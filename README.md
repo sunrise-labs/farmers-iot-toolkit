@@ -23,8 +23,7 @@ The toolkit starts with four core modules. Each one solves a real problem on
 the farm. They work on their own, but they can also be combined into a single,
 fully operational IoT system.
 
-<!-- TODO: Replace with the 4-module overview image -->
-![Farmers IoT Toolkit — 4 Modules](images/toolkit-modules-overview.png)
+![Farmers IoT Toolkit — 4 Modules](images/Farmers%20IoT%20Toolkit.png)
 
 | # | Module | Difficulty | What it does |
 |---|--------|------------|-------------|
