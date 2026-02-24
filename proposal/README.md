@@ -38,13 +38,7 @@
 
   ***`Farmers IoT Toolkit`***
 
-| *`Water tank level sensor  (beginner)`* |  | *`Soil Moisture Sensor to Drip irrigation valve (advanced)`* |  |
-| ----- | :---- | ----- | :---- |
-| *`![][image1]`* | *`Ultrasonic sensor detects how much water is in the water tank`* | *`![][image2]`* | *`soil moisture sensor tells solenoid valve when to release water into drip irrigation`* |
-| *`IoT solar powerbank (medium)`* |  | *`Mobile Wifi base station (beginner)`* |  |
-| *`![][image3]`* | *`off-grid power supply consisting of 20w solar panel powering 8 x 18650 lithium batteries (4S2P)`* | *`![][image4]`* | *`IoT hub consisting of an Android phone configured to receive data from IoT nodes, over local Wifi hotspot, running Node-Red, with 3g/4g backhaul to the internet.`* |
-| *`Request or Add solution to Farmers IoT Toolkit`* |  | *`* please feel free to contribute any other solution ideas to the Toolkit *`* |  |
-|  |  |  |  |
+  ![Farmers IoT Toolkit — 4 Modules](../images/Farmers%20IoT%20Toolkit.png)
 
 * *`We hope other Float members will contribute more ideas for practical/relevant IoT solutions to go into the Farmers IoT Toolkit`***
 
