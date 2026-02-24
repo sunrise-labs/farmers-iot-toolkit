@@ -10,7 +10,7 @@ guides that any farmer can follow.
 
 ## Background
 
-This project was submitted as a full funding proposal to
+This project was submitted as a [full funding proposal](proposal/) to
 [Float](https://float.ag) — a community-led funding lab for open
 agroecological technologies. Float selected it as a **discovery proposal**
 rather than a full proposal, so we are developing the toolkit incrementally
