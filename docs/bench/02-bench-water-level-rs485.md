@@ -63,14 +63,19 @@ Check in this order — first match wins:
 
 ### If it's the HTP-300Y
 
-Its manual is, frankly, a placeholder. No wire colours, no baud rate, no register map — it literally says to wire it *"according to the wiring definition provided by the seller."* There is nothing to work from.
+**There is no published register map for this sensor.** I searched for one and it does not exist publicly — no datasheet, no community integration, no forum thread. Its own manual is a placeholder: no wire colours, no baud rate, no registers, just an instruction to wire it *"according to the wiring definition provided by the seller."*
 
-That doesn't sink you. **Step 2 is model-agnostic** — the address/baud sweep and the block read find the map empirically whether or not you know the model. And two useful things are true regardless:
+> ⚠️ **Do not trust search results for "HTP Modbus."** There's a boiler manufacturer called HTP (Heat Transfer Products) whose Modbus adapter documentation ranks well and looks superficially relevant — it talks about baud rates and slave addresses, but configures them through an *installer menu on a boiler* ("press ENTER to advance to Parameter 38"). It is a completely unrelated product. I nearly quoted it. If you go looking yourself, that's the rock to not turn over.
 
-- **Both sensors are happy at 18 V** (see the boost note below), so you can power either one without knowing which it is.
-- If the QDY30A map below responds cleanly, you've *identified* your sensor as a QDY30A. If it doesn't, fall back to the sweep. Either way you get an answer.
+This doesn't sink you, because **Step 2 is model-agnostic** — the address/baud sweep and the block read find the map empirically whether or not you know the model. And:
 
-If it does turn out to be the HTP-300Y, **ask the seller for the wiring definition and Modbus register map** before you burn hours guessing. Their own manual tells you to.
+- **Both sensors are happy at 18 V**, so you can power either one before identifying it.
+- If the QDY30A map responds cleanly, you've *identified* your sensor. If not, fall back to the sweep.
+- **Try the QDY30A map on it anyway.** These Chinese hydrostatic transmitters overwhelmingly share a firmware family, and the `0x0000`=addr / `0x0001`=baud / `0x0004`=value layout is close to a de-facto standard among them. It costs nothing to try, and **reads cannot damage anything.**
+
+> ⚠️ **Reads are safe. Blind writes are not.** Never write registers on an unidentified sensor. If the layout differs and you write to what you *think* is the unit register, you could land on its address or baud register instead — and immediately lose the ability to talk to it. Read-only until you've confirmed the map.
+
+If it is the HTP-300Y, **ask the seller for the wiring definition and register map.** Their own manual says that's where it lives, and it's a five-minute message versus a day of sweeping. Note also that wire colours vary across this class of sensor — some use yellow=A / white=B rather than the QDY30A's blue/yellow — which is exactly why you don't assume a pinout you haven't confirmed.
 
 ## Wire colours — QDY30A (RS485 4-wire variant)
 
