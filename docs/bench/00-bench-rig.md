@@ -111,4 +111,6 @@ The soil sensor's manual has a **typo worth knowing about**: its register table 
 ## Where to go next
 
 - **[Soil sensor bench guide](01-bench-soil-sensor-rs485.md)** — start here. Fully documented register map, runs straight off the pack, no boost converter. It's the easier win and it validates your whole RS485 chain.
-- **[Water level bench guide](02-bench-water-level-rs485.md)** — do this second. Needs the 24 V boost, and its register map is *not* in the manual, so there's a discovery step.
+- **[Water level bench guide](02-bench-water-level-rs485.md)** — do this second. Needs the 24 V boost, and its register map is *not* in the manual — it's reconstructed from community sources, so there's a confirm-and-calibrate step.
+
+One thing to carry between them: **the two sensors run at different baud rates.** Soil THC-S is **4800**, water QDY30A is **9600**. Same bus wiring, different constant — don't copy it across.

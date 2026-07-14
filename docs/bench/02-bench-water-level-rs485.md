@@ -2,31 +2,26 @@
 
 > **Prerequisites:** [00-bench-rig.md](00-bench-rig.md), then **[01-bench-soil-sensor-rs485.md](01-bench-soil-sensor-rs485.md)**.
 > **Sensor:** QDY30A submersible hydrostatic level transmitter, RS485 (4-wire) variant
-> **Source:** `hardware/Manual - Water Level Option A.pdf`
+> **Manual:** `hardware/Manual - Water Level Option A.pdf` — covers wiring and voltage, but has **no Modbus section**.
+> **Register map below is community-sourced.** See [Provenance](#provenance-of-the-register-map).
 
-**Do the soil sensor first.** Not a style preference — this guide has two unknowns the soil guide doesn't (a boost converter to set, and an undocumented register map). You want the RS485 chain already proven before you take those on.
+**Do the soil sensor first.** It has a manufacturer-documented register map, so it proves your RS485 chain against a known-good target. Bring a working chain here.
 
-## Two things you need to know before wiring anything
+## Two things to know before wiring anything
 
 ### 1. Your pack cannot run this sensor directly
 
-The QDY30A needs **DC 12–36 V**, 24 V standard. Your 3S2P pack gives 9.0–12.6 V. It clears the 12 V floor only at near-full charge, then spends the rest of its life **below spec**.
+The QDY30A needs **DC 12–36 V**, 24 V standard. Your 3S2P pack gives 9.0–12.6 V. It clears the 12 V floor only near full charge, then spends the rest of its life **below spec**.
 
-Don't be tempted by "12.4 V is basically 12 V." An under-volted transmitter is not reliably a *dead* transmitter — it can return readings that look fine and drift as the pack sags. You'd be calibrating against a moving zero and chasing a fault that lives in your power rail.
+Don't split hairs over "12.4 V is basically 12 V." An under-volted transmitter doesn't necessarily fail *cleanly* — it can return plausible readings that drift as the pack sags, so you'd be calibrating against a moving zero and chasing a fault that actually lives in your power rail.
 
-**Boost the pack to 24 V with the MT3608.** That's the sensor's design point and it's stable across the pack's whole discharge curve.
+**Boost the pack to 24 V with the MT3608.** Stable across the pack's whole discharge curve.
 
-### 2. The register map is not in any of your manuals
+### 2. Your manual has no Modbus section — but the map is known
 
-I checked all three water-level PDFs in `hardware/`. They give you the wire colours, the voltage range, and the fact that RS485 is supported — and then **nothing about slave address, baud rate, or which register holds the level value.** No Modbus section at all.
-
-So unlike the soil sensor, I can't hand you a table. **Step 2 below is a discovery procedure** to find the register map empirically. It's straightforward, it just takes twenty minutes. Budget for it.
-
-If a datasheet came in the box or the seller has a spec sheet on the AliExpress listing, grab it — it'll save you the hunt. Worth asking the seller directly for "QDY30A Modbus RTU register map"; they usually have a PDF.
+None of the three water-level PDFs in `hardware/` document the protocol. The map below was reconstructed from Home Assistant and ESPHome community integrations of this exact sensor, cross-checked across three independent threads. **Step 2 is a five-minute confirmation** that your unit matches. Skip it and you're trusting the internet about your hardware.
 
 ## Wire colours (RS485 4-wire variant)
-
-From the manual's wiring diagram:
 
 | Wire | Function |
 |---|---|
@@ -35,27 +30,55 @@ From the manual's wiring diagram:
 | **Blue** | RS485 **A** |
 | **Yellow** | RS485 **B** |
 
-> Note these differ from the soil sensor, and confusingly so — on the soil sensor *yellow* is A and *blue* is B. Here it's the reverse: **blue is A, yellow is B**. Getting this backwards costs you nothing but a swap, but knowing it up front saves confusion.
+> These are **reversed relative to the soil sensor**, where yellow is A and blue is B. Here **blue is A, yellow is B**. Also worth knowing: multiple people integrating this sensor reported having to swap A and B anyway versus what the diagram implies. Swapping is harmless — if you get silence, just try it.
+
+## Modbus parameters
+
+| Setting | Value |
+|---|---|
+| Slave address | `1` (default) |
+| Baud | **9600** 8N1, no parity |
+| Function code | `0x03` read, `0x06` write |
+
+Note this differs from the soil sensor, which is **4800**. Same bus wiring, different baud — don't copy the constant across.
+
+## Register map
+
+| Reg | Holds | Notes |
+|---|---|---|
+| `0x0000` | Device address | 1–255 |
+| `0x0001` | Baud rate **code** | `0`=1200 · `3`=9600 · `4`=19200 · `7`=115200 |
+| `0x0002` | **Unit code** | QDY uses `0x11`=cm, `0x12`=m, `0x13`=kPa, `0x14`=Bar, `0x15`=PSI |
+| `0x0003` | **Decimal places** | 0–3. Sets the implied scaling of reg `0x0004` |
+| `0x0004` | **Measured value** ← the level | **int16, SIGNED** (−32768…32767) |
+| `0x0005` | Range zero point | Writable. Added to the result in `0x0004` |
+| `0x0006` | Range full point | Writable |
+| `0x000F` (15) | **Save settings** | Write `0` to persist — see gotcha below |
+| `0x0010` (16) | Factory reset | Write `1` |
+
+### The two gotchas that will bite you
+
+**Registers `0x0002` and `0x0003` decide what `0x0004` actually means.** The raw number is meaningless until you know the unit code and the decimal-place count. Multiple people reported the sensor returning **millimetres while the unit register claimed centimetres**. So don't assume — read `0x0002` and `0x0003` on your unit, then calibrate against a ruler (Step 4). That resolves it regardless of what the registers claim.
+
+**Config changes are volatile until you save them.** Writing a setting is a *two-command* operation: write the register, then **write `0` to register `0x000F`** to commit it to non-volatile memory. Skip the second command and your change silently evaporates on the next power cycle — which, on a solar node that browns out overnight, is a bug you'd chase for weeks.
 
 ## Step 1 — Set the MT3608 to 24 V *before* the sensor exists
 
-This is the step where you can actually destroy something. The MT3608 ships with its trimpot at an arbitrary setting. Do not connect the sensor and then adjust.
+This is the step where you can actually destroy something. The trimpot ships at an arbitrary setting. Never adjust it with the sensor connected.
 
-1. Connect **pack → MT3608 IN+ / IN−**. Nothing on the output.
+1. Connect **pack → MT3608 IN+ / IN−**. Output open, nothing attached.
 2. Multimeter across **OUT+ / OUT−**.
-3. Turn the trimpot — it's multi-turn, so it takes many rotations, and it may go the "wrong" way at first. Watch the meter, don't count turns.
-4. Bring it to a **steady 24.0 V**.
-5. Power down. *Now* connect the sensor's red to OUT+ and green to OUT−.
+3. Turn the trimpot — it's multi-turn, so expect many rotations, and it may initially go the wrong way. Watch the meter, don't count turns.
+4. Settle on a steady **24.0 V**.
+5. Power down. *Now* attach the sensor: red → OUT+, green → OUT−.
 
-Sanity checks:
+- The MT3608 is a **boost** converter — it cannot output below its input. 12 V → 24 V is fine; it can't give you 5 V.
+- Max output is 28 V. Don't creep toward it.
+- **24 V goes to the sensor's red wire and nowhere else.** Not the MAX485, not the ESP8266 — both are 3.3 V parts. Trace the wire with a finger before switching on.
 
-- The MT3608 is a **boost** converter. It cannot output *below* its input. 12 V in → 24 V out is fine; it can't give you 5 V.
-- Max output is 28 V. Don't overshoot toward it — 24.0 V is the target.
-- **24 V must reach the sensor's red wire and nowhere else.** Not the MAX485, not the ESP8266. Both are 3.3 V parts. Trace the wire with your finger before you switch on.
+## Step 2 — Confirm the map from the laptop (no ESP8266 yet)
 
-## Step 2 — Find the register map (laptop, no ESP8266 yet)
-
-Sensor → FT232 USB-RS485 adapter → laptop. Sensor powered from the MT3608 at 24 V. Sensor green → **common ground rail**.
+Sensor → FT232 USB-RS485 adapter → laptop. Sensor on the MT3608 at 24 V, green → **common ground rail**.
 
 | Sensor | FT232 |
 |---|---|
@@ -63,55 +86,41 @@ Sensor → FT232 USB-RS485 adapter → laptop. Sensor powered from the MT3608 at
 | Yellow (B) | B |
 | Green (−) | GND |
 
-### 2a. Find the address and baud rate
-
-These transmitters commonly ship as address `1` at `9600 8N1`, but yours is unverified — so scan rather than assume. Try the likely combination first:
+Read the whole config block plus the value in one shot:
 
 ```bash
-mbpoll -m rtu -a 1 -b 9600 -P none -d 8 -s 1 -t 4 -r 1 -c 4 /dev/ttyUSB0
+# registers 0x0000-0x0006 (mbpoll is 1-based: -r 1 == 0x0000)
+mbpoll -m rtu -a 1 -b 9600 -P none -d 8 -s 1 -t 4 -r 1 -c 7 /dev/ttyUSB0
 ```
 
-If that's silent, sweep addresses across the two plausible baud rates:
+Expect roughly:
+
+```
+[1]:  1        <- 0x0000  device address
+[2]:  3        <- 0x0001  baud code 3 = 9600
+[3]:  17       <- 0x0002  unit code 0x11 = cm
+[4]:  1        <- 0x0003  decimal places
+[5]:  0        <- 0x0004  measured value (0 in air)
+[6]:  0        <- 0x0005  zero point
+[7]:  5000     <- 0x0006  full range
+```
+
+**Write down your actual `0x0002` and `0x0003`.** They set the scaling for everything downstream.
+
+Now make it *move*: lower the probe into a bucket of water and watch `[5]`. It should climb clearly and settle. Lift it out — back toward zero. A value that doesn't respond to depth isn't the level register, and everything after this depends on it.
+
+Silence? **Swap blue and yellow**, retry. Then try `-b 4800`. Then sweep addresses:
 
 ```bash
-for baud in 9600 4800; do
-  for addr in $(seq 1 16); do
-    if timeout 1 mbpoll -m rtu -a $addr -b $baud -P none -d 8 -s 1 \
-         -t 4 -r 1 -c 2 -1 /dev/ttyUSB0 2>/dev/null | grep -q '\['; then
-      echo "FOUND — address $addr @ $baud baud"
-    fi
-  done
+for addr in $(seq 1 16); do
+  timeout 1 mbpoll -m rtu -a $addr -b 9600 -P none -t 4 -r 5 -c 1 -1 /dev/ttyUSB0 2>/dev/null \
+    | grep -q '\[' && echo "FOUND at address $addr"
 done
-```
-
-(`-1` polls once and exits.) Addresses 1–16 catch almost every factory default. If that sweep comes up empty: **swap blue and yellow** and run it again — A/B reversal is silent and harmless, and it's still the most likely fault. Then widen to `seq 1 247`.
-
-### 2b. Find which register holds the level
-
-Once you have an address and baud, dump a block of registers and watch which one *moves*:
-
-```bash
-# adjust -a and -b to what you found
-mbpoll -m rtu -a 1 -b 9600 -P none -d 8 -s 1 -t 4 -r 1 -c 10 /dev/ttyUSB0
-```
-
-That reads registers `0x0000`–`0x0009` on a repeating poll. Now **change the physical input** and watch the output:
-
-- Lower the probe into a **bucket of water**, then lift it out. Roughly 30 cm of submersion is plenty of signal.
-- The register tracking depth will swing clearly. Others will sit still or jitter in the noise.
-
-Some registers will hold a value scaled ×10 or ×100, some may be a 32-bit float split across two consecutive registers. Note *which* register moved and *by how much* for a known depth change — that's your scaling factor, and you'll confirm it in Step 4.
-
-Write down what you find:
-
-```
-address: ___    baud: ___
-level register: 0x____    scaling: ÷____    units: ____
 ```
 
 ## Step 3 — Move to the ESP8266
 
-Wiring is **exactly** the rig from [00-bench-rig.md](00-bench-rig.md) — `RO→D5`, `DI→D6`, `DE+RE→D1`, MAX485 `VCC→3V3`.
+Wiring is exactly the rig from [00-bench-rig.md](00-bench-rig.md): `RO→D5`, `DI→D6`, `DE+RE→D1`, MAX485 `VCC→3V3`.
 
 | Sensor | Goes to |
 |---|---|
@@ -120,59 +129,85 @@ Wiring is **exactly** the rig from [00-bench-rig.md](00-bench-rig.md) — `RO→
 | Red (+) | MT3608 OUT+ (**24 V**) |
 | Green (−) | MT3608 OUT− **and the common ground rail** |
 
-Pack −, MT3608 OUT−, MAX485 GND, and ESP8266 GND are all **one ground**. The sensor is running from a boosted rail while the ESP runs from laptop USB — two supplies, one reference. Miss this and you'll get intermittent CRC failures that look like a flaky sensor.
+Pack −, MT3608 OUT−, MAX485 GND and ESP8266 GND are **one ground**. The sensor runs off a boosted rail while the ESP runs off laptop USB — two supplies, one reference. Miss this and you get intermittent CRC failures that look exactly like a flaky sensor.
 
-Firmware is the soil sketch from [guide 01](01-bench-soil-sensor-rs485.md) with three lines changed to match what you found in Step 2:
+Take the sketch from [guide 01](01-bench-soil-sensor-rs485.md) — the CRC and frame code are unchanged — and swap the constants and the `loop()`:
 
 ```cpp
-#define SENSOR_ADDR  1      // <- from step 2a
-#define RS485_BAUD   9600   // <- from step 2a
+#define SENSOR_ADDR  1      // reg 0x0000
+#define RS485_BAUD   9600   // reg 0x0001 code 3. NOT 4800 like the soil sensor.
 
-// ...and in loop(), read your level register instead of 0x0000-0x0002:
 void loop() {
-  uint16_t r[2];
-  if (readRegisters(0x0000, 2, r)) {        // <- your register from step 2b
-    float level = r[0] / 10.0f;             // <- your scaling from step 2b
-    Serial.printf("raw %u | level %.2f\n", r[0], level);
+  uint16_t r[1];
+  if (readRegisters(0x0004, 1, r)) {          // 0x0004 = measured value
+    int16_t raw = (int16_t)r[0];              // SIGNED — below-zero readings are real
+
+    // Scaling depends on YOUR reg 0x0002 (unit) and 0x0003 (decimals).
+    // Confirm against a ruler in step 4 before trusting this divisor.
+    float level = raw / 10.0f;
+
+    Serial.printf("raw %d | level %.2f\n", raw, level);
   }
   delay(2000);
 }
 ```
 
-Print the **raw** value alongside the scaled one. While the register map is still a hypothesis, raw is the number you can actually reason about.
+Print **raw alongside scaled**. While the scaling is still a hypothesis, raw is the only number you can reason about — and `(int16_t)` matters, because a sensor reading slightly below its zero point returns a genuine negative that parses as ~65000 unsigned.
 
-## Step 4 — Calibrate against a known depth
+## Step 4 — Calibrate against a ruler
 
-The sensor reports *pressure* as depth of water above the probe. It knows nothing about your tank. So:
+The sensor reports water depth *above the probe*. It knows nothing about your tank, and the community reports of mm-vs-cm confusion mean the register's claimed unit is not authoritative. A ruler is.
 
-1. Probe in a bucket, sitting on the bottom. Note the raw reading — call it **zero offset**. It won't be 0; there's water above the probe and the diaphragm has its own offset.
-2. Measure the actual water depth above the probe with a ruler. Say 25 cm.
-3. Add water to a new measured depth, say 40 cm. Note the new raw reading.
-4. Two points give you scale and offset:
+1. Probe on the bottom of a bucket. Measure actual water depth above it — say **25 cm**. Note the raw value.
+2. Add water to a new measured depth — say **40 cm**. Note the new raw value.
+3. Fit the line:
 
 ```
-level_cm = (raw - raw_at_zero) * (cm_per_count)
 cm_per_count = (40 - 25) / (raw_at_40 - raw_at_25)
+level_cm     = (raw - raw_at_25) * cm_per_count + 25
 ```
 
-Confirm with a **third** depth you didn't use to fit the line. If it predicts that one correctly, your scaling is right. If it doesn't, the register is probably 32-bit across two registers, or scaled differently than you assumed — go back to Step 2b.
+4. **Verify with a third depth you didn't use to fit it.** If it predicts that one, your scaling is right. If it doesn't, re-check `0x0003` — the decimal-places register is the usual culprit for being off by exactly 10×.
 
-> **Keep the breather tube clear.** These are *gauge* pressure sensors — they reference the vent tube in the cable to atmosphere. The manual is emphatic about this. If you seal, kink, or submerge that cable end, readings drift with the weather. On the bench, just leave the cable end dry and open.
+If `cm_per_count` comes out near **0.1**, your sensor is reporting millimetres regardless of what the unit register says. That's the single most common outcome, and it matches what everyone else found.
+
+> **Keep the breather tube clear.** This is a *gauge* pressure sensor — it references atmosphere through a vent tube in the cable. Seal, kink, or submerge that cable end and your readings drift with the weather. Community reports also note **air bubbles trapped in the probe cavity cause up to 15 mm of error**; mount horizontally, or tilt the probe when submerging to let bubbles escape.
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Nothing at any address or baud | A/B swapped | Swap blue and yellow. Then rescan. |
-| Nothing, and the sensor is cold | Under-volted | Meter across red/green — must read **24 V**, not 12. |
-| Nothing, MT3608 output reads 0 V | Trimpot at the bottom of its range | It's multi-turn. Keep going, watch the meter. |
-| Readings drift over hours | Pack sagging *and* sensor under-volted | You're running direct off the pack. Use the boost. |
-| Readings drift with the weather | Breather tube blocked | Keep the cable end dry and open to air. |
-| Intermittent CRC failures | No common ground between boost rail and ESP | One ground rail. Everything joins it. |
-| Value never changes | Wrong register | Back to Step 2b — poll a block, watch which one moves. |
-| Level looks 10× or 100× off | Wrong scaling | Two-point calibrate, then verify with a third depth. |
-| Value jumps wildly between two extremes | 32-bit value read as 16-bit | Try reading two consecutive registers as one 32-bit int/float. |
+| Silence at every address/baud | A/B swapped | Swap blue and yellow. Commonly needed on this sensor. |
+| Silence, sensor cold | Under-volted | Meter red↔green: must be **24 V**, not 12. |
+| Silence, MT3608 reads 0 V | Trimpot at range bottom | Multi-turn — keep going, watch the meter. |
+| Readings 10× off | Wrong decimals assumption | Read `0x0003`. Calibrate with a ruler; likely mm not cm. |
+| Reading ≈ 65000 | Parsed unsigned | Cast to `int16_t`. Below-zero readings are legitimate. |
+| Config change lost on reboot | Didn't persist it | After any write, **write `0` to reg `0x000F`**. |
+| Drifts over hours | Pack sagging, sensor under-volted | You're running direct off the pack. Use the boost. |
+| Drifts with the weather | Breather tube blocked | Keep the cable end dry and open to air. |
+| Off by ~15 mm, erratic | Air bubble in the probe cavity | Tilt when submerging; mount horizontally. |
+| Intermittent CRC failures | No common ground | Boost OUT−, MAX485 GND, ESP GND — one rail. |
+| Value never changes | Not actually reading `0x0004` | Poll `0x0000`–`0x0006` as a block, watch which moves. |
+
+## Provenance of the register map
+
+Your manual documents wiring and voltage but **no Modbus protocol at all**. The map above comes from three independent Home Assistant / ESPHome community integrations of this same QDY30A. They agree with each other on every register.
+
+I verified the community-posted read frame is valid Modbus RTU by independently computing its CRC:
+
+```
+01 03 00 04 00 01 C5 CB      ← read reg 0x0004, addr 1
+                  ^^^^^ CRC recomputed → 0xC5 0xCB ✓
+```
+
+That proves the frame is well-formed, **not** that the register semantics are right for your unit. Hence Step 2 (confirm the block) and Step 4 (calibrate against a ruler). If the seller can supply an official "QDY30A Modbus register map" PDF, get it — but the ruler outranks any datasheet.
+
+**Sources:**
+- [Water level sensor QDY30A modbus RS485 with ESP32 S2 mini — ESPHome](https://community.home-assistant.io/t/water-level-sensor-qdy30a-modbus-rs485-with-esp32-s2-mini/698712) ([page 2](https://community.home-assistant.io/t/water-level-sensor-qdy30a-modbus-rs485-with-esp32-s2-mini/698712?page=2))
+- [Modbus with EW11 + QDY30A RS485 water level measure probe](https://community.home-assistant.io/t/modbus-with-ew11-qdy30a-rs485-water-level-measure-probe/688694)
+- [QDY30A RS485 + Waveshare RS485-to-POE-ETH](https://community.home-assistant.io/t/water-level-sensor-qdy30a-rs485-waveshare-rs485-to-poe-eth-b-modbus-mqtt/739638)
+- [QDY30A Submersible Level Transmitter manual (manuals.plus)](https://manuals.plus/ae/3256804725368942)
 
 ## Note on the existing module doc
 
-`docs/01-water-tank-level-sensor.md` still describes an **HC-SR04 ultrasonic sensor on an ESP32** — a completely different design from what you actually bought. `hardware.md` records that you "went with RS485 variant," and this submersible hydrostatic transmitter is a better call for a real tank (no false echoes off tank walls, ripples, or foam). But that doc is now stale and will mislead anyone who reads it. Worth rewriting once this bench test passes and you know the real wiring and register map.
+`docs/01-water-tank-level-sensor.md` still describes an **HC-SR04 ultrasonic sensor on an ESP32** — a different design from what you bought. `hardware.md` records the switch to RS485, and the submersible transmitter is the better call for a real tank (no false echoes off walls, ripples, or foam). But that doc is stale and will mislead. Worth rewriting once this bench test passes.
