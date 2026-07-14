@@ -9,28 +9,81 @@
 
 ## Two things to know before wiring anything
 
-### 1. Your pack cannot run this sensor directly
+### 1. Your pack cannot run this sensor directly — boost it to 18 V
 
-The QDY30A needs **DC 12–36 V**, 24 V standard. Your 3S2P pack gives 9.0–12.6 V. It clears the 12 V floor only near full charge, then spends the rest of its life **below spec**.
+Neither candidate sensor is happy on a bare 3S2P pack (9.0–12.6 V):
 
-Don't split hairs over "12.4 V is basically 12 V." An under-volted transmitter doesn't necessarily fail *cleanly* — it can return plausible readings that drift as the pack sags, so you'd be calibrating against a moving zero and chasing a fault that actually lives in your power rail.
+| Sensor | Spec'd supply |
+|---|---|
+| QDY30A | **12–36 V** (24 V standard) |
+| HTP-300Y | **9–24 V** (24 V default) |
 
-**Boost the pack to 24 V with the MT3608.** Stable across the pack's whole discharge curve.
+The QDY30A clears its 12 V floor only near full charge, then spends the rest of the pack's life **below spec**. Don't split hairs over "12.4 V is basically 12 V" — an under-volted transmitter doesn't necessarily fail *cleanly*. It can return plausible readings that drift as the pack sags, so you'd be calibrating against a moving zero while chasing a fault that actually lives in your power rail.
+
+**Boost the pack with the MT3608. If you don't yet know which sensor you have, set it to 18.0 V.**
+
+That number isn't arbitrary. The two sensors overlap at **12–24 V**, and 18 V sits in the middle of that window:
+
+```
+QDY30A     12 V ├──────────────────────────────────────┤ 36 V
+HTP-300Y  9 V ├──────────────────────┤ 24 V
+                       ↓
+overlap        12 V ├──────────┤ 24 V
+                        18 V ← safe for either, with margin both ways
+```
+
+18 V clears the QDY30A's 12 V minimum with room to spare and stays well under the HTP-300Y's 24 V ceiling. **Do not default to 24 V while the model is unknown** — that's the HTP-300Y's absolute maximum, and a trimpot nudged slightly past it puts you over the limit on a sensor that says *"ensure the supply voltage does not exceed the specified limits to prevent permanent damage."*
+
+Once you've positively identified a QDY30A, 24 V is its standard operating point and you can raise it if you like. There's no need to — 18 V works fine for both, so the simplest thing is to set it once and leave it.
 
 ### 2. Your manual has no Modbus section — but the map is known
 
 None of the three water-level PDFs in `hardware/` document the protocol. The map below was reconstructed from Home Assistant and ESPHome community integrations of this exact sensor, cross-checked across three independent threads. **Step 2 is a five-minute confirmation** that your unit matches. Skip it and you're trusting the internet about your hardware.
 
-## Wire colours (RS485 4-wire variant)
+## Which sensor do you actually have?
+
+You listed three options in `hardware.md`, but **they're only two sensors**:
+
+| Option | Model | Manual |
+|---|---|---|
+| **A** | QDY30A | `Manual - Water Level Option A.pdf` |
+| **C** | QDY30A | `Manual - Water Level Option C.pdf` — **byte-identical to A** (same MD5) |
+| **B** | **HTP-300Y** | different sensor, different manufacturer |
+
+A and C are the same product listed by two sellers. So the real question is only: **QDY30A or HTP-300Y?**
+
+### Telling them apart
+
+Check in this order — first match wins:
+
+1. **The body label.** Both are usually laser-etched or carry a hang tag with the model number. Easiest answer, so look here first.
+2. **Count and colour the wires.** The QDY30A RS485 variant has exactly **four wires: red, green, blue, yellow.** If yours matches that, it's the QDY30A and the map below applies.
+3. **Housing.** QDY30A is 316 stainless throughout, ~28 mm probe diameter, 7 mm PUR cable. The HTP-300Y has an **aluminium alloy housing** on a 316L diaphragm.
+4. **Just run Step 2.** The confirmation poll below *is* an identification test — see below.
+
+### If it's the HTP-300Y
+
+Its manual is, frankly, a placeholder. No wire colours, no baud rate, no register map — it literally says to wire it *"according to the wiring definition provided by the seller."* There is nothing to work from.
+
+That doesn't sink you. **Step 2 is model-agnostic** — the address/baud sweep and the block read find the map empirically whether or not you know the model. And two useful things are true regardless:
+
+- **Both sensors are happy at 18 V** (see the boost note below), so you can power either one without knowing which it is.
+- If the QDY30A map below responds cleanly, you've *identified* your sensor as a QDY30A. If it doesn't, fall back to the sweep. Either way you get an answer.
+
+If it does turn out to be the HTP-300Y, **ask the seller for the wiring definition and Modbus register map** before you burn hours guessing. Their own manual tells you to.
+
+## Wire colours — QDY30A (RS485 4-wire variant)
 
 | Wire | Function |
 |---|---|
-| **Red** | Power + (12–36 V) |
+| **Red** | Power + |
 | **Green** | Power − |
 | **Blue** | RS485 **A** |
 | **Yellow** | RS485 **B** |
 
-> These are **reversed relative to the soil sensor**, where yellow is A and blue is B. Here **blue is A, yellow is B**. Also worth knowing: multiple people integrating this sensor reported having to swap A and B anyway versus what the diagram implies. Swapping is harmless — if you get silence, just try it.
+> These are **reversed relative to the soil sensor**, where yellow is A and blue is B. Here **blue is A, yellow is B**. And multiple people integrating this sensor reported having to swap A and B anyway versus what the diagram implies. Swapping is harmless — if you get silence, just try it.
+>
+> **If your sensor's wires aren't red/green/blue/yellow, it's not the QDY30A** and you should not assume these roles. Get the wiring definition from the seller.
 
 ## Modbus parameters
 
@@ -62,23 +115,23 @@ Note this differs from the soil sensor, which is **4800**. Same bus wiring, diff
 
 **Config changes are volatile until you save them.** Writing a setting is a *two-command* operation: write the register, then **write `0` to register `0x000F`** to commit it to non-volatile memory. Skip the second command and your change silently evaporates on the next power cycle — which, on a solar node that browns out overnight, is a bug you'd chase for weeks.
 
-## Step 1 — Set the MT3608 to 24 V *before* the sensor exists
+## Step 1 — Set the MT3608 to 18 V *before* the sensor exists
 
-This is the step where you can actually destroy something. The trimpot ships at an arbitrary setting. Never adjust it with the sensor connected.
+This is the step where you can actually destroy something. The trimpot ships at an arbitrary setting. **Never adjust it with the sensor connected** — you'd be sweeping an unknown voltage across its input while you hunt for the target.
 
 1. Connect **pack → MT3608 IN+ / IN−**. Output open, nothing attached.
 2. Multimeter across **OUT+ / OUT−**.
-3. Turn the trimpot — it's multi-turn, so expect many rotations, and it may initially go the wrong way. Watch the meter, don't count turns.
-4. Settle on a steady **24.0 V**.
+3. Turn the trimpot — it's multi-turn, so expect many rotations, and it may initially move the wrong way. Watch the meter, don't count turns.
+4. Settle on a steady **18.0 V** (safe for either sensor — see above).
 5. Power down. *Now* attach the sensor: red → OUT+, green → OUT−.
 
-- The MT3608 is a **boost** converter — it cannot output below its input. 12 V → 24 V is fine; it can't give you 5 V.
-- Max output is 28 V. Don't creep toward it.
-- **24 V goes to the sensor's red wire and nowhere else.** Not the MAX485, not the ESP8266 — both are 3.3 V parts. Trace the wire with a finger before switching on.
+- The MT3608 is a **boost** converter — it cannot output below its input. 12 V → 18 V is fine; it can't give you 5 V.
+- Its ceiling is 28 V, but **that is not your limit** — if this is an HTP-300Y, anything over **24 V can permanently damage it**. Approach 18 V from below and stop there.
+- **The boosted rail goes to the sensor's red wire and nowhere else.** Not the MAX485, not the ESP8266 — both are 3.3 V parts. Trace the wire with a finger before switching on.
 
 ## Step 2 — Confirm the map from the laptop (no ESP8266 yet)
 
-Sensor → FT232 USB-RS485 adapter → laptop. Sensor on the MT3608 at 24 V, green → **common ground rail**.
+Sensor → FT232 USB-RS485 adapter → laptop. Sensor on the MT3608 at 18 V, green → **common ground rail**.
 
 | Sensor | FT232 |
 |---|---|
@@ -126,7 +179,7 @@ Wiring is exactly the rig from [00-bench-rig.md](00-bench-rig.md): `RO→D5`, `D
 |---|---|
 | Blue (A) | MAX485 A |
 | Yellow (B) | MAX485 B |
-| Red (+) | MT3608 OUT+ (**24 V**) |
+| Red (+) | MT3608 OUT+ (**18 V**) |
 | Green (−) | MT3608 OUT− **and the common ground rail** |
 
 Pack −, MT3608 OUT−, MAX485 GND and ESP8266 GND are **one ground**. The sensor runs off a boosted rail while the ESP runs off laptop USB — two supplies, one reference. Miss this and you get intermittent CRC failures that look exactly like a flaky sensor.
@@ -178,7 +231,7 @@ If `cm_per_count` comes out near **0.1**, your sensor is reporting millimetres r
 | Symptom | Cause | Fix |
 |---|---|---|
 | Silence at every address/baud | A/B swapped | Swap blue and yellow. Commonly needed on this sensor. |
-| Silence, sensor cold | Under-volted | Meter red↔green: must be **24 V**, not 12. |
+| Silence, sensor cold | Under-volted | Meter red↔green: must be the boosted **18 V**, not the raw pack. |
 | Silence, MT3608 reads 0 V | Trimpot at range bottom | Multi-turn — keep going, watch the meter. |
 | Readings 10× off | Wrong decimals assumption | Read `0x0003`. Calibrate with a ruler; likely mm not cm. |
 | Reading ≈ 65000 | Parsed unsigned | Cast to `int16_t`. Below-zero readings are legitimate. |

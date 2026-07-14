@@ -22,7 +22,7 @@ Now compare that against what each sensor demands — straight from the manuals 
 
 That second row is the thing to notice. Your pack only clears the QDY30A's 12 V minimum when it's near *full*. The moment it sags to 11.5 V — which is most of its useful life — the sensor is **under-volted and out of spec**. It might return nothing, or worse, it might return readings that look plausible and drift as the pack discharges. A sensor that fails cleanly is annoying; one that lies to you quietly will cost you a day.
 
-**So: the soil sensor runs off the pack directly, and the water sensor runs off the pack through the MT3608 boost converter set to 24 V.** You already own the MT3608. This is exactly the job it's for.
+**So: the soil sensor runs off the pack directly, and the water sensor runs off the pack through the MT3608 boost converter set to 18 V.** You already own the MT3608. This is exactly the job it's for.
 
 ## Parts you'll pull from the kit
 
@@ -83,7 +83,7 @@ Run one jumper from pack negative to the ESP8266 GND rail. Do it before you powe
        │            └────────────────────────────────────────────────────────┘
        │
        │            ┌─────────────────────────── WATER SENSOR ONLY ──────────┐
-       └────────────┼──► [MT3608 boost] ──── 24.0V ────────► Water V+ (red)  │
+       └────────────┼──► [MT3608 boost] ──── 18.0V ────────► Water V+ (red)  │
        │            │     set with multimeter BEFORE                         │
        │            │     connecting the sensor                              │
        │            └────────────────────────────────────────────────────────┘
@@ -111,6 +111,6 @@ The soil sensor's manual has a **typo worth knowing about**: its register table 
 ## Where to go next
 
 - **[Soil sensor bench guide](01-bench-soil-sensor-rs485.md)** — start here. Fully documented register map, runs straight off the pack, no boost converter. It's the easier win and it validates your whole RS485 chain.
-- **[Water level bench guide](02-bench-water-level-rs485.md)** — do this second. Needs the 24 V boost, and its register map is *not* in the manual — it's reconstructed from community sources, so there's a confirm-and-calibrate step.
+- **[Water level bench guide](02-bench-water-level-rs485.md)** — do this second. Needs an 18 V boost, and its register map is *not* in the manual — it's reconstructed from community sources, so there's a confirm-and-calibrate step.
 
 One thing to carry between them: **the two sensors run at different baud rates.** Soil THC-S is **4800**, water QDY30A is **9600**. Same bus wiring, different constant — don't copy it across.
