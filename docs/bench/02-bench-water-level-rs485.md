@@ -136,13 +136,20 @@ This is the step where you can actually destroy something. The trimpot ships at 
 
 ## Step 2 — Confirm the map from the laptop (no ESP8266 yet)
 
-Sensor → FT232 USB-RS485 adapter → laptop. Sensor on the MT3608 at 18 V, green → **common ground rail**.
+> **Full walkthrough: [00-bench-rig.md § Step 0](00-bench-rig.md#step-0--prove-the-sensor-works-before-the-esp8266-is-involved)** — installing `mbpoll`, finding `/dev/ttyUSB0`, what every flag means, and what to do when it times out. Read that if any of the below is unclear. This section is just the water-sensor specifics.
 
-| Sensor | FT232 |
+Sensor → FT232 USB-RS485 adapter → laptop. Sensor powered **from the MT3608 boost at 18 V** — set that first (Step 1 above), never straight off the pack.
+
+| Sensor wire | Goes to |
 |---|---|
-| Blue (A) | A |
-| Yellow (B) | B |
-| Green (−) | GND |
+| **Blue** (A) | FT232 **A** |
+| **Yellow** (B) | FT232 **B** |
+| **Red** (+) | MT3608 **OUT+** (18 V) |
+| **Green** (−) | MT3608 **OUT−** *and* FT232 **GND** |
+
+> **Note the A/B colours are the opposite of the soil sensor** — there, yellow is A and blue is B. Here blue is A. Read it twice; it's a genuinely nasty trap.
+
+Green must reach **both** the boost negative and the adapter's GND — the common-ground rule.
 
 Read the whole config block plus the value in one shot:
 

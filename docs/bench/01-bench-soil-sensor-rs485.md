@@ -39,13 +39,18 @@ Temperature is signed. `0xFF9B` = −101 = **−10.1 °C**, not 65435. Parse it 
 
 ## Step 0 — Read it from the laptop first
 
-Sensor → FT232 USB-RS485 adapter → laptop. Sensor powered from the pack (brown to pack +, black to pack −).
+> **Full walkthrough: [00-bench-rig.md § Step 0](00-bench-rig.md#step-0--prove-the-sensor-works-before-the-esp8266-is-involved)** — installing `mbpoll`, finding `/dev/ttyUSB0`, what every flag means, and what to do when it times out. Read that if any of the below is unclear. This section is just the soil-sensor specifics.
 
-| Sensor | FT232 |
+Sensor → FT232 USB-RS485 adapter → laptop. Sensor powered **from the pack directly** (brown to pack +, black to pack −) — no converter needed, the THC-S takes 4.5–30 V.
+
+| Sensor wire | Goes to |
 |---|---|
-| Yellow (A+) | A |
-| Blue (B−) | B |
-| Black (−) | GND |
+| **Yellow** (A+) | FT232 **A** |
+| **Blue** (B−) | FT232 **B** |
+| **Brown** (+) | pack **+** |
+| **Black** (−) | pack **−** *and* FT232 **GND** |
+
+Black must reach **both** the pack negative and the adapter's GND. That's the common-ground rule — skip it and you get silence from a rig that looks perfectly wired.
 
 ```bash
 # read 3 holding registers from addr 1 @ 4800 8N1
