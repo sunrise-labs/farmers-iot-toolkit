@@ -337,6 +337,10 @@ That proves the frame is well-formed, **not** that the register semantics are ri
 - [QDY30A RS485 + Waveshare RS485-to-POE-ETH](https://community.home-assistant.io/t/water-level-sensor-qdy30a-rs485-waveshare-rs485-to-poe-eth-b-modbus-mqtt/739638)
 - [QDY30A Submersible Level Transmitter manual (manuals.plus)](https://manuals.plus/ae/3256804725368942)
 
-## Note on the existing module doc
+## The module doc
 
-`docs/01-water-tank-level-sensor.md` still describes an **HC-SR04 ultrasonic sensor on an ESP32** — a different design from what you bought. `hardware.md` records the switch to RS485, and the submersible transmitter is the better call for a real tank (no false echoes off walls, ripples, or foam). But that doc is stale and will mislead. Worth rewriting once this bench test passes.
+[`docs/01-water-tank-level-sensor.md`](../01-water-tank-level-sensor.md) is the farmer-facing build guide for this sensor. It was rewritten on 2026-07-16 to match what we actually built — it previously described an HC-SR04 ultrasonic sensor on an ESP32, which was never built.
+
+The switch was deliberate: a tank is an enclosed cylinder full of reflective surfaces with a moving surface, which is precisely what an echo-based sensor handles worst. A submersible pressure probe ignores walls, ripples and foam entirely because it doesn't look at the water — it sits underneath it. The cost is that it needs 12–36 V (hence the MT3608 boost) and speaks RS485 rather than two GPIO pins.
+
+> ⚠️ **The funded proposal still specifies "ultrasonic detection"** (`proposal/README.md`). That document is the record of what Float agreed to fund and should not be quietly rewritten — but the divergence is real and belongs in the scope-change log in [`STATUS.md`](../../STATUS.md).
