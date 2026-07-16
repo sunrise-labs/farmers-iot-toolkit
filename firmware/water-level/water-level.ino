@@ -125,6 +125,10 @@ bool readLevelRaw(int16_t *out) {
   return true;
 }
 
+#if BENCH_MODE
+void connectWiFi() {}                       // bench mode: no radio, no waiting
+bool postJSON(const String &) { return false; }
+#else
 void connectWiFi() {
   if (WiFi.status() == WL_CONNECTED) return;
   Serial.printf("WiFi: connecting to %s", WIFI_SSID);
@@ -160,6 +164,7 @@ bool postJSON(const String &json) {
   Serial.printf("POST: failed (%d)\n", code);   // negative = client-side error
   return false;
 }
+#endif  // BENCH_MODE
 
 void setup() {
   Serial.begin(115200);          // debug, over USB
@@ -173,7 +178,13 @@ void setup() {
   if (TANK_FULL_MM <= 0) {
     Serial.println(F("tank_full_mm not set — reporting depth only, no percentage"));
   }
+#if BENCH_MODE
+  WiFi.mode(WIFI_OFF);   // radio off: less power, less RF noise near the RS485 pair
+  Serial.println(F("BENCH MODE — WiFi off, polling every 2s, serial only."));
+  Serial.println(F("Set BENCH_MODE 0 in config.h once the probe reads reliably.\n"));
+#else
   connectWiFi();
+#endif
 }
 
 void loop() {
@@ -202,8 +213,10 @@ void loop() {
       if (pct > 100.0f) pct = 100.0f;    // overfull reads as full, not 103%
       json += ",\"percent\":" + String(pct, 1);
     }
-    json += ",\"rssi\":" + String(WiFi.RSSI())
-          + ",\"uptime_s\":" + String(millis() / 1000) + "}";
+#if !BENCH_MODE
+    json += ",\"rssi\":" + String(WiFi.RSSI());
+#endif
+    json += ",\"uptime_s\":" + String(millis() / 1000) + "}";
 
     Serial.printf("raw=%d  depth=%d mm%s\n", raw, depth_mm,
                   depth_mm < 0 ? "  (below zero — check the dry offset)" : "");
@@ -212,14 +225,20 @@ void loop() {
     // identical to a dead node or dead WiFi; an explicit error tells the
     // dashboard the node is alive and the probe is not.
     json = String("{\"node\":\"") + NODE_ID + "\",\"ok\":false"
-         + ",\"error\":\"no valid modbus frame\""
-         + ",\"rssi\":" + String(WiFi.RSSI())
-         + ",\"uptime_s\":" + String(millis() / 1000) + "}";
+         + ",\"error\":\"no valid modbus frame\"";
+#if !BENCH_MODE
+    json += ",\"rssi\":" + String(WiFi.RSSI());
+#endif
+    json += ",\"uptime_s\":" + String(millis() / 1000) + "}";
     Serial.println(F("read FAILED — check 18V on the probe, and A/B wiring"));
   }
 
   Serial.println(json);
   postJSON(json);
 
+#if BENCH_MODE
+  delay(2000);   // fast loop while you're wiring
+#else
   delay((unsigned long)REPORT_INTERVAL_S * 1000UL);
+#endif
 }

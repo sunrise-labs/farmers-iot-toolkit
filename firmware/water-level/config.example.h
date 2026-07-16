@@ -6,8 +6,17 @@
 // .ino to get a working node.
 #pragma once
 
+// ─── Bench mode ─────────────────────────────────────────────────────────────
+// 1 = skip WiFi entirely and just print readings to the Serial Monitor, fast.
+// 0 = normal operation: read, and POST to the base station.
+//
+// START AT 1. Prove the probe reads through the ESP8266 before you add WiFi to
+// the list of things that could be broken. One thing at a time is the whole
+// trick to bringing hardware up.
+#define BENCH_MODE     1
+
 // ─── WiFi ───────────────────────────────────────────────────────────────────
-// The hotspot from Module 4 (the Android base station).
+// The hotspot from Module 4 (the Android base station). Ignored in bench mode.
 #define WIFI_SSID      "FarmIoT"
 #define WIFI_PASSWORD  "change-me"
 
@@ -21,7 +30,8 @@
 // Name for this node. If you ever run two tanks, give them different names.
 #define NODE_ID        "water-tank-1"
 
-// How often to read and send, in seconds.
+// How often to read and send, in seconds. Ignored in bench mode, which polls
+// every 2s so you get a fast feedback loop while wiring.
 #define REPORT_INTERVAL_S  60
 
 // ─── Sensor calibration ─────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ status: draft              # draft | in-progress | testing | complete
 
 # ---- What It Does (plain language) ----
 summary: >
-  An off-grid power supply that uses a 20W solar panel to charge 8
+  An off-grid power supply that uses a 20W solar panel to charge 6
   rechargeable batteries. It keeps your IoT sensors and microcontrollers
   running in the field — no mains power needed.
 
@@ -19,20 +19,24 @@ prior_knowledge: "Basic comfort with wiring. Read the safety notes carefully —
 microcontroller: "None (this is a power supply module, but it powers ESP32s in other modules)"
 batteries:
   - name: "18650 Lithium-ion battery"
-    quantity: 8
-    configuration: "4S2P (4 in series, 2 in parallel)"
-    approx_cost_usd: 20
+    quantity: 6
+    configuration: "3S2P (3 in series, 2 in parallel)"
+    approx_cost_usd: 15
 
 solar:
-  - name: "20W solar panel"
+  - name: "20W solar panel (Vmp 18.6V)"
     approx_cost_usd: 20
+    notes: >
+      The panel's Vmp (voltage at maximum power) matters as much as its wattage.
+      It must stay above the pack's full-charge voltage by ~2V even when hot.
+      See "Why 3 in series and not 4?" below before substituting a different panel.
 
 other_parts:
-  - name: "4S BMS (Battery Management System) board"
+  - name: "3S BMS (Battery Management System) board"
     quantity: 1
     purpose: "Protects the batteries from overcharge, over-discharge, and short circuit"
     approx_cost_usd: 5
-  - name: "Solar charge controller (suitable for 4S lithium)"
+  - name: "Solar charge controller (suitable for 3S lithium)"
     quantity: 1
     approx_cost_usd: 10
   - name: "DC-DC buck converter (step-down to 5V USB)"
@@ -49,15 +53,18 @@ other_parts:
     quantity: 1
     approx_cost_usd: 10
 
-total_approx_cost_usd: 80
+total_approx_cost_usd: 75
 
 # ---- Power ----
 power_source: "20W solar panel"
 power_output: "5V USB (via DC-DC converter)"
 power_notes: >
-  The 4S2P battery pack gives roughly 14.8V nominal.
+  The 3S2P battery pack gives roughly 11.1V nominal (12.6V fully charged).
   A buck converter steps this down to 5V for USB-powered devices.
-  With 8 batteries, this can power an ESP32 for many days without sun.
+  With 6 batteries, this can power a sleeping ESP32 for many days without sun.
+  Devices that never sleep — especially a phone running a WiFi hotspot — will
+  outrun a 20W panel no matter how many batteries you add. See "How long will
+  it last?" below.
 
 # ---- Connectivity ----
 connects_to: "Powers Module 1, Module 2 (ESP32 only), and Module 4"
@@ -100,10 +107,10 @@ ESP32 devices around the clock. A protection board keeps the batteries safe.
 
 | # | Part | What it does | Est. cost | Link to buy |
 |---|------|-------------|-----------|-------------|
-| 1 | 18650 lithium batteries (x8) | Store energy from the solar panel | ~$20 | *(add link)* |
-| 2 | 20W solar panel | Charges the batteries using sunlight | ~$20 | *(add link)* |
-| 3 | 4S BMS board | Protects batteries from damage (overcharge, short circuit) | ~$5 | *(add link)* |
-| 4 | Solar charge controller (4S lithium) | Manages charging from the solar panel | ~$10 | *(add link)* |
+| 1 | 18650 lithium batteries (x6) | Store energy from the solar panel | ~$15 | *(add link)* |
+| 2 | 20W solar panel, **Vmp 18.6V** | Charges the batteries using sunlight | ~$20 | *(add link)* |
+| 3 | 3S BMS board | Protects batteries from damage (overcharge, short circuit) | ~$5 | *(add link)* |
+| 4 | Solar charge controller (3S lithium) | Manages charging from the solar panel | ~$10 | *(add link)* |
 | 5 | DC-DC buck converter (to 5V) | Steps voltage down to 5V USB for your devices | ~$3 | *(add link)* |
 | 6 | Battery holder or spot-welded pack | Holds the 8 batteries in the right arrangement | ~$5 | *(add link)* |
 | 7 | Wires, connectors, fuse + holder | Connects everything and adds short-circuit protection | ~$5 | *(add link)* |
@@ -117,13 +124,14 @@ ESP32 devices around the clock. A protection board keeps the batteries safe.
         |
         v
 [ 20W Solar Panel ]
+   (Vmp 18.6V)
         |
         v
 [ Charge Controller ]
         |
         v
-[ 8 x 18650 Batteries ]  <-- protected by BMS board
-   (4S2P arrangement)
+[ 6 x 18650 Batteries ]  <-- protected by BMS board
+   (3S2P arrangement)
         |
         v
 [ DC-DC Buck Converter ]
@@ -158,22 +166,55 @@ ESP32 devices around the clock. A protection board keeps the batteries safe.
 > electrical experience to help. Safety first.
 
 
-## Understanding the battery arrangement: 4S2P
+## Understanding the battery arrangement: 3S2P
 
 This sounds complicated but it is simple:
 
-- **4S** = 4 batteries connected in **series** (end to end) — this adds up
-  the voltage (3.7V x 4 = 14.8V)
-- **2P** = 2 of these 4-battery chains connected in **parallel** (side by
+- **3S** = 3 batteries connected in **series** (end to end) — this adds up
+  the voltage (3.7V x 3 = 11.1V nominal, 12.6V when fully charged)
+- **2P** = 2 of these 3-battery chains connected in **parallel** (side by
   side) — this doubles the capacity so it lasts longer
 
 ```
-  Group A:  [bat1]--[bat2]--[bat3]--[bat4]  = 14.8V
-                        +
-  Group B:  [bat5]--[bat6]--[bat7]--[bat8]  = 14.8V
+  Group A:  [bat1]--[bat2]--[bat3]  = 11.1V
+                      +
+  Group B:  [bat4]--[bat5]--[bat6]  = 11.1V
 
-  A and B in parallel = 14.8V, double the capacity
+  A and B in parallel = 11.1V, double the capacity
 ```
+
+### Why 3 in series and not 4?
+
+> **An earlier version of this guide said 4S2P. That was wrong, and it is worth
+> explaining why — because the mistake is easy to repeat and it fails in a way
+> that is hard to diagnose.**
+
+A solar charge controller cannot push energy uphill. It needs the panel's voltage
+to sit **about 2V above the battery's full-charge voltage**, or it simply stops
+charging.
+
+Now the trap: **a panel's Vmp drops as it gets hot.** The "18.6V" on the label is
+measured at 25°C in a laboratory. A panel in real tropical sun runs at 55–60°C,
+and it loses roughly 0.35% of its Vmp per degree:
+
+```
+18.6V x (1 - 0.0035 x 33°C)  =  16.5V   <-- what you actually get in the field
+```
+
+So compare the two arrangements against a **real, hot** 16.5V:
+
+| Arrangement | Full charge | Panel voltage needed | Hot panel gives 16.5V |
+|-------------|-------------|----------------------|-----------------------|
+| **3S** (this guide) | 12.6V | ~14.6V | ✅ works, ~1.9V to spare |
+| **4S** (the old, wrong version) | 16.8V | ~18.8V | ❌ short by 2.3V |
+
+A 4S pack on this panel would charge a little on a cool morning and then **stop
+charging completely once the sun warmed the panel up** — so it would look fine on
+your bench and quietly fail in the field. That is the worst kind of fault.
+
+**If you substitute a different panel,** check its Vmp, subtract ~11% for heat,
+and make sure the result is at least 2V above your pack's full-charge voltage.
+Wattage alone will not tell you whether a panel can charge your battery.
 
 
 ## Step-by-step build guide
@@ -185,12 +226,12 @@ This sounds complicated but it is simple:
 - Use a multimeter to check each battery reads between 3.0V and 4.2V
 - Discard any battery that reads below 2.5V or looks damaged
 
-### Step 2 — Arrange batteries in 4S2P
+### Step 2 — Arrange batteries in 3S2P
 
 *(Wiring diagram and photo to be added)*
 
-- Place 4 batteries in series for Group A
-- Place 4 batteries in series for Group B
+- Place 3 batteries in series for Group A
+- Place 3 batteries in series for Group B
 - Connect Group A and Group B in parallel
 
 ### Step 3 — Connect the BMS board
@@ -234,7 +275,10 @@ This sounds complicated but it is simple:
 |---------|---------------|-------------|
 | No output voltage | Fuse has blown | Check and replace the fuse |
 | Output voltage is not 5V | Buck converter needs adjusting | Turn the small screw on the converter with a screwdriver while checking voltage |
-| Batteries drain overnight even with sun during the day | Solar panel is too shaded or too small | Move panel to a sunnier spot, check it is angled toward the sun |
+| Batteries drain overnight even with sun during the day | Panel too shaded/small, **or your devices never sleep** | Move the panel to a sunnier spot. Then check your daily energy budget — see "How long will it last?" |
+| Pack charges partway then stops, never reaches full | Panel Vmp too low for the pack (especially once hot) | Check Vmp against the table in "Why 3 in series and not 4?". A hot panel loses ~11% of its Vmp |
+| Charges fine in the morning, stops by midday | Same cause — the panel heated up and its Vmp fell below what the controller needs | You need a higher-Vmp panel, or fewer cells in series |
+| Panel gives far less current than its rating | Panel facing the wrong way | In the southern hemisphere the midday sun is in the **NORTH**. Check Voc and Isc with the panel disconnected to confirm the panel itself is healthy |
 | BMS cuts power suddenly | A battery is faulty or badly connected | Check all battery connections, test each battery individually |
 | Enclosure gets very hot inside | No ventilation | Add small vent holes (covered with mesh to keep bugs out) on the shaded side |
 
