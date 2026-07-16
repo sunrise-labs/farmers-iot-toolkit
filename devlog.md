@@ -8,6 +8,106 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-16 — Water sensor Step 4: ruler test PASSED — sensor reports **millimetres**
+
+Closes the last open item on the water sensor. Probe flat on the bottom of a bucket
+marked at 30 mm intervals, powered from the MT3608 boost @ 18 V, 4 points captured
+with `tools/poll-water.ts --point=<n>mm` (8 CRC-validated frames averaged per point).
+
+| ruler | raw (mean of 8) | spread |
+|---|---|---|
+| 65 mm | 82.25 | 1 |
+| 95 mm | 107.75 | 1 |
+| 125 mm | 136.0 | 0 |
+| 155 mm | 169.0 | 0 |
+
+Least-squares fit: **`level_cm = 0.10363 * raw − 1.824`**, R² = 0.9966.
+
+### ✅ VERDICT: 1 count = 1 mm. The register map was RIGHT.
+
+```
+raw is mm  → predicted slope 0.100 cm/count → measured 0.1036   (3.6% off)
+raw is cm  → predicted slope 1.000 cm/count → measured 0.1036   (865% off)
+```
+
+The community's mm-vs-cm confusion **does not apply to this unit**. `unit=0x11` (cm)
+with `decimals=1` means counts of 0.1 cm — which *is* 1 mm/count. The registers and
+the ruler agree. The 10× trap only catches people who read `decimals=1` and then treat
+raw as cm anyway. **Use `level_cm = raw / 10`.**
+
+### ⚠️ GOTCHA: you cannot calibrate a 5 m sensor in a bucket — and don't need to
+
+We burned two extra points chasing a 3.6–11% slope discrepancy before reading the spec:
+
+```
+Accuracy: 0.2%F.S ; 0.5%FS     ← 0.5% of 5000 mm = ±25 mm
+Zero Drift: ±2%F.S             ← ±100 mm
+Sensitivity Drift: ±2%F.S
+```
+
+Full scale is 5000 mm. Our whole calibration span was 90 mm — **3.6× the instrument's
+own error bar**. Fitting a slope across that is measuring a desk with a ruler marked
+every 30 cm. The per-step numbers wobbled (1.176 → 1.062 → 0.909 mm/count) and the
+residuals showed a real arch (+2.0, −1.6, −2.3, +1.9 mm), but ~4 mm of curvature is
+**6× smaller than the sensor's rated accuracy**. It is not resolvable in a bucket and
+not worth resolving: ±25 mm on a farm tank is ±2.5 cm, far below what anyone irrigating
+a field cares about.
+
+**The ruler test's job is the 10× question (mm vs cm), not the 1% question.** It answered
+that decisively at 4 points. Don't rat-hole chasing percent-level slope in a bucket —
+pinning the slope to even ±5% would need a multi-metre standpipe.
+
+Statistical trap worth remembering: at 3 points you have **1 degree of freedom**, so the
+95% t-multiplier is **12.7**. A tiny-looking standard error (±0.033 mm/count) became a
+real CI of ±0.42 — spanning 1.0 easily. R² was 0.999 throughout and told us nothing:
+**R² measures collinearity, not extrapolation.**
+
+### GOTCHA: bubble hypothesis — tested, NEGATIVE
+The guide warns trapped air in the probe cavity causes up to 15 mm of error, and the
+increasing counts-per-step looked exactly like a bubble compressing with depth. Tested
+directly: read at 155 mm, wiggled the probe underwater to shed anything clinging, re-read
+at the same level. **169.0 → 168.** One count. No bubble. A probe simply set down in a
+bucket doesn't trap one — the curvature is the sensor's own low-end behaviour (we were
+at 1.3–3% of full scale, where cheap transducers are worst).
+
+### Zero offset is real and bigger than anything above
+Probe reads **raw ≈ 26 in air** (~26 mm of water that isn't there). Normal — spec allows
+±2% FS = ±100 mm of zero drift. It's a constant, so handle it in software:
+`level_mm = raw − dry_offset`, with `dry_offset` read at install time. Reg `0x0005` (zero)
+exists for this but needs the `0x000F` commit dance, and a bad write on an unconfirmed
+map costs you the sensor. Software offset is free and reversible.
+
+### ⚠️ OPEN: FT232 adapter intermittently drops off the USB bus
+Surfaced by luck at the end of the session. `dmesg -T` disconnects by minute:
+```
+09:51 ×1 (initial plug — normal)   10:04 ×1   10:05 ×1   10:07 ×1   10:08 ×6   → then ABSENT
+```
+`ftdi_sio ttyUSB0: Unable to read latency timer: -32` on every re-enumeration. Deteriorating,
+not stable. **The fault predates the probe wiggle** — it was already dropping during the
+calibration, and the wiggle only accelerated it.
+
+**The calibration data survived it because of CRC** — a flaky link drops frames or kills the
+port, it cannot forge a CRC-valid frame with a plausible value. All 4 points were 8/8 valid.
+
+Not yet diagnosed. Check in order: (1) the USB plug/cable/port alone; (2) continuity from
+FT232 GND to MT3608 OUT− — the green wire must reach **both**, and an intermittent there
+leaves the A/B pins as the only bridge between an 18 V rail and the laptop, which is how you
+kill an adapter; (3) re-plug the FT232 with no sensor and no 18 V — if it still cycles, the
+adapter is dying.
+
+### Tooling
+`tools/poll-water.ts` gained: `--point=65mm` (capture one ruler point, averaged, stored),
+`--fit` (fit + verdict over stored points), `--read` (averaged read, stores nothing),
+`--reset`, and `--calibrate` (interactive loop for anyone following the guide). Depth entry
+accepts `mm`/`cm` suffixes — a bare number in `--mm` mode is mm. **That units trap is real:
+typing `65` (mm) into a cm prompt fits a line that's silently 10× wrong and R² can't see it.**
+Results land in `water-calibration.json`.
+
+**TODO:** the tool writes no per-point timestamps, so captures couldn't be correlated against
+the dmesg disconnects. Add them.
+
+---
+
 ## 2026-07-15 — Water sensor (QDY30A) bench bring-up: comms + map CONFIRMED
 
 Powered via **MT3608 boost @ 18 V** off the 3S2P pack (pack was 11.31–11.48 V;

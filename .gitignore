@@ -1,0 +1,3 @@
+# Bench working state — rewritten by `poll-water.ts --point/--reset` on every run.
+# The durable record of any calibration is the devlog entry, not this file.
+water-calibration.json

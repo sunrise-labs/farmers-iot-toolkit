@@ -221,22 +221,84 @@ Print **raw alongside scaled**. While the scaling is still a hypothesis, raw is 
 
 ## Step 4 — Calibrate against a ruler
 
+> ### ✅ Result on our unit (2026-07-16): **1 count = 1 mm**. Use `level_cm = raw / 10`.
+>
+> Four points over a 90 mm span fitted `level_cm = 0.10363 * raw − 1.824` (R² = 0.9966) —
+> within 3.6% of the 0.1 the register map implies, and 865% away from the "raw is cm"
+> alternative. **The register map was right.** `unit=0x11` (cm) with `decimals=1` means
+> counts of 0.1 cm, which *is* 1 mm/count. The mm-vs-cm trap only catches people who read
+> `decimals=1` and then treat raw as cm anyway. Full write-up in [`devlog.md`](../../devlog.md).
+>
+> **Do this test anyway on your own unit** — it's five minutes and it's the only thing
+> standing between you and a silent 10× error. But read the next box before you chase
+> anything finer than that.
+
+> ### ⚠️ Do NOT chase a precise slope in a bucket
+>
+> This test answers a **10× question** (mm or cm?), not a 1% question. The manual specs
+> **Accuracy: 0.5% F.S** and **Zero Drift: ±2% F.S** — on a 5000 mm sensor that's **±25 mm**
+> accuracy and **±100 mm** of zero drift. A bucket gives you maybe 90 mm of span, so your
+> entire experiment is ~3.6× the instrument's own error bar. We watched the per-step figure
+> wobble 1.176 → 1.062 → 0.909 mm/count and spent two extra points chasing it. It's inside
+> spec and unresolvable at bucket scale.
+>
+> **R² will not save you** — it measures collinearity, not extrapolation, and read 0.999
+> throughout. Nor will the standard error at 3 points: 1 degree of freedom means a 95%
+> t-multiplier of **12.7**, so a ±0.033 mm/count SE is really ±0.42.
+>
+> Pinning the slope to ±5% needs a multi-metre standpipe. For a farm tank you don't need it:
+> ±25 mm is ±2.5 cm, which nobody irrigating a field will ever notice.
+
 The sensor reports water depth *above the probe*. It knows nothing about your tank, and the community reports of mm-vs-cm confusion mean the register's claimed unit is not authoritative. A ruler is.
 
-1. Probe on the bottom of a bucket. Measure actual water depth above it — say **25 cm**. Note the raw value.
-2. Add water to a new measured depth — say **40 cm**. Note the new raw value.
-3. Fit the line:
+**Use the tool, not pen and paper:**
 
+```bash
+bun tools/poll-water.ts --point=65mm    # capture a point at each known depth
+bun tools/poll-water.ts --point=95mm
+bun tools/poll-water.ts --fit           # fit + verdict over all stored points
+bun tools/poll-water.ts --read          # averaged read, stores nothing
+bun tools/poll-water.ts --calibrate     # or: interactive prompt loop
 ```
-cm_per_count = (40 - 25) / (raw_at_40 - raw_at_25)
-level_cm     = (raw - raw_at_25) * cm_per_count + 25
-```
 
-4. **Verify with a third depth you didn't use to fit it.** If it predicts that one, your scaling is right. If it doesn't, re-check `0x0003` — the decimal-places register is the usual culprit for being off by exactly 10×.
+Each `--point` averages 8 CRC-validated frames and reports the spread, so you can see whether
+the surface has settled. Depth entry takes `mm`/`cm` suffixes — **the units trap is real:
+typing `65` (mm) where cm is expected fits a line that is silently 10× wrong.**
 
-If `cm_per_count` comes out near **0.1**, your sensor is reporting millimetres regardless of what the unit register says. That's the single most common outcome, and it matches what everyone else found.
+Two things that wreck a fit, neither of which the numbers will confess to:
+- **A probe that shifts between points.** A *constant* offset is harmless — the intercept
+  absorbs it, so you don't need to know where the diaphragm sits inside the probe body. But a
+  probe that moves *between* readings injects a fake slope and there's no way to detect it after.
+- **Measuring inconsistently.** Pick one reference (a mark on the probe, or the vessel floor)
+  and use it every single time. Consistency beats absolute accuracy here.
 
-> **Keep the breather tube clear.** This is a *gauge* pressure sensor — it references atmosphere through a vent tube in the cable. Seal, kink, or submerge that cable end and your readings drift with the weather. Community reports also note **air bubbles trapped in the probe cavity cause up to 15 mm of error**; mount horizontally, or tilt the probe when submerging to let bubbles escape.
+The method:
+
+1. Probe flat on the bottom, and **don't let it move again**. Measure the actual water depth above it and capture: `--point=65mm`.
+2. Add water to a new measured depth. Capture again. Repeat — **4 points minimum**, spread as widely as your vessel allows.
+3. `--fit`. It reports `cm_per_count`, per-point residuals, the slope's standard error, and a verdict.
+
+The tool fits least-squares over *every* point rather than the older fit-2-verify-1 method. The residuals give you the same hold-out signal — a line that predicts each point within a few mm is right — while wasting no data.
+
+**Reading the result:**
+
+| `cm_per_count` | Meaning |
+|---|---|
+| ≈ **0.1** | 1 count = 1 mm. Sensor reports millimetres. `level_cm = raw / 10`. **← what our unit does** |
+| ≈ **1.0** | 1 count = 1 cm, and `decimals=1` is lying. |
+| neither | Re-check `0x0003`, and check you measured above the **probe**, not the bucket floor. |
+
+Anything within ~15% of 0.1 is a pass — see the "don't chase a precise slope in a bucket" box above. A few percent off 0.1 is **not** evidence the register map is wrong; it's evidence you're calibrating a 5 m instrument in a bucket.
+
+### The zero offset is the number that actually matters
+
+Our probe read **raw ≈ 26 sitting in air** — 26 mm of water that doesn't exist. That's normal (spec allows ±2% F.S = ±100 mm of zero drift) and it dwarfs every slope subtlety on this page.
+
+Take a dry reading at install and subtract it in software: `level_mm = raw − dry_offset`. Register `0x0005` (zero) exists for this, but it needs the `0x000F` commit dance and **a bad write on an unconfirmed map costs you the sensor**. A software offset is free, reversible, and re-measurable when the zero drifts.
+
+> **Keep the breather tube clear.** This is a *gauge* pressure sensor — it references atmosphere through a vent tube in the cable. Seal, kink, or submerge that cable end and your readings drift with the weather.
+
+> **Bubbles: warned about everywhere, not observed here.** Community reports say air trapped in the probe cavity causes up to 15 mm of error, and a compressing bubble is a *very* convincing explanation for counts-per-step that grow with depth — we chased exactly that. We tested it directly: read at a fixed level, wiggled the probe underwater to shed anything clinging, re-read. **169.0 → 168.** One count. A probe simply set down in a bucket didn't trap one. Still tilt when submerging (it's free), but if your steps look curved, don't assume bubbles — check where you are in the sensor's range first.
 
 ## Troubleshooting
 
@@ -253,6 +315,8 @@ If `cm_per_count` comes out near **0.1**, your sensor is reporting millimetres r
 | Off by ~15 mm, erratic | Air bubble in the probe cavity | Tilt when submerging; mount horizontally. |
 | Intermittent CRC failures | No common ground | Boost OUT−, MAX485 GND, ESP GND — one rail. |
 | Value never changes | Not actually reading `0x0004` | Poll `0x0000`–`0x0006` as a block, watch which moves. |
+| `/dev/ttyUSB0` vanishes mid-session | FT232 dropping off the USB bus | `sudo dmesg -T \| grep -i ftdi`. Repeated "converter now disconnected" + `Unable to read latency timer: -32` = a real fault, not software. **De-energise the 18 V first** — if the common ground is what's intermittent, the A/B pins become the only bridge between an 18 V rail and your laptop, which is how you kill an adapter. Then: USB plug/cable/port alone → continuity FT232 GND ↔ boost OUT− → re-plug the adapter with nothing attached. |
+| First read after opening the port fails | Adapter TX→RX turnaround eats the frame header | Known and harmless. The pollers burn a warmup exchange and retry. Don't chase it. |
 
 ## Provenance of the register map
 
