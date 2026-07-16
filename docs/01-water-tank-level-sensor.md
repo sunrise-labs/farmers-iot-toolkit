@@ -223,11 +223,20 @@ And the MAX485 to the ESP8266:
 
 ### Step 3 — Load the code
 
-*(Firmware to be added — the choice of framework is still being confirmed.
-The bench guide has a minimal Arduino sketch that reads the sensor and prints
-to serial, which is enough to prove your wiring.)*
+The firmware is [`firmware/water-level/`](../firmware/water-level/). It reads the probe
+and sends the depth to your base station over WiFi.
 
-The settings your code needs:
+1. Install the Arduino IDE, then **Boards Manager → `esp8266`**, and pick the board
+   **NodeMCU 1.0 (ESP-12E Module)**. No libraries to install.
+2. Copy `config.example.h` to `config.h` and edit it — WiFi name and password, the
+   address of your base station, and (in Step 4 below) your probe's dry reading.
+3. Plug the ESP8266 in with a USB cable and hit Upload.
+4. Open the Serial Monitor at **115200** to watch it work.
+
+Everything you need to change lives in `config.h`. You should not have to edit the
+sketch itself.
+
+The settings the code uses, if you're curious or writing your own:
 
 | Setting | Value |
 |---|---|
@@ -235,9 +244,18 @@ The settings your code needs:
 | Slave address | 1 |
 | Register to read | `0x0004` |
 | Scaling | **1 count = 1 mm** |
+| Number type | **signed** 16-bit |
 
 > **Note the baud rate.** The soil sensor in Module 2 runs at **4800**. This one is
 > **9600**. Same wiring, different speed — don't copy the number across.
+
+> **Test your base station first.** Before blaming the firmware, check the endpoint
+> is actually listening:
+> ```
+> curl -X POST http://192.168.43.1:1880/water \
+>      -H 'Content-Type: application/json' -d '{"node":"test","depth_mm":500}'
+> ```
+> If that doesn't reach Node-RED, no amount of firmware fiddling will help.
 
 ### Step 4 — Zero it
 

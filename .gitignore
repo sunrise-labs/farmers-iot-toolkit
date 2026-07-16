@@ -1,3 +1,10 @@
 # Bench working state — rewritten by `poll-water.ts --point/--reset` on every run.
 # The durable record of any calibration is the devlog entry, not this file.
 water-calibration.json
+
+# Per-node firmware config — holds WiFi passwords and per-probe calibration.
+# Each build has its own; config.example.h is the committed template.
+firmware/*/config.h
+
+# Arduino build artefacts
+firmware/*/build/

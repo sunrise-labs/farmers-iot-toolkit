@@ -29,10 +29,15 @@
 4. **Build the Toolkit website + seed it with the four module docs.** The biggest remaining knowledge-work piece.
 5. **Integration demo** — the four modules working together as one system.
 
+## Decisions
+
+- ✅ **Firmware (2026-07-16): our own code first.** Get the system fully working with custom ESP8266 firmware, *then* evaluate Frugal IoT — you can't judge what a framework gains or loses you until you've built the thing and felt the problem it solves. Mitra Ardron's collaboration offer stands if we later adopt it; this is sequencing, not rejection. See `firmware/README.md`.
+- ✅ **ESP → base station protocol (2026-07-16): HTTP POST of JSON**, not MQTT. Node-RED's `http in` node is built in and needs no broker on the phone; testable with curl. MQTT is documented as the upgrade path (downlink commands, sleeping nodes). See `firmware/README.md`.
+
 ## Open decisions
 
-- **Firmware:** confirm the choice (Frugal IoT / Mitra Ardron vs custom) — it shapes the sensor pre-coding in step 2. *(Pre-coding implies a path is chosen — confirm.)*
 - **Website hosting:** on the Float site or Ian's own domain? Affects step 4.
+- **Tell Float about the module ① sensor change?** Ultrasonic → pressure probe. Deliverable unchanged; see Scope changes above.
 
 ## Source
 
