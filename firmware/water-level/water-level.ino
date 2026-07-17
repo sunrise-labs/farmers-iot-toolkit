@@ -80,7 +80,11 @@ bool readRegisters(uint16_t start, uint16_t count, uint16_t *out) {
   const uint8_t expected = 5 + count * 2;   // addr fn bytecount [data] crc crc
   uint8_t resp[64];
   uint8_t got = 0;
-  unsigned long deadline = millis() + 1000;
+  // 300ms is ~5x the worst real turnaround (a 7-byte reply at 9600 is ~7ms on the
+  // wire; the probe answers well inside 50ms). Generous enough not to clip a slow
+  // reply, short enough that a DEAD probe reports in ~5s instead of ~16s — which
+  // matters both when you're bench-wiring and when a solar node burns CPU retrying.
+  unsigned long deadline = millis() + 300;
 
   while (got < expected && millis() < deadline) {
     if (rs485.available()) resp[got++] = rs485.read();
