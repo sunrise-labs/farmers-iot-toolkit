@@ -8,6 +8,156 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-16 — BOTH sensors on ONE ESP8266 → Node-RED. And a wire that lies.
+
+Both probes now read on a single ESP8266 and POST to the phone:
+
+```
+WiFi: connecting to FarmIoT............. ok
+  gateway : 10.215.63.55   <- the phone
+WATER  raw=139    depth=113 mm
+SOIL   moisture=0.0 %   temp=20.2 C   EC=0 uS/cm
+POST /water: 200 ok
+POST /soil: 200 ok
+```
+
+Two sensors, two bauds, both slave address 1, one board. Firmware `firmware/farm-node/`,
+flow `flows/both-sensors-flow.json`. **First time the soil sensor has run on the ESP8266.**
+
+### The two-bus decision: a dollar of hardware beats a risky write
+
+Both sensors ship as **slave address 1**, and they run different bauds (soil 4800,
+water 9600). Sharing one RS485 bus needs us to rewrite one sensor's address *and*
+baud registers — on sensors we own exactly one of each, three weeks from a deadline,
+where a bad write lands on the address and costs you the ability to talk to the thing
+at all.
+
+**Two transceivers on separate pins deletes both problems for about a dollar.** Each
+bus has one slave, so address 1 collides with nothing. Each SoftwareSerial instance
+carries its own baud, so the mismatch evaporates. No writes, no risk.
+
+Pin budget is now exactly spent: **D5/D6 water, D7/D1 soil, D2 relay.** That is all
+five free-and-safe pins. D3/D4/D8 are boot straps; **D0 (GPIO16) has no interrupt
+support at all**, so it physically cannot do SoftwareSerial RX — and it's the
+deep-sleep wake pin besides. A sixth peripheral means an ESP32.
+
+Consequence worth knowing: **a classic DE/RE breakout cannot share an ESP8266 with
+module 1** — two buses plus two DE pins plus a relay wants seven safe pins. The
+HW-0519's *missing* DE pin, the thing we cursed on 2026-07-15, is exactly what makes
+the combined node fit.
+
+### ⚠️ GOTCHA: `water-level.ino`'s DE pin now jams the soil bus
+
+It drives **D1** as DE and holds it LOW at boot. Harmless while D1 was a disconnected
+pin ("it wiggles a disconnected pin", entry below). **D1 is now soil's HW-0519 TXD**,
+and an HW-0519 derives transmit-enable *from* TXD — so a LOW D1 clamps its driver onto
+the soil bus permanently and the sensor can never answer.
+
+Caught before flashing. Never drive a DE pin on a combined node; `farm-node.ino` has
+none. This is the cost of a pin assignment outliving the assumption that justified it.
+
+### CORRECTION: neither HW-0519 echoes. The entry below is wrong.
+
+The entry below says the auto-direction board "echoes our own transmitted bytes back",
+and `water-level.ino`'s resync is built on that premise. **Measured on both boards:
+no echo.** Replies arrive at exactly `frameLen`:
+
+```
+SOIL   sent: 01 03 00 00 00 03 05 CB
+SOIL   got : n=11  01 03 06 00 00 00 C9 00 00 F1 4B    <- reply only, no echo prefix
+```
+
+The echo is real on the **FT232 USB adapter** (2026-07-15, proven there). It got
+attributed to the HW-0519 by analogy when the same symptom appeared. The resync fix
+worked — but for a different reason than we thought: it finds the frame at offset 0,
+which costs nothing.
+
+**Keep the resync** — it's free, and the FT232 genuinely does echo. But **"no echo" is
+not a board-is-alive heartbeat**, which is exactly what we tried to diagnose with
+tonight and got wrong. *A fix that works does not confirm the theory that motivated it.*
+
+### ⚠️ GOTCHA: `cat /dev/ttyUSB0` reads ZERO bytes from a perfectly running board
+
+Not the "only prints in `setup()`" trap from earlier today — a second, distinct one.
+**Opening the port with `cat`/`stty` drives DTR and RTS, which on a NodeMCU *is* the
+auto-reset circuit.** The board sits in reset and emits nothing. Looks exactly like
+dead hardware, and cost us a detour while chasing a real fault.
+
+What works — the bundled pyserial, parking DTR and pulsing RTS:
+
+```bash
+PYTHONPATH=~/.arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/pyserial \
+python3 -c "
+import serial, time, sys
+s = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.2)
+s.setDTR(False); s.setRTS(True); time.sleep(0.15); s.setRTS(False)
+t0=time.time()
+while time.time()-t0 < 12:
+    d = s.read(512)
+    if d: sys.stdout.write(d.decode('utf-8','replace')); sys.stdout.flush()
+"
+```
+
+The garbage at the start is the 74880-baud boot ROM message read at 115200. Expected,
+harmless, ignore it.
+
+### ⚠️ OPEN — THE BIG ONE: the water probe has an intermittent, and it lies
+
+Water went silent mid-session. Then read `raw=139` right after the heat shrink came off
+the wires. Then went silent again ~20 minutes later. **Same code, same wiring, three
+different results.**
+
+Everything else is eliminated by test, not by argument:
+
+| Ruled out | How |
+|---|---|
+| Firmware | Known-good `water-level.ino` fails identically |
+| The WiFi radio | Fails with `WiFi.forceSleepBegin()`, radio fully off — tested twice |
+| MT3608 | 18 V measured at the boost |
+| ESP → HW-0519 | TX LED flashing, 3.3 V at VCC |
+| A/B orientation | This exact wiring worked 20 minutes earlier |
+
+**What's left is a wire.** `n=0` — total silence, not garbage, not CRC errors — is an
+*unpowered probe*, not a confused one. Prime suspect is **green/ground**, which is the
+same wire this devlog already fingered for the still-open FT232 dropout:
+
+> *"continuity from FT232 GND to MT3608 OUT− — the green wire must reach **both**"*
+
+**One intermittent, two costumes.** The FT232 dropping off the USB bus and the probe
+going silent are very likely the same fault.
+
+**Two lessons worth more than the fix:**
+
+**Submersion cannot make Modbus work.** The probe answers whether it's wet or dry —
+depth changes *what number* it reports, never *whether it replies*. So "it started
+working when I put it in the bucket" was never a candidate, however suggestive the
+timing. When two things change and one of them is *physically incapable* of causing the
+effect, you already know which one did it. Don't let coincidence outrank mechanism.
+
+**18 V at the source proves nothing about the load.** We measured 18 V at the MT3608 and
+moved on. That is the **third** time this project has been bitten by the same shape: VIN
+read 3.10 V open-circuit and collapsed to 20–40 mV under load; the FT232 looked fine
+until it didn't; now this. **Meter at the load, under load.** Red-to-green at the probe
+would have caught it in ten seconds.
+
+**Next: wiggle each wire while it polls, localise it, then solder.** An intermittent you
+can provoke is a gift — normally you can't. And a fault fixed by accident un-fixes itself
+by accident: next time inside a sealed box, on a tank, in the rain, where the only
+symptom is a node that stopped reporting.
+
+### Node-RED: both sensors, core nodes only
+
+`flows/both-sensors-flow.json` — `POST /water`, `POST /soil`, and `GET /` serving a live
+page. **Core nodes only, no `node-red-dashboard`**: every extra install step is a place a
+build dies on someone else's phone.
+
+It tracks **staleness** and marks a reading STALE past 90 s. That's the failure you can't
+otherwise see — a node that stops reporting produces no error anywhere, so the only symptom
+is a number that quietly stops changing. Supersedes `flows/water-level-flow.json`; don't
+import both, two `http in` on `/water` conflict.
+
+---
+
 ## 2026-07-16 — END TO END: probe → ESP8266 → WiFi → Node-RED on the phone
 
 ```
