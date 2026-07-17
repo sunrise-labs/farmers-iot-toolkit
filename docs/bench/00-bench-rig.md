@@ -199,6 +199,21 @@ Carry those four facts to the ESP8266. If it then fails, the fault is in the MAX
 
 The ESP8266 has one usable hardware UART and it's already committed to USB debug output. So RS485 goes on **SoftwareSerial**, and debug stays on USB where you can see it.
 
+### ⚠️ First: which MAX485 module did you actually get?
+
+The AliExpress listing in `hardware.md` ships **two physically different boards** under the same name, and they wire up differently. **Count the control pins before you wire anything.**
+
+| | **Classic breakout** | **Auto-direction (HW-0519)** |
+|---|---|---|
+| How to spot it | Has a pin labelled **DE** and one labelled **RE** | **No DE, no RE.** Silkscreen says `HW-0519`. Carries an extra 14-pin `74HC04D` inverter |
+| TTL pins | RO, RE, DE, DI, VCC, GND | GND, RXD, TXD, VCC |
+| RS485 pins | A, B | A+, B−, 接大地 (earth/shield) |
+| Direction control | **You** drive DE/RE from a GPIO | The board does it itself from the TXD line |
+
+We received the **HW-0519**. Both work; the wiring differs.
+
+### If yours is the classic breakout (has DE/RE)
+
 | MAX485 pin | NodeMCU pin | GPIO | Why |
 |---|---|---|---|
 | RO (receive out) | D5 | GPIO14 | SoftwareSerial RX |
@@ -209,7 +224,32 @@ The ESP8266 has one usable hardware UART and it's already committed to USB debug
 
 **Tie DE and RE together** with a jumper and drive both from D1. RS485 is half-duplex: HIGH = transmit, LOW = receive. The firmware handles the flipping.
 
-> **Power the MAX485 from 3V3, not 5V.** At 5 V its RO pin outputs 5 V logic into an ESP8266 pin rated for 3.3 V. That's how you cook a GPIO. If your particular module misbehaves at 3.3 V and you must run it at 5 V, put the 4-channel level shifter between RO and D5 — don't wire it direct.
+### If yours is the HW-0519 (no DE/RE) ← what we have
+
+| HW-0519 pin | NodeMCU pin | GPIO | Why |
+|---|---|---|---|
+| RXD | D5 | GPIO14 | SoftwareSerial RX — the module's output to you |
+| TXD | D6 | GPIO12 | SoftwareSerial TX — the module's input from you |
+| VCC | **3V3** | — | see warning below |
+| GND | GND | — | |
+| A+ | — | — | to the sensor's A wire |
+| B− | — | — | to the sensor's B wire |
+| 接大地 | *(nothing)* | — | "connect to earth" — cable shield for long field runs. Leave it floating on the bench. |
+
+**D1 goes unused.** The firmware still toggles it as a DE pin, which is harmless — it wiggles a disconnected pin. There is nothing to connect it to.
+
+**If you get silence, swap D5 and D6.** The TXD/RXD labels on these boards are inconsistent about whose perspective they're from. Both are logic-level pins, so trying it costs nothing.
+
+> **The TXD/RXD LEDs are a free logic analyser.** TXD flashes when the ESP asks a question; RXD flashes when the sensor answers.
+> - Neither blinks → the ESP isn't reaching the module. Check D5/D6 and VCC.
+> - TXD blinks, RXD doesn't → the sensor isn't replying. Swap A and B.
+> - Both blink → you're talking. Any remaining problem is baud, address, or registers.
+
+> ⚠️ **Auto-direction boards echo your own transmission back.** Both the HW-0519 and the FT232 USB adapter do this — it's the same fault that made `mbpoll` report "Invalid CRC" on every frame (see `devlog.md` 2026-07-15). Your reader must **resync on a valid frame header** inside the receive buffer instead of assuming the reply starts at byte 0. `tools/poll-soil.ts` and the module firmware both do this. If you write your own, expect it.
+
+### Both variants
+
+> **Power the MAX485 from 3V3, not 5V.** At 5 V its RO/RXD pin outputs 5 V logic into an ESP8266 pin rated for 3.3 V. That's how you cook a GPIO. If your particular module misbehaves at 3.3 V and you must run it at 5 V, put the 4-channel level shifter between that pin and D5 — don't wire it direct.
 
 **Avoid GPIO0, GPIO2, GPIO15.** They're boot-strapping pins; a sensor pulling one at reset stops the board booting. D5/D6/D1 as above are safe.
 

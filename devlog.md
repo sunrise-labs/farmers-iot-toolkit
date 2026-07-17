@@ -8,6 +8,77 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-16 — Module ① runs on its own hardware: ESP8266 reads the probe
+
+First reading off the ESP8266, no laptop in the chain:
+```
+raw=153  depth=127 mm
+{"node":"water-tank-1","ok":true,"raw":153,"depth_mm":127,"uptime_s":2}
+```
+Whole chain proven: ESP8266 → HW-0519 → RS485 → QDY30A → back, CRC-valid, with the
+ruler-test scaling and dry offset applied. Firmware: `firmware/water-level/`.
+
+### ⚠️ GOTCHA: the MAX485 listing ships TWO different boards
+`hardware.md`'s RS485 module link delivered an **HW-0519 auto-direction** board, not
+the classic breakout every guide (including ours) assumes. **It has no DE or RE pin**
+— a 74HC04D inverter derives transmit-enable from the TXD line itself.
+
+| | Classic breakout | HW-0519 (what we got) |
+|---|---|---|
+| Spot it | has DE + RE pins | no DE/RE; silkscreen `HW-0519`; extra 14-pin 74HC04D |
+| TTL pins | RO, RE, DE, DI, VCC, GND | GND, RXD, TXD, VCC |
+| RS485 pins | A, B | A+, B−, 接大地 (earth/shield) |
+| Direction | you drive DE/RE from a GPIO | the board does it |
+
+Wiring for the HW-0519: `RXD→D5`, `TXD→D6`, `VCC→3V3`, `GND→GND`. **D1 unused** (the
+firmware still toggles it as DE — harmless, it wiggles a disconnected pin). `接大地`
+= "connect to earth", the cable shield terminal for long field runs; leave it floating.
+Docs updated to cover both variants.
+
+**The TXD/RXD LEDs are a free logic analyser.** TXD flashes on ask, RXD on answer.
+Neither = ESP isn't reaching the module. TXD only = sensor not replying, swap A/B.
+
+### ⚠️ GOTCHA: NodeMCU VIN is NOT USB 5V — use VBUS
+Metering VIN gave **3.10 V unloaded, collapsing to 20–40 mV** the moment the boost
+drew from it. That's not a supply — it's **backfeed through the 3.3 V regulator's
+parasitic diode** (3.3 − 0.2 = 3.1 V, exactly). VIN is the regulator's *input*, left
+floating when powered over USB. **`VBUS` is the pin that carries USB 5 V.**
+
+That collapse-under-load signature is worth remembering: a rail that reads plausible
+open-circuit and dies under any load is a floating pin, not a weak supply.
+
+Bonus: on the MT3608, IN− and OUT− are the same node (non-isolated boost), so
+`probe green → OUT− → IN− → NodeMCU GND` satisfies the common-ground rule by topology.
+The whole bench rig runs off one USB cable. Boost outputs 18.2 V — fine, the QDY30A
+is confirmed 12–36 V (the 18.0 V target only mattered while the HTP-300Y's 24 V
+ceiling was still in play).
+
+### ⚠️ GOTCHA: `arduino-cli upload` does NOT recompile
+Cost ~30 minutes chasing a board that looked dead. Sequence was: compile with
+`BENCH_MODE 1` → flip to 0 → compile to check the WiFi path → flip back to 1 →
+`upload`. **The upload flashed the stale `BENCH_MODE 0` binary**, so the board sat in
+a 20 s WiFi wait for a hotspot that doesn't exist. Use **`compile --upload`**.
+
+Related trap: the board only prints in `setup()`, so `cat /dev/ttyUSB0` on an
+already-running board shows nothing until the next loop print — which looked exactly
+like a dead board. **Pulse RESET (RTS) while listening**, or you're reading a window
+where nothing is due. `scratchpad/espread2.py` does this via the pyserial bundled at
+`~/.arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/pyserial`. Note `cat` at
+**74880** (the boot-ROM rate) is impossible — termios rejects the non-standard baud.
+
+### ⚠️ OPEN: auto-direction echo is eating the retry budget
+Serial shows clean reads interleaved with runs of `timeout`. Reads succeed — 5 good
+samples out of up to 15 tries — so nothing is broken. But **most of the retry budget
+is being spent**, and that margin is what protects a field node on a long, noisy cable.
+
+Cause is the same one the FT232 had (`devlog` 2026-07-15): the auto-direction board
+**echoes our own transmitted bytes back**, the reader takes the echo for the reply,
+CRC rejects it, attempt scored a timeout. Fix is the pattern `poll-soil.ts` already
+uses: **resync on a valid frame header inside the buffer** instead of assuming the
+reply starts at byte 0. Next job.
+
+---
+
 ## 2026-07-16 — Water sensor Step 4: ruler test PASSED — sensor reports **millimetres**
 
 Closes the last open item on the water sensor. Probe flat on the bottom of a bucket

@@ -201,15 +201,35 @@ The probe has four wires:
 | **Blue** | MAX485 **A** |
 | **Yellow** | MAX485 **B** |
 
-And the MAX485 to the ESP8266:
+And the MAX485 to the ESP8266. **Check which module you have first** — the same
+listing ships two different boards:
+
+**If it says `HW-0519` and has no DE/RE pins** (this is what we have):
+
+| HW-0519 pin | ESP8266 pin |
+|---|---|
+| RXD | D5 |
+| TXD | D6 |
+| VCC | **3V3** |
+| GND | GND |
+| 接大地 | *(leave it — that's the cable shield terminal)* |
+
+**If it has DE and RE pins** (the classic breakout):
 
 | MAX485 pin | ESP8266 pin |
 |---|---|
 | RO | D5 |
 | DI | D6 |
-| DE + RE (joined) | D1 |
+| DE + RE (joined together) | D1 |
 | VCC | **3V3** |
 | GND | GND |
+
+Either board works — the firmware handles both. Full detail in
+[the bench rig guide](bench/00-bench-rig.md#esp8266--max485-wiring-identical-for-both-sensors).
+
+> **The little TXD and RXD LEDs tell you what's happening.** TXD flashes when the
+> ESP asks the probe a question; RXD flashes when the probe answers. If TXD blinks
+> and RXD never does, the probe isn't replying — swap the blue and yellow wires.
 
 > **The 18V goes to the probe's red wire and nowhere else.** The MAX485 and the
 > ESP8266 are 3.3V parts — 18V will destroy both. Trace the wire with your finger

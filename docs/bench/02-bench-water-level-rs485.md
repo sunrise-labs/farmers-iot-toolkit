@@ -185,7 +185,9 @@ done
 
 ## Step 3 — Move to the ESP8266
 
-Wiring is exactly the rig from [00-bench-rig.md](00-bench-rig.md): `RO→D5`, `DI→D6`, `DE+RE→D1`, MAX485 `VCC→3V3`.
+Wiring is exactly the rig from [00-bench-rig.md](00-bench-rig.md) — **check which MAX485 variant you have first**, the listing ships two. Ours is the **HW-0519** (auto-direction, no DE/RE): `RXD→D5`, `TXD→D6`, `VCC→3V3`, `GND→GND`, and D1 goes unused. The classic breakout instead wants `RO→D5`, `DI→D6`, `DE+RE→D1`.
+
+> **Production firmware for this module is [`firmware/water-level/`](../../firmware/water-level/)** — set `BENCH_MODE 1` in `config.h` for serial-only bring-up before you involve WiFi. The minimal sketch below is kept for reference and for anyone wanting to see the bare read path.
 
 | Sensor | Goes to |
 |---|---|
