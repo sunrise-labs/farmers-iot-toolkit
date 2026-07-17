@@ -60,9 +60,27 @@ void sendFrame(uint8_t *frame, uint8_t len) {
   digitalWrite(RS485_DE, LOW);
 }
 
-// Read `count` registers from `start`. Returns true only on a CRC-valid frame.
-// Everything downstream trusts this, so it fails closed: a bad frame is no data,
-// never partial data.
+/*
+ * Read `count` registers from `start`. Returns true only on a CRC-valid frame.
+ * Everything downstream trusts this, so it fails closed: a bad frame is no data,
+ * never partial data.
+ *
+ * WHY THIS RESYNCS INSTEAD OF READING FROM BYTE 0:
+ * Auto-direction RS485 boards (our HW-0519, and the FT232 USB adapter) echo our
+ * own transmitted bytes back into the receive path. So the buffer looks like
+ *
+ *     01 03 00 04 00 01 C5 CB | 01 03 02 00 99 ...
+ *     └──── our echoed request ────┘ └── the actual reply ──┘
+ *
+ * Parsing from byte 0 lands on the echo, fails CRC, and scores a timeout — which
+ * is exactly the fault that made `mbpoll` report "Invalid CRC" on every frame
+ * (devlog 2026-07-15). So: collect a window, then slide along it looking for a
+ * well-formed header, and only trust a candidate once its CRC checks out.
+ *
+ * Requiring resp[2] == count*2 (the byte-count field) is what skips the echo:
+ * in our request that position holds the register address high byte (0x00), never
+ * the byte count. The CRC is the real proof; this just finds candidates fast.
+ */
 bool readRegisters(uint16_t start, uint16_t count, uint16_t *out) {
   uint8_t req[8] = {
     SENSOR_ADDR, 0x03,
@@ -77,30 +95,52 @@ bool readRegisters(uint16_t start, uint16_t count, uint16_t *out) {
   while (rs485.available()) rs485.read();   // drop stale bytes
   sendFrame(req, 8);
 
-  const uint8_t expected = 5 + count * 2;   // addr fn bytecount [data] crc crc
-  uint8_t resp[64];
-  uint8_t got = 0;
+  const uint8_t frameLen = 5 + count * 2;   // addr fn bytecount [data] crc crc
+  uint8_t buf[64];
+  uint8_t n = 0;
+  // Read a WINDOW, not just frameLen bytes — the echo sits in front of the reply,
+  // so stopping at frameLen would stop inside the echo and never see the answer.
+  //
   // 300ms is ~5x the worst real turnaround (a 7-byte reply at 9600 is ~7ms on the
   // wire; the probe answers well inside 50ms). Generous enough not to clip a slow
   // reply, short enough that a DEAD probe reports in ~5s instead of ~16s — which
   // matters both when you're bench-wiring and when a solar node burns CPU retrying.
   unsigned long deadline = millis() + 300;
-
-  while (got < expected && millis() < deadline) {
-    if (rs485.available()) resp[got++] = rs485.read();
+  while (millis() < deadline && n < sizeof(buf)) {
+    if (rs485.available()) {
+      buf[n++] = rs485.read();
+      // Once a valid frame could fit, give the rest of it a moment to arrive
+      // rather than sitting out the whole 300ms. Keeps a good read fast.
+      if (n >= frameLen + 8) break;
+    }
   }
 
-  if (got < expected)         { Serial.println(F("  timeout")); return false; }
-  if (resp[0] != SENSOR_ADDR) { Serial.println(F("  wrong addr")); return false; }
-  if (resp[1] & 0x80)         { Serial.printf("  modbus exception 0x%02X\n", resp[2]); return false; }
+  if (n < frameLen) { Serial.println(F("  timeout")); return false; }
 
-  uint16_t rxCRC = resp[expected-2] | (resp[expected-1] << 8);
-  if (rxCRC != modbusCRC(resp, expected-2)) { Serial.println(F("  CRC fail")); return false; }
+  // Slide along the window looking for a CRC-valid reply.
+  for (uint8_t i = 0; i + frameLen <= n; i++) {
+    if (buf[i] != SENSOR_ADDR) continue;
+    if (buf[i+1] != 0x03) continue;            // our function code
+    if (buf[i+2] != count * 2) continue;       // byte count — this is what skips the echo
+    uint16_t rxCRC = buf[i+frameLen-2] | (buf[i+frameLen-1] << 8);
+    if (rxCRC != modbusCRC(buf + i, frameLen - 2)) continue;
 
-  for (uint16_t i = 0; i < count; i++) {
-    out[i] = (resp[3 + i*2] << 8) | resp[4 + i*2];
+    for (uint16_t r = 0; r < count; r++) {
+      out[r] = (buf[i + 3 + r*2] << 8) | buf[i + 4 + r*2];
+    }
+    return true;
   }
-  return true;
+
+  // Nothing valid in the window. Report a Modbus exception if the sensor sent one
+  // — that's the sensor answering with a complaint, a different fault from silence.
+  for (uint8_t i = 0; i + 2 <= n; i++) {
+    if (buf[i] == SENSOR_ADDR && (buf[i+1] & 0x80)) {
+      Serial.printf("  modbus exception 0x%02X\n", buf[i+2]);
+      return false;
+    }
+  }
+  Serial.printf("  no valid frame in %d bytes\n", n);
+  return false;
 }
 
 /*
