@@ -5,8 +5,15 @@ self-contained Arduino sketch for the **ESP8266 NodeMCU**.
 
 | Folder | Module | Status |
 |---|---|---|
-| `water-level/` | ① Water tank level (QDY30A pressure probe, RS485) | Written, not yet flashed |
-| `soil-moisture/` | ② Soil moisture + irrigation valve (THC-S, RS485) | Not started |
+| `water-level/` | ① Water tank level (QDY30A pressure probe, RS485) | **Proven on hardware** — reads, POSTs, `200 ok` |
+| `farm-node/` | ①+② combined — both sensors on one ESP8266, POSTs each | **Proven on hardware.** What Ian's farm runs |
+| `bench-both/` | Bench tool — both sensors, serial only, dumps raw frames on failure | Bench tool, not a deliverable |
+| `soil-moisture/` | ② Soil moisture + irrigation valve (THC-S, RS485) | Not started — the *sensor* half is proven in `farm-node/`; this folder is for the standalone module plus the valve logic |
+
+> **`water-level.ino` drives D1 as a DE pin. Do not run it on a combined node** — D1
+> is soil's HW-0519 TXD there, and an auto-direction board derives transmit-enable
+> from TXD, so a LOW D1 clamps its driver onto the soil bus and the sensor can never
+> reply. `farm-node.ino` drives no DE pin at all, which is correct for HW-0519 boards.
 
 ## Why our own code (and not Frugal IoT, ESPHome, Tasmota…)
 
@@ -29,6 +36,14 @@ one sketch, opens it in the Arduino IDE, and flashes it. No library install step
 
 The tradeoff is real: fix a Modbus bug and you fix it twice. If a third RS485 module
 appears, revisit this — a proper Arduino library becomes worth the install step.
+
+**That trigger has now fired** (2026-07-16). `water-level/`, `farm-node/` and
+`bench-both/` each carry their own copy of `modbusCRC` and `readRegisters`, and the
+resync fix already had to be applied more than once. The decision above still holds for
+the *module* sketches a farmer downloads — that's the whole point of them — but the
+duplication is now a real maintenance cost rather than a hypothetical one. Worth
+revisiting once the field build settles: likely a shared library for our own nodes,
+with the module sketches staying self-contained for anyone following the guide.
 
 ## Setup
 
