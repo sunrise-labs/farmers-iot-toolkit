@@ -156,32 +156,115 @@ computer to set it up — but a computer makes it easier if you have one.
 
 ### Step 3 — Install Termux
 
-*(Step-by-step instructions with screenshots to be added)*
+Termux is a Linux terminal that runs on Android. It's how Node-RED runs on a phone.
 
-- Download Termux from F-Droid (a free app store)
-- Do NOT use the Google Play Store version — it is outdated
+> ### ⚠️ Get it from F-Droid, NOT the Google Play Store
+> The Play Store version was abandoned years ago and is frozen at an old release.
+> Package installs fail on it in ways that look like network or server errors, and
+> you will waste an afternoon before suspecting the app itself. This is the single
+> most common way this build goes wrong.
+>
+> Install from **[f-droid.org/packages/com.termux](https://f-droid.org/en/packages/com.termux/)**
+> or the **[Termux GitHub releases](https://github.com/termux/termux-app/releases)**.
+
+1. Install **F-Droid** (you'll need to allow "install from unknown sources").
+2. Search F-Droid for **Termux** and install it.
+3. Open Termux. You get a black screen with a `$` prompt. That's correct.
+
+> **Typing on a phone keyboard is miserable.** Termux supports copy/paste — long-press
+> the screen. You can also `pkg install openssh`, run `sshd`, and type from a laptop
+> on the same hotspot. Worth it if you have one.
 
 ### Step 4 — Install Node-RED inside Termux
 
-*(Step-by-step instructions with screenshots to be added)*
+Type these one at a time. The first two take a few minutes each.
 
-- Open Termux and type the setup commands (we will list them here)
-- Node-RED will install automatically
-- Start Node-RED with a single command
+```bash
+pkg update && pkg upgrade -y
+pkg install -y nodejs
+npm install -g --unsafe-perm node-red
+```
+
+> **`--unsafe-perm` is not optional.** Without it the install dies partway through
+> building native modules. It sounds alarming; it isn't. It just lets npm's build
+> scripts run as the current user, which on Termux is the only user there is.
+
+Start it:
+
+```bash
+node-red
+```
+
+Leave that running. It prints a wall of text ending with `Server now running at
+http://127.0.0.1:1880/`.
+
+> ### ⚠️ Android will kill Node-RED unless you stop it
+> This is the second afternoon-waster. Android's battery saver ("doze") suspends
+> Termux when the screen sleeps. Node-RED stops, your sensors' data vanishes, and
+> **nothing reports an error** — the sensor nodes just time out silently.
+>
+> Two things, both needed:
+> 1. In Termux, run **`termux-wake-lock`** (or swipe down the notification shade and
+>    tap **Acquire wakelock** on the Termux notification).
+> 2. **Settings → Apps → Termux → Battery → Unrestricted** (the exact path varies by
+>    phone; look for "battery optimisation" and exempt Termux).
+>
+> Keep the phone on its charger regardless — running a hotspot plus Node-RED will
+> flatten a battery in hours.
 
 ### Step 5 — Open the Node-RED dashboard
 
-- On the phone (or any device connected to the hotspot), open a web browser
-- Go to: `http://localhost:1880` (on the phone) or `http://<phone-ip>:1880`
-  (from another device)
-- You should see the Node-RED editor
+- On the phone, open a browser to **`http://localhost:1880`**
+- From a laptop on the same hotspot, use **`http://192.168.43.1:1880`**
 
-### Step 6 — Set up a basic flow
+You should see the Node-RED editor — a blank canvas with a palette of blocks.
 
-*(Instructions and example flow to be added)*
+> **What's the phone's IP?** On its own hotspot Android is almost always
+> **192.168.43.1**. If that doesn't work, the easiest way to find it is to *ask a
+> sensor*: the water level firmware prints `gateway : <ip>` on its serial output when
+> it connects, and the gateway **is** the phone.
 
-- We will provide a ready-made flow you can import with one click
-- It will be pre-configured to receive data from the other modules
+### Step 6 — Import the ready-made flow
+
+We ship a flow that receives water level readings. Import it:
+
+1. In the Node-RED editor, tap the **☰ menu** (top right) → **Import**.
+2. Paste the contents of **[`flows/water-level-flow.json`](../flows/water-level-flow.json)**.
+3. Tap **Import**, then **Deploy** (top right).
+
+You now have an endpoint at `/water` listening for readings.
+
+**Test it before involving any hardware:**
+
+```bash
+curl -X POST http://192.168.43.1:1880/water \
+     -H 'Content-Type: application/json' \
+     -d '{"node":"test","ok":true,"depth_mm":500}'
+```
+
+Open the **debug sidebar** (the bug icon, right-hand panel) and you should see the
+message arrive. If this doesn't work, no amount of sensor debugging will help — fix
+it here first.
+
+> ### ⚠️ Every `http in` needs an `http response`
+> If you build your own flow, remember this. An `http in` node with nothing sending a
+> response leaves the request hanging open — the sensor waits, times out, and reports
+> a failure, while Node-RED shows the message arriving perfectly fine. It looks like
+> a network fault and is not. The bundled flow already wires this correctly.
+
+### Step 7 — Point a sensor at it
+
+In the sensor's `config.h`:
+
+```c
+#define BENCH_MODE 0                                  // was 1 for bring-up
+#define WIFI_SSID  "FarmIoT"
+#define WIFI_PASSWORD "your-hotspot-password"
+#define POST_URL   "http://192.168.43.1:1880/water"
+```
+
+Flash it, and watch the serial output — it prints its own IP, the gateway, and the
+signal strength when it connects.
 
 
 ## Troubleshooting

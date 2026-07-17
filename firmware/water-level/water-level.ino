@@ -185,9 +185,17 @@ void connectWiFi() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println(WiFi.status() == WL_CONNECTED
-                   ? " ok, ip " + WiFi.localIP().toString()
-                   : " FAILED (will retry next cycle)");
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println(" ok");
+    Serial.println("  my ip   : " + WiFi.localIP().toString());
+    // The gateway IS the phone running the hotspot, so this is the address your
+    // POST_URL needs. Printing it saves hunting for it on the phone, and if your
+    // POST fails this is the first thing to compare against POST_URL.
+    Serial.println("  gateway : " + WiFi.gatewayIP().toString() + "   <- the phone. POST_URL should point here.");
+    Serial.printf("  rssi    : %d dBm\n", WiFi.RSSI());
+  } else {
+    Serial.println(" FAILED (will retry next cycle)");
+  }
 }
 
 bool postJSON(const String &json) {

@@ -1,0 +1,72 @@
+[
+    {
+        "id": "water_in",
+        "type": "http in",
+        "name": "POST /water",
+        "url": "/water",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 170,
+        "y": 160,
+        "wires": [
+            [
+                "water_debug",
+                "water_resp",
+                "water_status"
+            ]
+        ]
+    },
+    {
+        "id": "water_resp",
+        "type": "http response",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 500,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "water_debug",
+        "type": "debug",
+        "name": "reading",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 490,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "water_status",
+        "type": "function",
+        "name": "depth or fault",
+        "func": "// The node reports failures explicitly rather than going silent, so a\n// message with ok:false means the ESP is alive and the probe is not.\n// That's a different repair job from no messages at all.\nif (msg.payload.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + msg.payload.error });\n    return null;\n}\n\nconst mm = msg.payload.depth_mm;\nlet text = mm + \" mm\";\nif (msg.payload.percent !== undefined) text += \"  (\" + msg.payload.percent + \"%)\";\n\nnode.status({ fill: \"green\", shape: \"dot\", text: text });\nreturn { payload: mm, topic: msg.payload.node };\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 500,
+        "y": 170,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "water_notes",
+        "type": "comment",
+        "name": "Farmers IoT Toolkit — Module 1 water level",
+        "info": "Receives readings from the ESP8266 water level node.\n\nThe ESP POSTs JSON like:\n\n    {\"node\":\"water-tank-1\",\"ok\":true,\"raw\":153,\n     \"depth_mm\":127,\"percent\":47.6,\"rssi\":-62,\"uptime_s\":1234}\n\nA failed sensor read still POSTs, with ok:false and an error\nstring — a silent node is indistinguishable from dead WiFi or a\nflat battery, so the node says so instead.\n\nIMPORTANT: the `http response` node is not optional. Without it\nthe request never completes and the ESP sits there until it times\nout. Every `http in` needs one.\n\nTest without any hardware:\n\n    curl -X POST http://192.168.43.1:1880/water \\\n         -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"test\",\"ok\":true,\"depth_mm\":500}'\n",
+        "x": 210,
+        "y": 100,
+        "wires": []
+    }
+]
