@@ -1,0 +1,197 @@
+[
+    {
+        "id": "farm_both_tab",
+        "type": "tab",
+        "label": "Farmers IoT — both sensors",
+        "disabled": false,
+        "info": "Receives readings from the water tank probe (Module 1) and the soil\nprobe (Module 2), and serves a live page at GET / so you can watch both\nfrom a phone browser.\n\nWorks whether the two sensors are on one ESP8266 or two — each has its\nown endpoint, so nothing cares where the POST came from.\n\nSUPERSEDES flows/water-level-flow.json. Do not import both: two `http in`\nnodes on /water will conflict.\n\nCore nodes only — no node-red-dashboard install. Every extra install step\nis a place a build dies on someone else's phone.\n\nTest with no hardware at all:\n\n    curl -X POST http://localhost:1880/water -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"water-tank-1\",\"ok\":true,\"raw\":139,\"depth_mm\":113}'\n\n    curl -X POST http://localhost:1880/soil -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"soil-bed-1\",\"ok\":true,\"moisture_pct\":22.4,\"temp_c\":20.2,\"ec\":0}'\n\nThen open http://<phone-ip>:1880/ in a browser.\n"
+    },
+    {
+        "id": "both_notes",
+        "type": "comment",
+        "z": "farm_both_tab",
+        "name": "READ ME — endpoints, payloads, and the one thing people forget",
+        "info": "ENDPOINTS\n  POST /water   Module 1, the QDY30A tank probe\n  POST /soil    Module 2, the THC-S soil probe\n  GET  /        live page showing both\n\nPAYLOADS\n  /water  {\"node\":\"water-tank-1\",\"ok\":true,\"raw\":139,\"depth_mm\":113,\n           \"percent\":47.6,\"rssi\":-62,\"uptime_s\":1234}\n  /soil   {\"node\":\"soil-bed-1\",\"ok\":true,\"moisture_pct\":22.4,\n           \"temp_c\":20.2,\"ec\":0,\"rssi\":-49,\"uptime_s\":1234}\n\nA failed sensor read still POSTs, with ok:false and an error string. That\nis deliberate: a node that goes silent looks exactly like dead WiFi or a\nflat battery. An explicit error says the node is alive and the probe is\nnot, which is a different repair job.\n\nTHE ONE THING PEOPLE FORGET: every `http in` needs an `http response`.\nWithout it the request never completes and the ESP blocks until it times\nout. Both are wired here already — don't delete them.\n\nSTALENESS: the page shows how long ago each reading arrived and marks it\nSTALE past 90s. Absence is the failure mode you cannot see otherwise —\na node that stops reporting produces no error anywhere, so the only\nsymptom is a number that quietly stops changing.\n",
+        "x": 250,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "both_water_in",
+        "type": "http in",
+        "z": "farm_both_tab",
+        "name": "POST /water",
+        "url": "/water",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 140,
+        "wires": [
+            [
+                "both_water_store",
+                "both_water_resp",
+                "both_water_debug"
+            ]
+        ]
+    },
+    {
+        "id": "both_water_resp",
+        "type": "http response",
+        "z": "farm_both_tab",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 420,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "both_water_debug",
+        "type": "debug",
+        "z": "farm_both_tab",
+        "name": "water raw",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "both_water_store",
+        "type": "function",
+        "z": "farm_both_tab",
+        "name": "store water",
+        "func": "// Keep the latest reading in flow context so the page node can read it.\n// Stamped with an ARRIVAL TIME, because a node that stopped reporting looks\n// identical to one that never started unless you track when you last heard it.\nconst p = msg.payload;\nflow.set(\"water\", Object.assign({}, p, { at: Date.now() }));\n\n// ok:false means the ESP is alive and the probe is not. Show it as a fault\n// rather than dropping it — that's a different repair job from silence.\nif (p.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + p.error });\n    return null;\n}\n\nlet text = p.depth_mm + \" mm\";\nif (p.percent !== undefined) text += \"  (\" + p.percent + \"%)\";\nnode.status({ fill: \"green\", shape: \"dot\", text: text });\n\nreturn { payload: p.depth_mm, topic: p.node };\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "both_soil_in",
+        "type": "http in",
+        "z": "farm_both_tab",
+        "name": "POST /soil",
+        "url": "/soil",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 300,
+        "wires": [
+            [
+                "both_soil_store",
+                "both_soil_resp",
+                "both_soil_debug"
+            ]
+        ]
+    },
+    {
+        "id": "both_soil_resp",
+        "type": "http response",
+        "z": "farm_both_tab",
+        "name": "200 OK",
+        "statusCode": "200",
+        "headers": {},
+        "x": 420,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "both_soil_debug",
+        "type": "debug",
+        "z": "farm_both_tab",
+        "name": "soil raw",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 420,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "both_soil_store",
+        "type": "function",
+        "z": "farm_both_tab",
+        "name": "store soil",
+        "func": "const p = msg.payload;\nflow.set(\"soil\", Object.assign({}, p, { at: Date.now() }));\n\nif (p.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + p.error });\n    return null;\n}\n\nnode.status({\n    fill: \"green\", shape: \"dot\",\n    text: p.moisture_pct + \" %  |  \" + p.temp_c + \" C  |  EC \" + p.ec\n});\n\nreturn { payload: p.moisture_pct, topic: p.node };\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 420,
+        "y": 300,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "both_page_in",
+        "type": "http in",
+        "z": "farm_both_tab",
+        "name": "GET /",
+        "url": "/",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 140,
+        "y": 440,
+        "wires": [
+            [
+                "both_page_build"
+            ]
+        ]
+    },
+    {
+        "id": "both_page_build",
+        "type": "function",
+        "z": "farm_both_tab",
+        "name": "build page",
+        "func": "// A live page from core nodes only — no node-red-dashboard install.\n// Every extra install step is a place a build dies on someone else's phone.\nconst now = Date.now();\nconst STALE_MS = 90000;   // ~1.5x the firmware's default 60s report interval\n\nfunction card(title, r, body) {\n    if (!r) {\n        return '<div class=\"c wait\"><h2>' + title + '</h2>'\n             + '<p class=\"big\">--</p><p class=\"s\">waiting for first reading</p></div>';\n    }\n    const secs = Math.round((now - r.at) / 1000);\n    if (r.ok === false) {\n        return '<div class=\"c bad\"><h2>' + title + '</h2>'\n             + '<p class=\"big\">FAULT</p><p class=\"s\">' + r.error + '</p>'\n             + '<p class=\"s\">' + secs + 's ago</p></div>';\n    }\n    const stale = (now - r.at) > STALE_MS;\n    return '<div class=\"c ' + (stale ? 'stale' : 'good') + '\"><h2>' + title + '</h2>'\n         + body(r)\n         + '<p class=\"s\">' + secs + 's ago' + (stale ? ' &mdash; STALE' : '') + '</p></div>';\n}\n\nconst waterCard = card('Water tank', flow.get('water'), function (r) {\n    let s = '<p class=\"big\">' + r.depth_mm + '<span>mm</span></p>';\n    if (r.percent !== undefined) s += '<p class=\"s\">' + r.percent + '% full</p>';\n    if (r.raw !== undefined) s += '<p class=\"s\">raw ' + r.raw + '</p>';\n    return s;\n});\n\nconst soilCard = card('Soil', flow.get('soil'), function (r) {\n    return '<p class=\"big\">' + r.moisture_pct + '<span>%</span></p>'\n         + '<p class=\"s\">' + r.temp_c + ' &deg;C &nbsp;|&nbsp; EC ' + r.ec + ' &micro;S/cm</p>';\n});\n\nmsg.headers = { 'content-type': 'text/html; charset=utf-8' };\nmsg.payload =\n'<!DOCTYPE html><html><head><meta charset=\"utf-8\">'\n+ '<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">'\n+ '<meta http-equiv=\"refresh\" content=\"2\">'\n+ '<title>Farmers IoT</title><style>'\n+ 'body{margin:0;padding:16px;background:#12161c;color:#e8eef6;'\n+ 'font-family:system-ui,-apple-system,sans-serif}'\n+ 'h1{font-size:1.1rem;font-weight:600;color:#8fa3bb;margin:0 0 16px}'\n+ '.g{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}'\n+ '.c{background:#1b212b;border-radius:12px;padding:18px;border-left:5px solid #3a4553}'\n+ '.c.good{border-left-color:#3fb950}.c.stale{border-left-color:#d29922}'\n+ '.c.bad{border-left-color:#f85149}.c.wait{border-left-color:#3a4553}'\n+ 'h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;'\n+ 'color:#8fa3bb;margin:0 0 10px;font-weight:600}'\n+ '.big{font-size:2.6rem;font-weight:700;margin:0;line-height:1.1}'\n+ '.big span{font-size:1rem;font-weight:500;color:#8fa3bb;margin-left:6px}'\n+ '.s{margin:6px 0 0;font-size:.85rem;color:#8fa3bb}'\n+ '.c.bad .big{color:#f85149;font-size:1.8rem}'\n+ '</style></head><body><h1>Farmers IoT Toolkit</h1><div class=\"g\">'\n+ waterCard + soilCard\n+ '</div></body></html>';\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 320,
+        "y": 440,
+        "wires": [
+            [
+                "both_page_resp"
+            ]
+        ]
+    },
+    {
+        "id": "both_page_resp",
+        "type": "http response",
+        "z": "farm_both_tab",
+        "name": "serve page",
+        "statusCode": "200",
+        "headers": {},
+        "x": 510,
+        "y": 440,
+        "wires": []
+    }
+]
