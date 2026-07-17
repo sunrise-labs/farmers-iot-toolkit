@@ -21,11 +21,27 @@
 #define WIFI_PASSWORD  "change-me"
 
 // ─── Where to send readings ─────────────────────────────────────────────────
-// A Node-RED `http in` node listening for POST. The IP is the phone's address
-// on its own hotspot — check Module 4, it's usually 192.168.43.1.
-// Test it before flashing:
-//   curl -X POST http://192.168.43.1:1880/water -H 'Content-Type: application/json' -d '{"test":1}'
-#define POST_URL       "http://192.168.43.1:1880/water"
+// LEAVE POST_URL EMPTY and the node finds the base station by itself.
+//
+// The phone running the hotspot IS this node's gateway, by definition — so the
+// node already knows its address the moment it connects, and builds the URL from
+// POST_PORT and POST_PATH below. You never have to look up an IP.
+//
+// This is not just convenience. Android RANDOMISES the hotspot subnet: ours came
+// up on 10.215.63.55, not the 192.168.43.1 every guide quotes, and it can shuffle
+// again on any hotspot restart or reboot. A hardcoded IP goes stale silently —
+// every node in the field stops reporting and the only symptom is nothing at all.
+//
+// Set POST_URL only to override: a real server on the LAN, a different host, etc.
+//   #define POST_URL "http://192.168.1.50:1880/water"
+#define POST_URL       ""
+#define POST_PORT      1880
+#define POST_PATH      "/water"
+
+// Test the endpoint before you blame the firmware — from any device on the hotspot:
+//   curl -X POST http://<phone-ip>:1880/water \
+//        -H 'Content-Type: application/json' -d '{"node":"test","ok":true,"depth_mm":500}'
+// The node prints the phone's address on serial as `gateway :` when it connects.
 
 // Name for this node. If you ever run two tanks, give them different names.
 #define NODE_ID        "water-tank-1"

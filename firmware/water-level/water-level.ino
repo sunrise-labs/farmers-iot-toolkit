@@ -36,6 +36,14 @@
 #define RS485_BAUD   9600    // QDY30A default. NOT 4800 — that's the soil sensor.
 #define REG_LEVEL    0x0004  // measured value
 
+// Fallbacks so a config.h written before these existed still builds.
+#ifndef POST_PORT
+#define POST_PORT 1880
+#endif
+#ifndef POST_PATH
+#define POST_PATH "/water"
+#endif
+
 SoftwareSerial rs485(RS485_RX, RS485_TX);
 
 uint16_t modbusCRC(const uint8_t *buf, uint8_t len) {
@@ -198,12 +206,27 @@ void connectWiFi() {
   }
 }
 
+/*
+ * Where to POST. An explicit POST_URL wins; otherwise derive it from the gateway.
+ *
+ * The phone running the hotspot IS our gateway, so it can't go stale — and Android
+ * randomises the hotspot subnet (ours came up 10.215.63.x, not the 192.168.43.1
+ * every guide quotes) and can reshuffle on any restart. A hardcoded IP fails silently:
+ * the node keeps reading happily and nothing ever arrives. Deriving it deletes that
+ * whole failure class, and means a farmer never has to find an IP address.
+ */
+String postUrl() {
+  if (sizeof(POST_URL) > 1) return String(POST_URL);   // sizeof("") == 1
+  return "http://" + WiFi.gatewayIP().toString() + ":" + String(POST_PORT) + POST_PATH;
+}
+
 bool postJSON(const String &json) {
   if (WiFi.status() != WL_CONNECTED) return false;
+  const String url = postUrl();
   WiFiClient client;
   HTTPClient http;
-  if (!http.begin(client, POST_URL)) {
-    Serial.println(F("POST: bad URL"));
+  if (!http.begin(client, url)) {
+    Serial.println("POST: bad URL: " + url);
     return false;
   }
   http.addHeader("Content-Type", "application/json");
@@ -213,7 +236,10 @@ bool postJSON(const String &json) {
     Serial.printf("POST: %d ok\n", code);
     return true;
   }
-  Serial.printf("POST: failed (%d)\n", code);   // negative = client-side error
+  // Negative = client-side (couldn't even open a socket); positive = the server
+  // answered and didn't like it. Printing the URL turns "-1" from a mystery into
+  // "that address isn't on this network", which is the usual cause.
+  Serial.printf("POST: failed (%d) -> %s\n", code, url.c_str());
   return false;
 }
 #endif  // BENCH_MODE
@@ -266,7 +292,10 @@ void loop() {
       json += ",\"percent\":" + String(pct, 1);
     }
 #if !BENCH_MODE
-    json += ",\"rssi\":" + String(WiFi.RSSI());
+    // Only publish RSSI when there's a link to measure. Disconnected, WiFi.RSSI()
+    // returns a sentinel (we saw 31) that looks exactly like a real reading — and
+    // publishing a sentinel as data is the same sin as reporting a wrong depth.
+    if (WiFi.status() == WL_CONNECTED) json += ",\"rssi\":" + String(WiFi.RSSI());
 #endif
     json += ",\"uptime_s\":" + String(millis() / 1000) + "}";
 
@@ -279,7 +308,10 @@ void loop() {
     json = String("{\"node\":\"") + NODE_ID + "\",\"ok\":false"
          + ",\"error\":\"no valid modbus frame\"";
 #if !BENCH_MODE
-    json += ",\"rssi\":" + String(WiFi.RSSI());
+    // Only publish RSSI when there's a link to measure. Disconnected, WiFi.RSSI()
+    // returns a sentinel (we saw 31) that looks exactly like a real reading — and
+    // publishing a sentinel as data is the same sin as reporting a wrong depth.
+    if (WiFi.status() == WL_CONNECTED) json += ",\"rssi\":" + String(WiFi.RSSI());
 #endif
     json += ",\"uptime_s\":" + String(millis() / 1000) + "}";
     Serial.println(F("read FAILED — check 18V on the probe, and A/B wiring"));

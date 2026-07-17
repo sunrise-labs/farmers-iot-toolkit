@@ -16,10 +16,10 @@
 
 | # | Module | Level | Status |
 |---|--------|-------|--------|
-| ① | Water-tank level sensor (QDY30A RS485) | beginner | **Bench-proven** ✅ — comms, register map, and ruler calibration all confirmed (1 count = 1 mm). Module doc rewritten to the pressure-probe design. Next: ESP8266 + MAX485. ⚠️ FT232 adapter has an undiagnosed intermittent USB dropout |
+| ① | Water-tank level sensor (QDY30A RS485) | beginner | **Bench-proven** ✅ — comms, register map, and ruler calibration all confirmed (1 count = 1 mm). Module doc rewritten to the pressure-probe design. **Runs end-to-end on its own hardware** → WiFi → Node-RED (`POST: 200 ok`). Next: field enclosure + real tank. ⚠️ FT232 adapter has an undiagnosed intermittent USB dropout |
 | ② | Soil-moisture + auto irrigation valve → drip tape | advanced | Sensor to be **pre-coded now**; deploy/test after battery |
 | ③ | Solar IoT powerbank (**3S2P** battery) | medium | **In progress** — finishing the 3S2P battery build |
-| ④ | Mobile Wi-Fi base station (Android + Node-RED) | — | ✅ **Done** |
+| ④ | Mobile Wi-Fi base station (Android + Node-RED) | — | ✅ **Done** — and now actually *documented* (`docs/04`), with an importable flow at `flows/water-level-flow.json`. Proven receiving live readings from ① |
 
 ## Critical path to deadline
 

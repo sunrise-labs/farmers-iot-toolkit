@@ -8,6 +8,56 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-16 — END TO END: probe → ESP8266 → WiFi → Node-RED on the phone
+
+```
+WiFi: connecting to FarmIoT....... ok
+  my ip   : 10.215.63.141
+  gateway : 10.215.63.55
+  rssi    : -49 dBm
+raw=153  depth=127 mm
+{"node":"water-tank-1","ok":true,"raw":153,"depth_mm":127,"rssi":-49,"uptime_s":6}
+POST: 200 ok
+```
+Modules ① and ④ talking, our own code, real hardware. Backbone of the integration demo.
+
+### ⚠️ GOTCHA: the Android hotspot IP is NOT 192.168.43.1
+Every guide says it is. **Ours came up on `10.215.63.55`.** Modern Android randomises
+the hotspot subnet, and it can reshuffle on any hotspot restart or reboot.
+
+First POST attempt failed with `-1` (couldn't open a socket) against the hardcoded
+`192.168.43.1` from the docs. **The `gateway :` line printed on connect — added maybe
+an hour earlier — diagnosed it instantly.**
+
+**Fix: derive the URL from `WiFi.gatewayIP()` at runtime.** The phone running the
+hotspot IS the node's gateway, by definition, so the address can't go stale. Leave
+`POST_URL` empty in config and the node finds the base station by itself; set it only
+to override (a real server on a LAN). **Verified on hardware with no IP configured
+anywhere: `POST: 200 ok`.**
+
+Worth dwelling on the failure mode this kills: a hardcoded IP goes stale *silently*.
+The node keeps reading the sensor perfectly, publishes happily into the void, and
+nothing anywhere reports an error. Every node in the field stops reporting and the
+only symptom is absence. Deriving it deletes the whole class — and a farmer never has
+to find an IP address, which is the better toolkit anyway.
+
+### Fixed: RSSI sentinel published as data
+Disconnected, `WiFi.RSSI()` returns a sentinel (we saw **31**) that looks exactly like
+a plausible reading, and we were publishing it. Now only included when the link is
+actually up. Publishing a sentinel as data is the same sin as reporting a wrong depth.
+
+### Notes
+- Laptop scanning: this box runs **iwd**, not NetworkManager — `nmcli` silently returns
+  nothing. `iw dev wlan0 scan` works. That scan confirmed FarmIoT was on 2412 MHz
+  (channel 1, 2.4 GHz), ruling out the classic ESP8266 killer of a 5 GHz-only hotspot.
+- Config permutations verified to build: auto-derive + WiFi, auto-derive + bench,
+  explicit override, and a **legacy config.h with no POST_PORT/POST_PATH** (`#ifndef`
+  fallbacks cover it, so nobody's existing config breaks).
+- `docs/04` Termux/Node-RED/flow steps were all `(to be added)` placeholders despite
+  module ④ being marked Done — written up now, plus `flows/water-level-flow.json`.
+
+---
+
 ## 2026-07-16 — Module ① runs on its own hardware: ESP8266 reads the probe
 
 First reading off the ESP8266, no laptop in the chain:

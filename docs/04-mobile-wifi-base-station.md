@@ -254,17 +254,57 @@ it here first.
 
 ### Step 7 — Point a sensor at it
 
-In the sensor's `config.h`:
+In the sensor's `config.h`, you only need three things:
 
 ```c
-#define BENCH_MODE 0                                  // was 1 for bring-up
+#define BENCH_MODE 0                    // was 1 for bring-up
 #define WIFI_SSID  "FarmIoT"
 #define WIFI_PASSWORD "your-hotspot-password"
-#define POST_URL   "http://192.168.43.1:1880/water"
 ```
 
-Flash it, and watch the serial output — it prints its own IP, the gateway, and the
-signal strength when it connects.
+**You do not need to set an IP address.** Leave `POST_URL` empty and the node works
+out where the base station is by itself — the phone running the hotspot is the node's
+gateway by definition, so it already knows the address the moment it connects.
+
+Flash with:
+
+```bash
+arduino-cli compile --upload --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/water-level
+```
+
+(**`compile --upload`, not `upload`** — bare `upload` doesn't rebuild and will flash
+whatever was compiled last, so your config changes silently don't take effect.)
+
+Watch the serial output at 115200. A working node says:
+
+```
+WiFi: connecting to FarmIoT....... ok
+  my ip   : 10.215.63.141
+  gateway : 10.215.63.55   <- the phone. POST_URL should point here.
+  rssi    : -49 dBm
+raw=153  depth=127 mm
+{"node":"water-tank-1","ok":true,"raw":153,"depth_mm":127,"rssi":-49,"uptime_s":6}
+POST: 200 ok
+```
+
+> ### ⚠️ The hotspot IP is NOT always 192.168.43.1
+> Every guide on the internet says it is. **Ours came up on `10.215.63.55`.** Modern
+> Android randomises the hotspot subnet, and it can change again after a hotspot
+> restart or a reboot.
+>
+> This is why the firmware derives the address instead of storing it. If you hardcode
+> an IP, it will work until the day it silently doesn't — the node keeps reading the
+> sensor perfectly and nothing ever arrives, with no error anywhere to tell you why.
+>
+> If you do need to point at a real server rather than the phone, set `POST_URL`
+> explicitly and it overrides the auto-detection.
+
+### Reading the serial output
+
+`POST: failed (-1)` means the node couldn't open a socket at all — usually the address
+isn't on this network. It prints the URL it tried, so compare it with the `gateway`
+line. A **positive** code (like 404) means the server answered and didn't like the
+request — that's a Node-RED flow problem, not a network one.
 
 
 ## Troubleshooting
