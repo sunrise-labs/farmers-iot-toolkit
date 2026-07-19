@@ -1,0 +1,138 @@
+"""
+MCU + interconnect spine for the Farmers IoT Toolkit field node.
+
+Traces to DESIGN-BRIEF decisions:
+  B  - socketed Heltec WiFi LoRa 32 V3 (ESP32-S3 + SX1262 + OLED) + external SMA.
+  D1 - the spine that carries 2 UARTs + 4 soil-selects to the RS485 bus.
+  F1 - OLED visible + one status LED per function + test-valve button.
+
+STEP-4 DECISION (ATO-HANDOFF §7.4): I2C-EXPANDER SPINE, not native UARTs.
+  Reason: the Heltec V3 breaks out almost no free GPIO (SX1262 SPI + OLED + USB
+  consume nearly everything; effectively only ~GPIO47/48 are free). Native UARTs
+  cannot fit 2 UARTs + 4 soil-selects + 2 valve + button + ~7 LEDs. So everything
+  hangs off the OLED's existing I2C bus (SDA=GPIO41, SCL=GPIO42):
+    - SC16IS752 : I2C dual-UART bridge -> soil UART + water UART, plus 8 GPIO
+                  (4 soil selects + water-enable + 2 valve control + 1 spare)
+    - PCF8574   : I2C 8-bit GPIO expander -> ~7 status LEDs + test button
+  Net MCU-pin cost of the whole sensor+valve+UI I/O: just the 2 I2C pins already
+  used by the OLED. This is why the SC16IS752 is mandatory here, not optional.
+
+STATUS: architecture skeleton. Heltec/SC16IS752/PCF8574/LEDs are typed-interface
+STUBS so the design builds offline. Real parts + the exact Heltec free-GPIO map are
+resolved in a later network-gated pass (see ATO-HANDOFF.md).
+"""
+
+import ElectricPower
+import ElectricLogic
+import I2C
+import UART
+
+
+module HeltecV3:
+    """Socketed Heltec WiFi LoRa 32 V3 (ESP32-S3 + SX1262 + OLED), 2x female headers (A1/B).
+
+    LoRa band: 915 MHz / AS923 variant (Cook Islands follows NZ AS923) - NOT the 868 part
+    currently in the BOM. External SMA antenna (A2). OLED is on-board, driven over I2C.
+    """
+    # TODO(part): Heltec WiFi LoRa 32 V3 (915MHz) socket footprint; SMA edge connector.
+    p5v_in = new ElectricPower        # 5V into the Heltec 5V pin (from buck)
+    p3v3_out = new ElectricPower      # Heltec on-board LDO 3V3 out (logic/RS485 supply, C1)
+    i2c = new I2C                     # OLED + expander bus (SDA=GPIO41, SCL=GPIO42)
+    vext = new ElectricLogic          # GPIO36 external-peripheral power control
+    gpio_spare = new ElectricLogic[2] # ~GPIO47/48, the only reliably-free header pins
+
+
+module SC16IS752:
+    """I2C dual-UART bridge + 8 GPIO. The spine that gives us 2 UARTs without native pins."""
+    # TODO(part): SC16IS752IPW (LCSC). Address-strapped on I2C; IRQ to a spare Heltec GPIO.
+    power = new ElectricPower          # 3V3
+    i2c = new I2C
+    irq = new ElectricLogic
+    uart_a = new UART                  # -> soil shared bus (@4800)
+    uart_b = new UART                  # -> water (@9600)
+    gpio = new ElectricLogic[8]        # 4 soil-select + water-en + 2 valve + 1 spare
+
+
+module PCF8574:
+    """I2C 8-bit GPIO expander for status LEDs + test button (F1)."""
+    # TODO(part): PCF8574T (LCSC). Second I2C address on the same bus.
+    power = new ElectricPower          # 3V3
+    i2c = new I2C
+    gpio = new ElectricLogic[8]        # ~7 status LEDs + test-valve button
+
+
+module StatusLed:
+    """One labelled status LED per function: power, charge, radio, 4x sensor, valve (F1)."""
+    # TODO(part): LED + series resistor; sized in the network-gated pass.
+    drive = new ElectricLogic
+    power = new ElectricPower
+
+
+module Mcu:
+    """MCU block: Heltec socket + SC16IS752 + PCF8574 + LEDs + button, all on one I2C bus.
+
+    Exposes to the rest of the board (wired in main.ato):
+      p5v_in     - 5V supply into the Heltec
+      p3v3       - 3V3 out (Heltec LDO) -> RS485 xcvrs + the two expanders
+      soil_uart  - to RS485Bus soil bus
+      water_uart - to RS485Bus water
+      soil_sel[] - 4 soil selects
+      water_en   - water transceiver enable
+      valve_open / valve_close - to the valve H-bridge
+    """
+    heltec = new HeltecV3
+    bridge = new SC16IS752
+    expander = new PCF8574
+
+    # ~7 status LEDs (power, charge, radio, soil0..3, valve) - modelled as 8, one spare
+    leds = new StatusLed[8]
+
+    # External interfaces
+    p5v_in = new ElectricPower
+    p3v3 = new ElectricPower
+    soil_uart = new UART
+    water_uart = new UART
+    soil_sel = new ElectricLogic[4]
+    water_en = new ElectricLogic
+    valve_open = new ElectricLogic
+    valve_close = new ElectricLogic
+
+    # Power: 5V into Heltec, 3V3 out feeds the spine chips + LEDs
+    p5v_in ~ heltec.p5v_in
+    heltec.p3v3_out ~ p3v3
+    p3v3 ~ bridge.power
+    p3v3 ~ expander.power
+
+    # One I2C bus: Heltec (OLED) + both expanders
+    heltec.i2c ~ bridge.i2c
+    heltec.i2c ~ expander.i2c
+    heltec.gpio_spare[0] ~ bridge.irq
+
+    # SC16IS752 UARTs -> sensor buses
+    bridge.uart_a ~ soil_uart
+    bridge.uart_b ~ water_uart
+
+    # SC16IS752 GPIO -> soil selects (0-3), water enable (4), valve open/close (5,6); 7 spare
+    bridge.gpio[0] ~ soil_sel[0]
+    bridge.gpio[1] ~ soil_sel[1]
+    bridge.gpio[2] ~ soil_sel[2]
+    bridge.gpio[3] ~ soil_sel[3]
+    bridge.gpio[4] ~ water_en
+    bridge.gpio[5] ~ valve_open
+    bridge.gpio[6] ~ valve_close
+
+    # PCF8574 GPIO -> status LEDs (0-6) + test-valve button (7). LED supply = 3V3.
+    expander.gpio[0] ~ leds[0].drive
+    expander.gpio[1] ~ leds[1].drive
+    expander.gpio[2] ~ leds[2].drive
+    expander.gpio[3] ~ leds[3].drive
+    expander.gpio[4] ~ leds[4].drive
+    expander.gpio[5] ~ leds[5].drive
+    expander.gpio[6] ~ leds[6].drive
+    p3v3 ~ leds[0].power
+    p3v3 ~ leds[1].power
+    p3v3 ~ leds[2].power
+    p3v3 ~ leds[3].power
+    p3v3 ~ leds[4].power
+    p3v3 ~ leds[5].power
+    p3v3 ~ leds[6].power

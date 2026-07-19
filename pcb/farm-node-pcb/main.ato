@@ -1,0 +1,47 @@
+"""
+Farmers IoT Toolkit - Field Node carrier PCB (top level).
+
+One solar-powered LoRa field node: socketed Heltec WiFi LoRa 32 V3 + 3S2P 18650 power
+(MPPT/BMS), 4x plug-and-play soil sensors + 1 water sensor over RS485, 1 latching
+irrigation valve with fail-closed brown-out, farmer-visible OLED/LEDs, on one IP65 board.
+
+Requirements are FROZEN in ../DESIGN-BRIEF.md (decisions A1-F2). Build plan in
+../ATO-HANDOFF.md. This top wires the four blocks: power / rs485 / valve / mcu.
+
+STATUS: architecture skeleton - builds offline (module stubs, no pickable parts yet).
+Next pass (needs network to reach api.atopile.io for the part picker): resolve real
+LCSC parts via `ato create part`, add valued passives, then `ato build` -> netlist+BOM.
+"""
+
+from "power.ato" import Power
+from "rs485.ato" import RS485Bus
+from "valve.ato" import ValveDriver
+from "mcu.ato" import Mcu
+
+
+module App:
+    power = new Power
+    sensors = new RS485Bus
+    valve = new ValveDriver
+    mcu = new Mcu
+
+    # --- Power rails ---
+    power.p5v ~ mcu.p5v_in            # buck 5V -> Heltec
+    mcu.p3v3 ~ sensors.p3v3           # Heltec LDO 3V3 -> RS485 transceivers
+    power.vbat ~ sensors.soil_v       # soil sensors pack-direct (C1)
+    power.p18v ~ sensors.p18v         # boost 18V -> water sensor (C1)
+    power.valve_pulse ~ valve.power_in
+    power.vbat ~ valve.vbat_sense     # VBAT tap for brown-out detection (E2)
+
+    # --- MCU <-> sensor bus ---
+    mcu.soil_uart ~ sensors.soil_uart
+    mcu.water_uart ~ sensors.water_uart
+    mcu.soil_sel[0] ~ sensors.soil_sel[0]
+    mcu.soil_sel[1] ~ sensors.soil_sel[1]
+    mcu.soil_sel[2] ~ sensors.soil_sel[2]
+    mcu.soil_sel[3] ~ sensors.soil_sel[3]
+    mcu.water_en ~ sensors.water_en
+
+    # --- MCU <-> valve ---
+    mcu.valve_open ~ valve.open_cmd
+    mcu.valve_close ~ valve.close_cmd

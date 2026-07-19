@@ -1,0 +1,103 @@
+"""
+Power tree for the Farmers IoT Toolkit field node.
+
+Traces to DESIGN-BRIEF decisions:
+  C1 - rails: buck->5V (Heltec), 3V3 from Heltec LDO, boost->~18V (water probe),
+       regulated pulse rail (valve), soil pack-direct.
+  C2 - balanced safety: revpol + fuses (batt + solar), TVS, MPPT thermally isolated,
+       charge-temp cutoff (NTC on cells).
+  A1 - hybrid: CN3722 MPPT and 3S BMS are SOCKETED; regulators/protection are bare parts.
+
+STATUS: architecture skeleton. Socketed ICs (MPPT, BMS) and the regulators are
+modelled as typed-interface STUBS so the design builds offline. Real LCSC parts +
+valued passives are resolved in a later, network-gated pass (see ATO-HANDOFF.md).
+"""
+
+import ElectricPower
+import Electrical
+
+
+module SolarInput:
+    """20W panel input: reverse-polarity ideal-diode + fuse + TVS clamp (C2)."""
+    # TODO(part): P-FET ideal diode (e.g. DMP3017SFG), fuse, TVS.
+    panel = new ElectricPower      # from the 20W panel (~16.5-22V)
+    out = new ElectricPower        # protected solar into the MPPT
+    panel ~ out                    # placeholder pass-through until protection parts added
+
+
+module MPPT:
+    """CN3722 solar MPPT buck charger (SOCKETED, A1). Charges the 3S pack.
+
+    Populates the NTC charge-temperature cutoff input the 3S2P.md flagged unpopulated (C2).
+    Lives in its own vented thermal zone away from the cells (layout constraint, C2).
+    """
+    # TODO(part): CN3722 module socket (2x header) + NTC divider on the cells.
+    solar_in = new ElectricPower
+    batt = new ElectricPower        # charge output -> pack node
+    ntc = new Electrical            # 10k NTC on cells -> CN3722 temp-sense pin
+
+
+module BatteryPack:
+    """6x 18650 in on-board holders, 3S2P, no spot-weld, through a socketed 3S BMS (C1).
+
+    VBAT sags 12.6V (full) -> ~9.0V (near cutoff). Protected P- node is VBAT to the board.
+    """
+    # TODO(part): 6x 18650 holders + socketed 3S BMS (protected P-/P+).
+    charge_in = new ElectricPower   # from MPPT
+    vbat = new ElectricPower        # protected pack node to the rest of the board
+
+
+module BuckReg:
+    """Generic step-down regulator stub. VBAT -> fixed output."""
+    # TODO(part): MP1584 / TPS563201 for 5V; small boost for 18V uses BoostReg.
+    power_in = new ElectricPower
+    power_out = new ElectricPower
+
+
+module BoostReg:
+    """Generic step-up regulator stub. VBAT -> ~18V, low current (water probe only)."""
+    # TODO(part): MT3608-class / MP3423.
+    power_in = new ElectricPower
+    power_out = new ElectricPower
+
+
+module ValvePulseRail:
+    """Regulated pulse source + reservoir cap for the latching-valve H-bridge (C1, E1/E2).
+
+    The reservoir also feeds the brown-out close pulse when the pack dies (E2) - the
+    brown-out detector + H-bridge live in valve.ato; this just provides the energy rail.
+    """
+    # TODO(part): regulator sized to the chosen latching valve pulse spec + reservoir/supercap.
+    power_in = new ElectricPower
+    power_out = new ElectricPower
+
+
+module Power:
+    """Aggregate power tree. Exposes the board rails as interfaces for top to distribute."""
+    solar = new SolarInput
+    mppt = new MPPT
+    pack = new BatteryPack
+
+    buck5v = new BuckReg
+    boost18v = new BoostReg
+    valve_rail = new ValvePulseRail
+
+    # Charge path: panel -> protection -> MPPT -> pack
+    solar.out ~ mppt.solar_in
+    mppt.batt ~ pack.charge_in
+
+    # VBAT distribution to the on-board converters
+    pack.vbat ~ buck5v.power_in
+    pack.vbat ~ boost18v.power_in
+    pack.vbat ~ valve_rail.power_in
+
+    # Rails published to the rest of the board (wired in main.ato)
+    vbat = new ElectricPower        # soil sensors are pack-direct (C1)
+    p5v = new ElectricPower         # -> Heltec 5V in
+    p18v = new ElectricPower        # -> water probe only
+    valve_pulse = new ElectricPower # -> H-bridge
+
+    pack.vbat ~ vbat
+    buck5v.power_out ~ p5v
+    boost18v.power_out ~ p18v
+    valve_rail.power_out ~ valve_pulse

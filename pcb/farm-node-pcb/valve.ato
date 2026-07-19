@@ -1,0 +1,69 @@
+"""
+Latching-valve actuator for the Farmers IoT Toolkit field node.
+
+Traces to DESIGN-BRIEF decisions:
+  E1 - latching solenoid via H-bridge (pulse-open / pulse-close), near-zero hold energy.
+  E2 - brown-out auto-close: reservoir + power-loss detector fires ONE close pulse
+       through the H-bridge as the rail collapses, restoring fail-closed.
+  E3 - one valve (v1).
+  F1 - a 'test valve' button drives a pulse on-site with no phone (button lives in mcu.ato).
+
+STATUS: architecture skeleton. H-bridge and brown-out supervisor are typed-interface
+STUBS so the design builds offline. Real parts (DRV8871 H-bridge, voltage supervisor,
+reservoir/supercap, screw terminals, flyback where needed) resolved in a later
+network-gated pass (see ATO-HANDOFF.md).
+"""
+
+import ElectricPower
+import ElectricLogic
+import Electrical
+
+
+module HBridge:
+    """DRV8871-class H-bridge (6.5-45V, 3.6A). Two control pins -> pulse either coil polarity."""
+    # TODO(part): DRV8871DDAR (LCSC). in1/in2 set direction; pulse width set in firmware.
+    power = new ElectricPower         # valve pulse rail
+    in1 = new ElectricLogic           # direction/enable A (open pulse)
+    in2 = new ElectricLogic           # direction/enable B (close pulse)
+    out1 = new Electrical             # to latching coil lead A
+    out2 = new Electrical             # to latching coil lead B
+
+
+module BrownoutCloser:
+    """Power-loss supervisor + reservoir that fires ONE close pulse as the rail dies (E2).
+
+    Watches VBAT; when it collapses below the valve pull-in floor, it drives in2 (close)
+    from energy held in the reservoir cap, guaranteeing fail-closed on a dying battery.
+    """
+    # TODO(part): voltage supervisor (e.g. TPS3839) + reservoir/supercap + one-shot to in2.
+    sense = new ElectricPower          # taps VBAT to detect collapse
+    reservoir = new ElectricPower      # held energy for the last close pulse
+    close_cmd = new ElectricLogic      # -> H-bridge in2 (close)
+
+
+module ValveDriver:
+    """Full valve stage: H-bridge + brown-out closer + screw terminals to the coil."""
+    hbridge = new HBridge
+    brownout = new BrownoutCloser
+
+    # External interfaces to the rest of the board (wired in main.ato)
+    power_in = new ElectricPower       # valve pulse rail (from power.valve_pulse)
+    vbat_sense = new ElectricPower      # VBAT tap for brown-out detection
+    open_cmd = new ElectricLogic        # from MCU: pulse-open command
+    close_cmd = new ElectricLogic       # from MCU: pulse-close command
+
+    # Screw terminals to the latching solenoid coil (F2 field wiring)
+    coil_a = new Electrical
+    coil_b = new Electrical
+
+    power_in ~ hbridge.power
+    power_in ~ brownout.reservoir
+    vbat_sense ~ brownout.sense
+
+    # MCU open + close both reach the bridge; brown-out closer also drives close (E2)
+    open_cmd ~ hbridge.in1
+    close_cmd ~ hbridge.in2
+    brownout.close_cmd ~ hbridge.in2
+
+    hbridge.out1 ~ coil_a
+    hbridge.out2 ~ coil_b

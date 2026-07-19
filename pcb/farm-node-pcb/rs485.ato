@@ -1,0 +1,120 @@
+"""
+RS485 sensor interface for the Farmers IoT Toolkit field node.
+
+Traces to DESIGN-BRIEF decisions:
+  D1 - one RS485 transceiver per soil socket (4x), shared UART @4800, ESP32 selects
+       ONE at a time so every soil sensor stays factory addr 1. Water = its own
+       transceiver + UART @9600.
+  D3 - water = GX16-4 (18V, GND, A, B); each soil = GX12-4 (packV+, GND, A, B).
+  D4 - +/-15kV ESD-rated transceivers + TVS on every A/B pair, all 5 field connectors.
+
+STATUS: architecture skeleton. Transceivers, TVS and connectors are typed-interface
+STUBS so the design builds offline. Real parts (THVD1450 xcvr, SM712 TVS, GX12/GX16)
+resolved in a later network-gated pass (see ATO-HANDOFF.md).
+
+The one-at-a-time select: all 4 soil transceivers share one UART (RO->RX, DI->TX).
+Only the selected socket's driver+receiver is enabled via its DE/RE line; the other
+three sit high-impedance off the bus. Water has its own always-on transceiver + UART.
+"""
+
+import ElectricPower
+import ElectricLogic
+import UART
+import Electrical
+
+
+module RS485Transceiver:
+    """THVD1450-class 3.3V, +/-15kV ESD RS485 transceiver with separate DE/RE (D4)."""
+    # TODO(part): THVD1450DR (LCSC). Separate DE/RE enables the soil-select scheme.
+    power = new ElectricPower        # 3V3 logic supply
+    uart = new UART                  # RO->rx, DI->tx toward the MCU-side UART
+    de = new ElectricLogic           # driver enable
+    re = new ElectricLogic           # receiver enable (active low)
+    a = new Electrical               # RS485 A / D+
+    b = new Electrical               # RS485 B / D-
+
+
+module FieldConnector4:
+    """4-pin aviation connector (GX12 soil or GX16 water), panel-mount, pigtailed (D3, F2)."""
+    # TODO(part): GX12-4 (soil) / GX16-4 (water). Pin1 power, Pin2 GND, Pin3 A, Pin4 B.
+    power = new ElectricPower         # soil: packV+ ; water: 18V
+    a = new Electrical
+    b = new Electrical
+
+
+module SoilChannel:
+    """One soil socket: transceiver + GX12 + TVS on A/B. Pack-direct sensor power (C1)."""
+    # TODO(part): SM712 TVS across a/b.
+    xcvr = new RS485Transceiver
+    conn = new FieldConnector4
+    xcvr.a ~ conn.a
+    xcvr.b ~ conn.b
+    # sensor power (pack-direct) flows through the connector; wired at RS485Bus level.
+
+
+module WaterChannel:
+    """Water socket: transceiver + GX16 + TVS. Sensor powered from the 18V boost rail (C1)."""
+    # TODO(part): SM712 TVS across a/b.
+    xcvr = new RS485Transceiver
+    conn = new FieldConnector4
+    xcvr.a ~ conn.a
+    xcvr.b ~ conn.b
+
+
+module RS485Bus:
+    """The full sensor interface: 4 soil channels on a shared UART + 1 water channel.
+
+    Exposes to the MCU:
+      soil_uart  - shared UART for all 4 soil transceivers (@4800)
+      soil_sel[] - 4 select lines (each drives one soil xcvr's DE + RE together)
+      water_uart - dedicated UART for the water transceiver (@9600)
+      water_en   - water transceiver enable
+      p3v3       - logic supply for all transceivers
+      soil_v     - pack-direct power distributed to the 4 soil connectors
+      p18v       - boost supply distributed to the water connector
+    """
+    soil = new SoilChannel[4]
+    water = new WaterChannel
+
+    soil_uart = new UART
+    soil_sel = new ElectricLogic[4]
+    water_uart = new UART
+    water_en = new ElectricLogic
+
+    p3v3 = new ElectricPower
+    soil_v = new ElectricPower       # pack-direct to soil sensors (C1)
+    p18v = new ElectricPower         # 18V to the water sensor (C1)
+
+    # Water: dedicated UART, always-enabled transceiver, 18V sensor power out
+    water_uart ~ water.xcvr.uart
+    water_en ~ water.xcvr.de
+    water_en ~ water.xcvr.re
+    p3v3 ~ water.xcvr.power
+    p18v ~ water.conn.power
+
+    # Soil x4: shared UART bus; per-socket select; pack-direct sensor power.
+    # Unrolled (4 sockets) so each select line pairs with its socket without the
+    # experimental FOR_LOOP pragma.
+    soil_uart ~ soil[0].xcvr.uart
+    soil_sel[0] ~ soil[0].xcvr.de
+    soil_sel[0] ~ soil[0].xcvr.re
+    p3v3 ~ soil[0].xcvr.power
+    soil_v ~ soil[0].conn.power
+
+    soil_uart ~ soil[1].xcvr.uart
+    soil_sel[1] ~ soil[1].xcvr.de
+    soil_sel[1] ~ soil[1].xcvr.re
+    p3v3 ~ soil[1].xcvr.power
+    soil_v ~ soil[1].conn.power
+
+    soil_uart ~ soil[2].xcvr.uart
+    soil_sel[2] ~ soil[2].xcvr.de
+    soil_sel[2] ~ soil[2].xcvr.re
+    p3v3 ~ soil[2].xcvr.power
+    soil_v ~ soil[2].conn.power
+
+    soil_uart ~ soil[3].xcvr.uart
+    soil_sel[3] ~ soil[3].xcvr.de
+    soil_sel[3] ~ soil[3].xcvr.re
+    p3v3 ~ soil[3].xcvr.power
+    soil_v ~ soil[3].conn.power
