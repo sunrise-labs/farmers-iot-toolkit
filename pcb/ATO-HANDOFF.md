@@ -28,17 +28,28 @@
 - **The KiCad-plugin-path warning is HARMLESS** — verified: `ato build` produces a full
   KiCad PCB + BOM + netlist despite it. The warning only affects interactive layout
   push-sync into an open KiCad session (atopile 0.15.7 looks for KiCad 9.x's plugin dir).
-- **⚠️ NEW BLOCKER for the next pass — part resolution needs network this env can't give:**
-  - `ato build` runs a **part picker that fetches from `api.atopile.io`** on every valued
-    passive / real part. In this session that host **won't resolve** (`Name or service not
-    known`) — the machine has IPv6-only egress via the netbird VPN and `api.atopile.io` /
-    `packages.atopile.io` return no AAAA record, while `atopile.io`, `google.com`, raw IPs
-    all work. So `ato add` (registry) and part-picking both fail here.
-  - `ato create part -s <mpn>` **also needs a TTY** ("Input is not a terminal — Aborted"),
-    so it can't be driven from a non-interactive shell regardless.
-  - **Consequence:** the skeleton builds offline (stubs have nothing to pick), but resolving
-    real LCSC parts + valued passives must happen where `api.atopile.io` resolves and a real
-    terminal is available (fix IPv6/DNS for that host, or run on a normal network). See §7.
+- **⚠️ NEW BLOCKER for the next pass — atopile's hosted part backend is DOWN (upstream, not us):**
+  - `ato build` runs a **part picker** and `ato add` uses the **registry**. Their real
+    endpoints are `https://components.atopileapi.com` and `https://packages.atopileapi.com`
+    (config default; overridable via `ATO_SERVICES_COMPONENTS_API_URL`). Both **CNAME to a
+    single AWS ELB that is globally NXDOMAIN** — confirmed via Cloudflare *and* Google DoH
+    hitting AWS's own nameservers (`Status:3`). So this is **atopile's hosted infrastructure
+    being unreachable, not a local DNS/VPN problem** — this machine resolves and reaches
+    `github.com`, `atopile.io`, `gateway.atopile.io`, raw IPs, everything else fine.
+    `/etc/hosts` can't help: there is no IP anywhere to pin. (Earlier notes blaming IPv6/netbird
+    were wrong — corrected here.) 0.15.7 is the latest release, so it's not a stale-version fix,
+    and `ato auth login` does not reroute the picker (it uses the URL unconditionally).
+  - `ato create part -s <mpn>` **also needs a TTY** ("Input is not a terminal — Aborted").
+  - **Consequence & options for the parts pass:**
+    1. **Retry later** — most likely a transient atopile infra outage/migration; re-check
+       `curl -s -o /dev/null -w '%{http_code}' https://components.atopileapi.com/` (non-000 = back).
+    2. **Git-sourced components** (bypasses the dead registry, GitHub works here):
+       `github.com/atopile/atopile-components.git` and `github.com/atopile/packages.git` both
+       exist and clone. `ato add git://<url>.git` currently mangles the URL (clones without
+       `https://`) — may need a manual clone into `.ato/modules` or a fixed spec.
+    3. **Fully-explicit offline parts** — define every component with an explicit `lcsc_id` +
+       local KiCad footprint so nothing calls the picker (works during the outage; most effort).
+  - The skeleton itself builds offline regardless (stubs have nothing to pick).
 
 ## 2. The board in one line
 
