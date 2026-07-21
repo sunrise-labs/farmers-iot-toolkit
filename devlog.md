@@ -8,6 +8,189 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-17 — This node's relay is active-HIGH: `VALVE_ACTIVE_LOW` → 0
+
+Set `VALVE_ACTIVE_LOW 0` in config.h — the relay board on this node energises on a
+HIGH input, not LOW. The default assumed active-LOW (most 1-channel boards, and it
+gives fail-safe-closed at boot when the pin floats). This board is the other kind.
+
+Consequence to keep in mind now that it's active-HIGH: at boot the pin floats LOW,
+which is de-energised = valve CLOSED, so it *still* fails safe — good. But `setup()`
+writes the CLOSED level before `pinMode(OUTPUT)` regardless, so boot is covered either
+way. If a future board clicks the wrong direction, this flag is the first thing to flip.
+
+Separate and still open: the relay clicks but the **solenoid doesn't actuate** — traced
+to USB+MT3608 not sourcing enough current for the coil (fine open-circuit, collapses
+under load — the project's recurring signature). Fix is to drive the valve from the
+battery pack through the relay, not the boost. Being tackled with the battery switch.
+
+---
+
+## 2026-07-17 — OTA firmware update added to `farm-node`, before going to battery
+
+Added ArduinoOTA to `firmware/farm-node/`. Reflash over WiFi, no cable — the point
+being the node's about to move to battery and won't always have a USB cable on it.
+Config gates it: `OTA_ENABLE`, `OTA_HOSTNAME`, `OTA_PASSWORD` in config.h. Compiles
+clean; +37 KB flash (28% of 1 MB), IRAM 94%→95% (under ceiling).
+
+**The one that must be said out loud: the FIRST flash carrying OTA still goes over
+USB.** OTA can only *receive* an update once OTA-capable firmware is already running.
+So flash this build over the cable one last time while it's still on the bench —
+then every update after is wireless. Disconnect USB *after* that, not before.
+
+Fail-safe wired in: `ArduinoOTA.onStart` forces the valve CLOSED before flashing.
+The sketch stops running during an update, so a relay latched OPEN would otherwise
+stay open across the whole flash + reboot — exactly when nobody's watching.
+
+Non-blocking by construction: the report loop's `delay()` is now `otaDelay()`, which
+services `ArduinoOTA.handle()` while it waits. A plain delay would leave the node deaf
+to an update for the whole `REPORT_INTERVAL_S` and fail the handshake. Sensor reads
+themselves (sub-second) are deliberately left alone — poking OTA mid-read risks the
+bit-banged SoftwareSerial timing, and a missed window just means retrying the upload.
+
+### ⚠️ GOTCHA: a glob path in a `/* */` header comment killed the whole build
+
+The espota example in the header comment had `.../esp8266/*/tools/espota.py`. The
+`*/` in that glob **closed the block comment early** — every line after became code,
+and the compiler vomited 30 errors deep inside `IPAddress.h` that had nothing to do
+with the real cause. The first error (`'tools' does not name a type`, `missing
+terminating ' character` on an apostrophe further down) was the only honest one.
+Fixed by writing `<ver>` instead of `*`. **Never put `*/` inside a C block comment**,
+not even in a path — and when a build explodes in a system header, scroll to the
+*first* error, it's usually yours.
+
+### Push an update (once the OTA build is running)
+
+```bash
+arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 \
+    --output-dir /tmp/farm-node firmware/farm-node
+python3 ~/.arduino15/packages/esp8266/hardware/esp8266/<ver>/tools/espota.py \
+    -i farm-node-1.local -p 8266 --auth=change-me-ota \
+    -f /tmp/farm-node/farm-node.ino.bin
+```
+
+`-i` takes `<OTA_HOSTNAME>.local` or the node's IP; `--auth` is `OTA_PASSWORD`. Node
+and laptop must be on the same hotspot. In the Arduino IDE it also just appears as a
+network port. Change the password before the node leaves the desk — anyone on the
+hotspot can otherwise overwrite it.
+
+---
+
+## 2026-07-17 — Module ② valve bring-up: manual control works, and the valve isn't the valve we documented
+
+Shipped **manual** valve control end to end: firmware drives a relay on **D2**, and the
+Node-RED page (`GET /`) grew **Open/Close buttons**. No moisture thresholds yet — that's
+deliberate, it's the next step. `firmware/farm-node/` + `flows/both-sensors-flow.json`.
+Verified by `arduino-cli compile` (clean) and by executing the flow functions with stubs
+(button → state → poll round-trips; the page renders the buttons and confirmation).
+
+### The valve on the bench is not the valve in the BOM
+
+`hardware/Manual - Plastic Solenoid.pdf` describes a small plastic 12mm quick-connect valve.
+The unit we're actually fitting is a **big all-brass ½" solenoid with a 4-bolt diaphragm
+cover — a pilot/servo-assisted valve.** And the plan grew a second valve type: this brass one
+is the **master on the 6000L tank** (gates every line); smaller **25mm brass valves become
+per-row zone valves.**
+
+Consequence for the node: **the combined ESP8266 has zero spare pins** (D5/D6 water, D7/D1
+soil, D2 master valve). Each zone valve needs its own GPIO+relay, so zones are a **separate
+controller (an ESP32), not this board.** The master valve *is* the D2 valve — nothing about
+the current build changes.
+
+### ⚠️ GOTCHA: you can't ohm-out a potted solenoid coil, and 0.3 Ω is not a coil
+
+The brass valve's coil is a **sealed slide-on donut with two leads potted straight in — no
+terminals.** Probing the bare wire ends read **~0.3 Ω, identical to shorting the probes.**
+That's not a shorted coil; it's the two bare ends touching each other. **0.3 Ω across a "12V
+coil" is physically impossible** (that would be 40 A) — a near-zero reading means *you are not
+on the coil*, you're reading a short between your own probes. We never got a clean number off
+it; pull-in will be judged empirically once it's wired.
+
+Two smaller meter traps on the way: a reading in **`mV`** means the dial is on volts, not ohms;
+and on ohms, **probes-together reading ~0.3 (even slightly negative) is normal** — that's lead
+resistance, and it confirms you really are in resistance mode.
+
+### The 25mm zone valve DID measure: 24.3 Ω → 0.49 A. And "inrush" is the wrong worry.
+
+The smaller valve had real steel terminals: **24.3 Ω = 0.49 A / ~6 W at 12V** (0.37 A at 9V).
+A comfortable, well-behaved load.
+
+The reframe worth keeping: **a DC solenoid is an inductor, so its current *ramps up* from zero
+— there is no capacitor-style inrush spike.** Worst-case current is simply **I = V / R_coil**,
+reached after a few L/R time constants. So an **ohmmeter across the cold coil tells you the
+entire load in ten seconds** — no bench supply, no current rig. That single reading sizes any
+converter.
+
+### The boost question: don't add one for an under-volt you haven't confirmed
+
+Tempting to drop an MT3608 between the pack and the valve "in case it sags below 12V." Held off,
+on this devlog's own principle — *don't add complexity to solve a problem you haven't measured.*
+Two 10-second, no-power tests collapse the decision: **coil resistance** (current at any voltage)
+and **pull-in voltage** (does it click in on the bare pack?). If it pulls in below ~9V, the pack
+feeds it direct and there is no converter at all.
+
+Topology note if a converter IS needed: it's a **boost, not a buck** — the 3S2P pack sits *below*
+12V for most of its discharge (12.6 → 9.0V). And an 11→12V lift (ratio 1.09) is well within the
+MT3608's comfort zone, unlike the 11→18V it already does for the water probe.
+
+### ⚠️ Pilot/servo valves need minimum pressure — the gravity-tank trap
+
+The brass valve's diaphragm cover marks it **pilot-operated.** Those need a **minimum pressure
+differential (~0.2 bar / 0.02 MPa) to open** — they borrow line pressure to lift the diaphragm.
+On a **gravity tank feed with low head, a pilot valve won't open no matter how perfect the
+wiring**, and it looks exactly like an electrical fault. A ~2m water column is ~0.2 bar, right at
+the edge. Check the head above the valve; if it's marginal, a **direct-acting ("0 bar") valve**
+is the right part.
+
+### Flyback diode: you don't need a 1N5819, or even a Schottky
+
+For a **relay-switched DC solenoid, diode speed is irrelevant** (the relay opens in ms), so any
+ordinary rectifier works: **1N400x (1A) or 1N540x (3A)**. Reverse voltage only needs to beat 12V
+— any 50V+ part. Avoid the tiny glass **1N4148** (~0.2A, too small). We salvaged a **1N5408
+(3A/1000V)** off a scrap board — tested good at **0.477 V forward / OL reverse** in diode mode.
+3A covers both valves with margin.
+
+Desolder lesson: those boards are **RoHS = lead-free solder**, which melts ~30°C hotter (~217 vs
+183°C), so a modest iron struggles. Set ~**370°C**, clean/re-tin the tip, use a fat chisel tip,
+and **add fresh leaded solder to the joint** to drop its melting point. When all else fails,
+**snipping the part off is a legitimate fallback** — a cut diode with short leads still works.
+
+### Polarity: the coil doesn't have one, the diode does
+
+The solenoid **coil is just wound wire — non-polar; either lead can be +.** What *does* have
+fixed polarity is the **12V supply** and the **flyback diode**. Rule: pick either coil lead as
+the "+ leg", run 12V+ to it, and put the **diode's band (cathode) on that same +12V leg.**
+Reversed, the diode is forward-biased the instant the valve powers on and **shorts the supply.**
+
+Placement: landing the diode's anode on the **relay COM screw terminal is fine and tidy** — COM
+is the same electrical node as the coil's − leg (they're wired together). Just don't confuse it
+with putting the diode **across COM–NO** (the switch contacts) — it goes across the *coil*.
+
+### The valve can't damage the laptop
+
+The solenoid draws from the **12V adapter through the relay's isolated switched contacts** — its
+current never touches USB. The laptop only feeds the ESP + relay coil (~0.1 A). **No common ground
+is needed** between the 12V side and USB, and that isolation is exactly why 12V can't backfeed the
+laptop. (Modern USB ports current-limit on overload anyway.) The only way to put valve current on
+USB is to wire the coil to the ESP's 5V pin — don't.
+
+### Firmware notes worth keeping
+
+- **Downlink by POLLING, not a server.** The node GETs `/valve` every ~1s; a page button sets
+  `flow.valveCmd` in Node-RED. We poll because the phone's hotspot hands the node its IP and can
+  change it — the node always knows its gateway, never the reverse (same reasoning as deriving the
+  POST host at runtime).
+- **Fail-safe closed at boot:** write the CLOSED level *before* `pinMode(OUTPUT)` so the pin can't
+  glitch open during boot.
+- **A failed poll HOLDS the last state** — a WiFi blip shouldn't cycle the valve. (When autonomy
+  lands, the real safety net is max-open + fail-closed-on-bad-read.)
+- The node **echoes its actual pin state** back in the `/soil` payload (`valve:open|closed`) so the
+  page shows commanded vs confirmed — not the same thing.
+- **This node's relay turned out active-HIGH** — set `VALVE_ACTIVE_LOW 0`. Most 1-channel boards
+  are active-LOW; ours wasn't. If Open/Close come out reversed, that's the flag.
+
+---
+
 ## 2026-07-16 — BOTH sensors on ONE ESP8266 → Node-RED. And a wire that lies.
 
 Both probes now read on a single ESP8266 and POST to the phone:

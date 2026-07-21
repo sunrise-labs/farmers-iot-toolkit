@@ -65,3 +65,49 @@
 // Set to 0 if you don't know it yet — the node reports depth in mm and simply
 // omits the percentage.
 #define TANK_FULL_MM   0
+
+// ─── Valve (Module 2 — MANUAL control for now) ──────────────────────────────
+// The valve is driven through a relay on this pin. D2 is the last free-and-safe
+// pin once both sensors are wired (D5/D6 water, D7/D1 soil). Don't move it onto
+// a boot-strap pin (D3/D4/D8) or D0.
+#define VALVE_PIN         D2
+
+// Most 1-channel relay boards are ACTIVE-LOW: IN LOW energises the relay. That
+// suits us — at boot the pin floats and the board's pull-up holds it de-energised,
+// so the valve is CLOSED before code runs. If your relay clicks the wrong way
+// (opens when it should close), set this to 0.
+#define VALVE_ACTIVE_LOW  1
+
+// How often (seconds) to ask the base station for the desired valve state, so the
+// page button feels responsive. Sensors still report every REPORT_INTERVAL_S.
+#define VALVE_POLL_S      1
+
+// Endpoint on the base station that returns "1" (open) or "0" (closed).
+#define VALVE_PATH        "/valve"
+
+// Safety: force the valve shut after this many seconds open, even in manual mode
+// (guards against "opened it and walked away"). 0 = disabled. Turn it on before
+// you leave the node unattended.
+#define VALVE_MAX_OPEN_S  0
+
+// ─── OTA — over-the-air firmware update ─────────────────────────────────────
+// Reflash this node over WiFi, no USB cable. This is what makes the node
+// maintainable once it's on battery, sealed in a box, or up a tank — you push a
+// new build from your laptop on the same hotspot instead of unwiring it.
+//
+// FIRST FLASH IS STILL USB. OTA can only receive an update once OTA-capable
+// firmware is ALREADY running. So flash this build over the cable one last time;
+// every update after that can go wireless.
+//
+// 1 = enable, 0 = disable. Auto-off in bench mode (no WiFi there anyway).
+#define OTA_ENABLE     1
+
+// The name the node advertises. Appears as a network port in the Arduino IDE and
+// resolves as <hostname>.local via mDNS, so you never chase its IP. Make it
+// unique per node if you run several.
+#define OTA_HOSTNAME   "farm-node-1"
+
+// Password required to push an update. DO NOT ship a node with this empty —
+// anyone on the hotspot could otherwise overwrite your firmware. Leave "" only
+// on the bench. Change it before the node leaves your desk.
+#define OTA_PASSWORD   "change-me-ota"

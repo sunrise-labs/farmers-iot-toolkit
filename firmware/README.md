@@ -66,6 +66,58 @@ arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/water-level
 arduino-cli upload  --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/water-level
 ```
 
+> Use `compile --upload` (or compile then upload) — a bare `upload` flashes whatever
+> `.bin` is already on disk, which may be stale (devlog 2026-07-16, cost ~30 min).
+
+## Updating firmware over the air (OTA)
+
+`farm-node/` can be reflashed over WiFi — no USB cable. This is how you update a node
+once it's on battery, sealed in a box, or up a tank. Only `farm-node/` has OTA today.
+
+**The rule that bites everyone once: the first OTA-capable flash still goes over USB.**
+A node can only *receive* an OTA update if OTA firmware is already running on it. So the
+build that *adds* OTA must be flashed with a cable one last time. After that boots, every
+later update is wireless. Don't unplug USB until you've done that USB flash.
+
+**One-time setup** (in `farm-node/config.h`):
+
+```c
+#define OTA_ENABLE    1
+#define OTA_HOSTNAME  "farm-node-1"     // unique per node; resolves as farm-node-1.local
+#define OTA_PASSWORD  "change-me-ota"   // CHANGE THIS — anyone on the hotspot can push otherwise
+```
+
+Flash it once over USB, then watch the serial line confirm OTA is live:
+
+```
+OTA: ready as "farm-node-1" (farm-node-1.local) at 10.215.63.x
+```
+
+**Every update after that — wireless.** Laptop and node must be on the same hotspot:
+
+```bash
+# 1. build a .bin
+arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 \
+    --output-dir /tmp/farm-node firmware/farm-node
+
+# 2. push it over WiFi (espota ships with the ESP8266 core)
+python3 ~/.arduino15/packages/esp8266/hardware/esp8266/<ver>/tools/espota.py \
+    -i farm-node-1.local -p 8266 --auth=change-me-ota \
+    -f /tmp/farm-node/farm-node.ino.bin
+```
+
+- `<ver>` is the installed core version (e.g. `3.1.2`).
+- `-i` takes `farm-node-1.local` (mDNS) or the node's IP if `.local` won't resolve on your network.
+- `--auth` must match `OTA_PASSWORD`.
+- In the **Arduino IDE** the node also just appears under *Tools → Port* as a network port; select it and Upload as normal.
+
+**Safety built in:** the node forces the **valve CLOSED** before it accepts a flash. The
+sketch stops running during an update, so a relay latched open would otherwise stay open
+across the whole flash and reboot.
+
+**Gotcha:** OTA needs the radio awake. If a node is ever put into deep sleep to save
+battery, it can't be reflashed while asleep — wake it (schedule or reset) first.
+
 ## How data reaches the base station
 
 **HTTP POST of JSON** to a Node-RED `http in` node on the Module 4 phone.
