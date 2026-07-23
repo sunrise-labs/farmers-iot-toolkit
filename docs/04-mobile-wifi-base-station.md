@@ -46,9 +46,10 @@ cost_notes: "If you already have an old Android phone and a SIM card, this modul
 # ---- Power ----
 power_source: "Phone's own battery, charged via USB"
 power_notes: >
-  Keep the phone plugged into a charger (mains or the IoT Solar Powerbank
-  from Module 3). Running WiFi hotspot and Node-RED drains the battery
-  faster than normal.
+  On mains, keep the phone plugged in. On solar (Module 3) do NOT — a permanently
+  plugged phone can outrun a 20W panel on its own, and it can never deep-sleep
+  while charging. Charge it in bursts from daytime surplus instead and let its own
+  battery carry the night. See Module 3, "Powering a phone from this pack".
 
 # ---- Connectivity ----
 connects_to: "All other modules connect to this base station over WiFi"
@@ -141,7 +142,26 @@ computer to set it up — but a computer makes it easier if you have one.
 
 - Factory reset the phone (optional but recommended for a clean start)
 - Make sure the phone is charged and has a working SIM card with data
-- Connect it to a charger — it should stay plugged in at all times
+- Connect it to a charger
+
+> ### ⚠️ On solar, do NOT leave the phone plugged in permanently
+> Near a wall socket, plug it in and forget it. **On the Module 3 solar powerbank,
+> permanently plugged is the wrong answer** and it fails in two ways at once:
+>
+> - **Energy.** A plugged-in phone can never enter Android's deep sleep (Doze only
+>   engages when *unplugged*), so it runs at its awake floor forever — ~17–67 Wh/day
+>   out of a panel that collects 50–60 Wh on a *good* day, and 6–15 Wh under heavy
+>   cloud. It will flatten the pack in a wet-season cloudy run.
+> - **Safety.** A lithium battery held at 100% in a hot sealed box degrades fast and
+>   swells. Module 3 calls this a matter of *when, not if*.
+>
+> The fix is to switch the **charger**, not the phone — the phone's own battery
+> (~19.4 Wh on a 5100 mAh handset) is easily big enough to carry it overnight. A $3
+> voltage-controlled relay does the whole job with no code. Full design in
+> **Module 3 → "Powering a phone from this pack: switch the charger, not the phone."**
+>
+> **Whatever you build, charging must be the default state** — if the phone is flat
+> and the charger is off, nothing is left to turn it back on.
 
 ### Step 2 — Turn on WiFi Hotspot
 

@@ -288,6 +288,11 @@ Wattage alone will not tell you whether a panel can charge your battery.
 - Adjust output to exactly 5V using the small screw on the converter
 - Add a USB socket or cable to the output
 
+> **If this converter will charge a phone, two changes:** set it to **5.15–5.2V**
+> (not 5.0V) to cover cable losses at 2A, and use a **5V/3A synchronous** module
+> rather than a tiny Mini360 — a phone will overheat the small one in a sealed box.
+> Also short the USB **D+ to D−** pins. See "Powering a phone from this pack" below.
+
 ### Step 6 — Add a fuse
 
 - Place a fuse between the battery pack and the buck converter
@@ -312,6 +317,8 @@ Wattage alone will not tell you whether a panel can charge your battery.
 | Charges fine in the morning, stops by midday | Same cause — the panel heated up and its Vmp fell below what the controller needs | You need a higher-Vmp panel, or fewer cells in series |
 | Panel gives far less current than its rating | Panel facing the wrong way | In the southern hemisphere the midday sun is in the **NORTH**. Check Voc and Isc with the panel disconnected to confirm the panel itself is healthy |
 | BMS cuts power suddenly | A battery is faulty or badly connected | Check all battery connections, test each battery individually |
+| **Phone charges very slowly, or loses ground overnight — looks like the panel is too small** | The USB data pins aren't shorted, so the phone thinks it's plugged into a computer and limits itself to 500mA (2.5W) | Short **D+ to D−** at the USB socket. Confirm with a USB power meter that it now draws >0.5A. See "Wiring the charger" below — this failure impersonates a solar problem |
+| Phone charges, but never reaches full even on a sunny day | Voltage drop in a long or thin USB cable at 2A | Shorter, thicker cable; set the buck to 5.15–5.2V (never above 5.25V) |
 | Enclosure gets very hot inside | No ventilation | Add small vent holes (covered with mesh to keep bugs out) on the shaded side |
 
 
@@ -375,6 +382,23 @@ the charge cable, and use the real number.
   0.5–1W on the modem alone
 - charging losses, or a worn-out phone battery
 
+#### A worked example — the phone we're using
+
+Ours is an **OPPO A3 4G**: a 5100 mAh battery (**~19.4 Wh**), Android 14. Screen
+off, hotspot up, 4G attached, Node-RED running, we expect somewhere in this range —
+and the buck converter loses ~15% on top, so the pack pays more than the phone draws:
+
+| Case | Phone draws | Pack pays | Wh/day |
+|------|------------|-----------|--------|
+| Good signal, quiet flows | 0.7W | 0.82W | **20** |
+| Typical | 1.3W | 1.5W | **37** |
+| Poor signal (distant tower) | 2.0W | 2.4W | **57** |
+
+Compare that to a 20W panel's **50–60 Wh on a clear day**. Even the good case eats a
+third of a perfect day; the bad case eats all of it. **A single 20W panel cannot carry
+a permanently-plugged phone plus sensors through a cloudy stretch.** That's not a
+reason to give up on the phone — it's a reason to read the next section.
+
 ### What this tells you
 
 - **Sensors that sleep are almost free.** ~5.5 Wh/day against a 50–60 Wh/day
@@ -433,6 +457,119 @@ re-read the bucket rule above. Ranked by value for money:
 and check it against your panel. Not against your battery.
 
 
+## Powering a phone from this pack: switch the charger, not the phone
+
+If you are building Module 4 (the Android base station) out in the field, this is the
+section that decides whether it works. Read it before you wire anything.
+
+### Why you cannot just tell the phone to sleep
+
+The obvious idea is "make the phone sleep between readings." It doesn't work, for
+three reasons that are worth knowing so you don't spend a weekend on it:
+
+1. **Android's deep sleep (Doze) only happens when the phone is unplugged.** Plug in a
+   charger and the phone wakes straight back up. A permanently solar-charged phone
+   therefore never gets the saving.
+2. **The WiFi hotspot keeps it awake anyway.** Tethering holds the processor awake by
+   design, so unplugging on its own doesn't buy you deep sleep while the hotspot is on.
+3. **Turning the hotspot on and off doesn't help enough to bother.** It only costs
+   ~0.3W, and Android won't let a script toggle it without rooting the phone.
+
+### The trick: your phone's battery is a second battery pack
+
+Look at the two numbers side by side:
+
+| | Energy stored |
+|---|---|
+| The 3S2P pack, everyday-usable | ~28–33 Wh |
+| **The phone's own battery** (5100 mAh) | **~19.4 Wh** |
+
+**The phone is carrying two-thirds of a second pack, and most people treat it purely
+as a load.** So stop charging it constantly. Charge it in bursts when the sun is
+making surplus, and let it coast on its own battery overnight — exactly as it would
+in your pocket.
+
+You get three wins at once:
+
+- **No round-trip loss.** Charging from daytime surplus means the energy never has to
+  go into the 18650s and back out again.
+- **The fire risk goes away.** A phone that is never held at 100% in a hot box is not
+  the failure the safety box above warns about.
+- **The right things die first.** When a cloudy run empties the pack, the phone stops
+  charging and the *sensors keep logging*. You lose your view of the farm before you
+  lose the data. That's the correct order.
+
+### How to build it — start simple
+
+**Option 1 — a $3 voltage-controlled relay. No code, no programming.**
+
+Buy an adjustable battery-voltage relay module (sold as XH-M203, XY-DJ, and similar).
+Wire it between the pack and the phone's charger, and set:
+
+- **Switch ON at ~12.3V** — the pack is near full, so the sun has surplus to spare
+- **Switch OFF at ~11.6V** — the pack is coming down, protect the sensors
+
+That's the whole design. The phone charges in the middle of the day and runs on its
+own battery the rest of the time. At ~1W it will last roughly **20 hours** unplugged,
+so it comfortably covers a night and gets partway through an overcast day.
+
+> ⚠️ **Check the relay module's own consumption.** Some draw 5–20mA just sitting
+> there, which is 0.7–2.6 Wh/day — a real bite out of a budget this tight. Prefer a
+> module that switches a MOSFET, or one with a latching relay, over one that has to
+> hold a relay coil energised all day.
+
+**Option 2 — let the phone decide (once Option 1 works).**
+
+The phone knows its own charge level, so it can ask to be charged. Node-RED serves a
+`/charge` endpoint that returns `false` above 80% and `true` below 60% (read from
+`termux-battery-status`), and an ESP node polls it and switches a MOSFET on the
+charge line. Keeping the phone between 60% and 80% is the single biggest thing you
+can do for the life of its battery in a hot box.
+
+> ### ⚠️ The failure that traps you: charging must be the DEFAULT
+> If the phone is the thing that decides when to charge, and the phone goes flat,
+> **nothing is left to turn the charger back on.** Your base station is dead until
+> someone walks out to it with a power bank.
+>
+> **So the switch must default to ON.** If the ESP node can't reach the phone, or has
+> just rebooted, or gets no answer — it charges. "Stop charging" is a command the
+> phone has to actively send, and it expires. Never build it the other way around.
+
+**Option 3 — buy a second panel (~$20).**
+
+Honestly? Do this too. Re-read "The cheapest fix is almost always another panel"
+above — it is cheaper than your time, and it is the only fix that actually addresses
+a run of cloudy days rather than rationing around it.
+
+### Wiring the charger: five things that catch people
+
+**1. The tiny Mini360 buck converter is not big enough for a phone.** It's rated 3A on
+paper but realistically handles ~1.5A before it gets hot and starts misbehaving — and
+a sealed box in tropical sun is the worst place for that. Use a proper **5V/3A
+synchronous buck** (an MP1584-based module, or a ready-made USB step-down module).
+
+**2. ⚠️ If the USB data pins aren't shorted, your phone charges at 500mA and you will
+blame the solar.** A phone plugged into a bare buck converter with a soldered-on USB
+socket sees a "computer port" and politely limits itself to 500mA — that's 2.5W, which
+will never keep up. Shorting the two data pins (**D+ to D−**) at the socket tells the
+phone "this is a wall charger" and it will take up to 2A. Most ready-made USB
+step-down modules already do this, but **check it with a USB power meter** — this
+failure looks exactly like a panel problem and it isn't.
+
+**3. Fast charging won't work, and that's good.** Proprietary fast-charge systems
+(OPPO's SuperVOOC, and equivalents) need the manufacturer's own charger and cable to
+negotiate. From a solar buck you get plain 5V. That's a feature: 10W instead of 45W
+means far less heat inside the box.
+
+**4. Set the converter to 5.15–5.2V, and use a short thick cable.** At 2A, a long thin
+cable drops enough voltage that the phone quietly falls back to trickle charging.
+Don't go above 5.25V — that's the USB limit.
+
+**5. Fuse the phone separately, and tap through the BMS.** The phone gets its own 2A
+fuse, so a chafed charging cable can't take your sensors down with it. And like every
+other load, it connects on the protected side of the BMS — never straight to the cells.
+
+
 ## How this connects to the other modules
 
 This module provides power to the other modules:
@@ -441,8 +578,10 @@ This module provides power to the other modules:
 - **Module 2 — Soil Moisture Sensor:** Powers the ESP32 (valve still needs
   its own 12V source)
 - **Module 4 — Mobile WiFi Base Station:** ⚠️ **Check the energy budget first.**
-  A phone running its hotspot 24/7 can outrun this panel on its own. Either
-  duty-cycle the hotspot, or give the phone its own panel and pack.
+  A phone plugged in 24/7 can outrun this panel on its own. Don't leave it
+  permanently connected — see "Powering a phone from this pack: switch the charger,
+  not the phone" above. Duty-cycling the *hotspot* is the wrong lever; duty-cycling
+  the *charger* is the right one.
 
 
 ## Notes and learnings

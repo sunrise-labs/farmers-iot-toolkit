@@ -8,6 +8,135 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-22 — Powering the base-station phone off the pack: duty-cycle the CHARGER, not the phone
+
+The field phone is an **OPPO A3 4G (CPH2669)**: 5100 mAh (**~19.4 Wh**), Snapdragon 6s Gen 1,
+Android 14 / ColorOS 14, 45 W SuperVOOC, 6.67" 120 Hz LCD. Question: can the 3S2P pack carry it
+24/7 so we get its 4G as backhaul, and how does the charger wire in.
+
+**Answer: not plugged in permanently, not on one 20 W panel. And the pack isn't the binding
+constraint — the panel is.**
+
+### The energy budget for this specific phone
+
+Screen off, hotspot up, 4G attached, Node-RED running. Buck loss taken at 85%:
+
+| Case | At phone USB | At pack | Wh/day |
+|------|-------------|---------|--------|
+| Good signal, quiet flows | 0.7 W | 0.82 W | **20** |
+| Typical | 1.3 W | 1.5 W | **37** |
+| **Poor signal** (modem straining for a distant tower) | 2.0 W | 2.4 W | **57** |
+| + field gear, sleeping | | | +5.5 |
+
+Against a 20 W panel: **50–60 Wh clear, 6–15 Wh heavy overcast.** So a clear day is break-even
+at best and a deficit at worst — marginal *in full sun* — and an overcast run is a 10–56 Wh/day
+deficit. With ~28–33 Wh everyday-usable in the pack that's **0.5–1.3 days of autonomy.**
+
+Mauke is a small island a long way from a tower, so the poor-signal row is a live risk, not a
+hypothetical. A straining modem can outdraw everything else on the phone combined. ⚠️ The pack
+figure is derived from the doc's "44 Wh at 80% DoD", implying ~2500 mAh cells — **confirm the
+actual cell capacity**, every number here scales off it.
+
+### Why you can't just make the phone sleep
+
+Three facts that kill the obvious approach:
+
+1. **Doze only engages when unplugged.** Android exits Doze the instant a charger connects, and
+   that is unchanged through Android 14. A permanently-plugged phone never gets the win.
+2. **The hotspot defeats Doze anyway.** Tethering holds a wakelock, so unplugging alone buys
+   nothing while the AP is up.
+3. **Duty-cycling the hotspot is a dead end.** It's only ~0.3 W, and ColorOS won't let a script
+   toggle it without root.
+
+### The reframe: the phone's own battery IS the night buffer
+
+19.4 Wh in the phone vs ~28–33 Wh everyday-usable in the pack. The phone is carrying **60–70% of
+a second pack** and we were treating it as a load. Charge it in bursts from daytime surplus and
+let it coast on its own cell overnight. Three wins at once: skips the pack's round-trip loss,
+removes the "sits at 100% in a hot box" fire/degradation mode `docs/03` already calls *when, not
+if*, and puts the field gear ahead of the phone in the failure order.
+
+**Tier 1 — hardware hysteresis, zero code.** Adjustable voltage-comparator relay (XH-M203 /
+XY-DJ class, ~$3) in the pack→buck→phone line. **ON at ~12.3 V** (pack near full = solar has
+surplus), **OFF at ~11.6 V** (pack falling = protect the sensors). On a cloudy run the phone
+stops charging, runs ~20 h on its own battery, then dies *while the sensors keep logging*.
+Backhaul degrades before sensing does — that's the correct failure ordering.
+⚠️ These modules have real quiescent draw (5–20 mA = 0.7–2.6 Wh/day at 11 V). Measure it; prefer
+a MOSFET or latching-relay output over a continuously-held coil.
+
+**Tier 2 — phone-commanded, fail-safe to charging.** Reuse the `GET /valve` polling pattern
+exactly: node polls `GET /charge`, phone answers from `termux-battery-status` — `false` above
+80%, `true` below 60%. Node drives a MOSFET on the 5 V line. That 60–80% band is the single
+biggest lever on the phone battery's life in a hot box.
+**Fail-safe rule: default CLOSED (charging) on timeout or boot.** If the phone dies it must be
+able to come back. Do not invert this — an inverted default is a base station that can never
+restart itself, and nobody is standing there to notice.
+
+Tier 1 is the outer loop (protects the pack), Tier 2 the inner loop (protects the phone
+battery). Neither can strand the other.
+
+**Tier 3 — buy the second panel (~$20).** Per the doc's own ranking this is cheaper than any of
+the above engineering, and it's the only fix that addresses the cloudy-run deficit rather than
+rationing around it.
+
+### Charger wiring — the gotchas
+
+- **Mini360 won't cut it.** MP2307, 17×11 mm, no heatsink: rated 3 A peak but realistically
+  ~1.5 A sustained before it drifts or shuts down. A phone pulling 2 A in a sealed tropical box
+  will cook it. Use a synchronous 5 V/3 A buck (MP1584-class, ~90%). Avoid LM2596 — 75–80%
+  efficiency is ~1 W of heat paid for daily, out of a budget this tight.
+- ⚠️ **Short D+ to D− at the USB socket or you get 500 mA.** A bare buck + soldered socket
+  presents an SDP and Android caps at 500 mA = 2.5 W, which will never keep up with ~1 W
+  continuous *plus* recharging. Shorting the data pins signals DCP → the phone pulls up to ~2 A.
+  Pre-made USB step-down modules usually do this already; **verify with a meter, don't assume.**
+  This one looks exactly like "the solar isn't keeping up" and it isn't.
+- **SuperVOOC will not engage** — it needs OPPO's own brick and handshake. We get plain 5 V, and
+  that's desirable: 10 W instead of 45 W is far less heat in the box.
+- **Set the buck to 5.15–5.2 V** and use a short, thick cable. At 2 A a long thin cable drops
+  below the 4.75 V the phone wants and it silently throttles to trickle. Don't exceed 5.25 V.
+- **Tap at P−, through the BMS** — same rule as everything else (`hardware/3S2P.md`). The phone
+  is a load; it goes through the protection FETs.
+- **Its own 2 A fuse**, so a chafed phone cable can't take the sensors down with it.
+- **Sequence it after the ground fault.** The phone branch shares ground with the node. With ①'s
+  green/ground intermittent still open, don't add a second ground path until that's fixed — one
+  gremlin at a time.
+
+### Two flags before any of this gets built
+
+- **LoRa makes this problem optional.** PCB decision A2 already has LoRa-first with the phone as
+  *one of two* gateway backhauls. If the node talks LoRa, the phone doesn't have to be in the
+  field at all — it sits in the shed on mains and none of this exists. Deciding which variant we
+  actually deploy is free today and expensive after a solar phone-charging rig is built and
+  documented.
+- **A CPH2669 is a current-model phone, not the old one `docs/04` is written around.** Cycling it
+  at 40 °C in a sealed box will visibly degrade it and the doc's fire warning applies in full.
+
+### The measurement plan (do this before building anything)
+
+The doc's own rule is *measure, don't estimate*. Half a day of bench work turns every range above
+into a decision. **Written up as a runnable bench sheet: `docs/bench/03-bench-phone-power.md`.**
+
+1. **Overnight unplugged drain** (battery % + a clock, no equipment) → real autonomy on 19.4 Wh,
+   and the number Tier 1 lives or dies on. Start it tonight.
+2. **Repeat with mobile data OFF** → isolates the modem, tests the poor-signal risk directly.
+3. **Plugged-in steady draw, multimeter in series on the pack side** → the Wh/day budget figure.
+4. **Does the phone actually pull >500 mA on our buck?** → confirms D+/D− is right.
+5. **Mini360 under load: output voltage + case temp after 20 min** → confirms whether it's replaced.
+6. **Confirm the 18650 cell capacity** → every pack number scales off it.
+
+Two things worth recording about the method, because they were the useful realisations:
+
+- **The most important test needs no equipment at all.** In the recommended design the phone is
+  *unplugged* most of the time, so its unplugged drain rate is the number that decides
+  everything — and that's just battery percentage over a night. No USB meter, no waiting for
+  parts, no excuse to defer it.
+- **A multimeter in series beats an inline USB meter here.** A USB meter reads *after* the buck
+  and tells you what the phone draws; we care what the *pack pays*, which is 15–25% more.
+  Measuring on the pack side gives that directly with no efficiency assumption. Use the **10 A
+  jack** — steady draw is ~150 mA but a top-up spike hits ~1 A and would blow the mA fuse.
+
+---
+
 ## 2026-07-17 — This node's relay is active-HIGH: `VALVE_ACTIVE_LOW` → 0
 
 Set `VALVE_ACTIVE_LOW 0` in config.h — the relay board on this node energises on a

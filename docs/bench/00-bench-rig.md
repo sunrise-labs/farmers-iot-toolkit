@@ -2,6 +2,7 @@
 
 > Read this once. Both sensor bench guides build on it.
 > **Guides:** [Soil sensor](01-bench-soil-sensor-rs485.md) · [Water level sensor](02-bench-water-level-rs485.md)
+> **Independent of this rig:** [Base-station phone power](03-bench-phone-power.md) — needs no RS485 chain, so it can run while sensor work is blocked.
 
 ## The power problem, and why the two sensors differ
 
