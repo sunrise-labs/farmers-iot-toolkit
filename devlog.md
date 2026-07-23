@@ -8,6 +8,47 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-23 — First USB-meter reading on the OPPO: 4.93 V / 0.36 A / 1.78 W (a snapshot, not the budget)
+
+Put the OPPO A3 on charge through a USB power meter (photo:
+`hardware/android-charging.webp`). Frame reads:
+
+```
+  4.9319 V   0.3618 A   →  1.78 W  at the USB port
+  20.1 mWh   4.1 mAh    over  00:00:41   (TEnvr 25.2 °C, Set 1)
+```
+
+The numbers cross-check, so they're trustworthy, not a glitchy frame: 20.1 mWh ÷ 4.1 mAh = 4.90 V
+average, and 4.1 mAh over 41 s = 360 mA average — both match the live V/A. Good.
+
+**Two things it genuinely tells us:**
+
+- **The charge path works** — phone accepts power through the meter. Baseline established.
+- ⚠️ **Voltage is already low: 4.93 V at just 0.36 A.** A healthy 5 V source should hold ~5.0–5.1 V
+  under a load this light. There's ~0.07 V of drop before we're even pulling real current — so at
+  the ~2 A a low phone wants, this source+cable would sag under the 4.75 V floor and the phone
+  would throttle to trickle. This is the "short thick cable, set the buck to 5.15–5.2 V" gotcha
+  from `docs/03` showing up on the very first reading. Worth chasing the drop now (cable? meter's
+  own contacts? source?).
+
+**What it does NOT settle — noting so nobody over-reads one frame:**
+
+- **This is not the budget number (bench Test 3).** That needs the phone at ~100 %, in *deployed*
+  config (hotspot + 4G + Node-RED, screen off), read at its *steady* draw. This was a 41-second
+  snapshot at unknown state-of-charge on the bench. 1.78 W here is charge-in current, not the
+  idle floor the pack has to carry forever.
+- **0.36 A can't confirm or deny the 500 mA cap (bench Test 4).** It's *under* 500 mA, so it's
+  ambiguous: either the phone is fairly full and just topping up, or the data pins aren't shorted
+  and this is a limited port — one frame can't distinguish them. **To test the cap: run the phone
+  LOW, then plug in and watch** — pins at ~500 mA = D+/D− open (bad); climbs toward ~2 A = shorted
+  (good).
+
+Next: leave it on the meter through the deployed config and read the steady plateau (Test 3), and
+separately drain the phone and watch the peak (Test 4). Bench sheet:
+`docs/bench/03-bench-phone-power.md`.
+
+---
+
 ## 2026-07-23 — The cells are Samsung INR18650-32E: the pack is 70 Wh, not 55
 
 Datasheet arrived and is now in `hardware/18650-cells-INR18650-32E.pdf` (Samsung SDI, v2.0,
