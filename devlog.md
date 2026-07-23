@@ -8,44 +8,50 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
-## 2026-07-23 — First USB-meter reading on the OPPO: 4.93 V / 0.36 A / 1.78 W (a snapshot, not the budget)
+## 2026-07-23 — USB-meter readings on the OPPO from a PC port (a charge curve, NOT the budget)
 
-Put the OPPO A3 on charge through a USB power meter (photo:
-`hardware/android-charging.webp`). Frame reads:
+Put the OPPO A3 on charge through a USB power meter. **Source is a PC USB port, not the 3S2P
+pack** — important for how these read. Two frames, ~27 min apart:
 
 ```
-  4.9319 V   0.3618 A   →  1.78 W  at the USB port
-  20.1 mWh   4.1 mAh    over  00:00:41   (TEnvr 25.2 °C, Set 1)
+  frame 1  hardware/android-charging.webp    4.9319 V  0.3618 A  → 1.78 W   00:00:41  25.2 °C
+  frame 2  hardware/android-charging-2.webp  5.0312 V  0.0663 A  → 0.33 W   00:27:46  25.8 °C
+                                             303.0 mWh  60.7 mAh accumulated (Set 1)
 ```
 
-The numbers cross-check, so they're trustworthy, not a glitchy frame: 20.1 mWh ÷ 4.1 mAh = 4.90 V
-average, and 4.1 mAh over 41 s = 360 mA average — both match the live V/A. Good.
+Both frames cross-check internally (mWh÷mAh and mAh÷time both reproduce the live V/A), so they're
+real. Cumulative average over the 27:46 run: **131 mA / 0.66 W**. The current **tapered 362 → 66
+mA** — a textbook charge curve flattening as the phone fills. Frame 2 is near-full trickle.
 
-**Two things it genuinely tells us:**
+**What the two load points measure together — series resistance:**
 
-- **The charge path works** — phone accepts power through the meter. Baseline established.
-- ⚠️ **Voltage is already low: 4.93 V at just 0.36 A.** A healthy 5 V source should hold ~5.0–5.1 V
-  under a load this light. There's ~0.07 V of drop before we're even pulling real current — so at
-  the ~2 A a low phone wants, this source+cable would sag under the 4.75 V floor and the phone
-  would throttle to trickle. This is the "short thick cable, set the buck to 5.15–5.2 V" gotcha
-  from `docs/03` showing up on the very first reading. Worth chasing the drop now (cable? meter's
-  own contacts? source?).
+Voltage *rose* (4.93 → 5.03 V) as current *fell* (362 → 66 mA). That's load-dependent IR drop, and
+two points solve it:
 
-**What it does NOT settle — noting so nobody over-reads one frame:**
+- Effective series R (PC-port cable + connectors + meter) ≈ **0.34 Ω**, implied open-circuit
+  ≈ 5.05 V.
+- Extrapolated, **at 2 A the terminal voltage would fall to ~4.4 V — under the 4.75 V floor**, at
+  which point the phone throttles to trickle.
 
-- **This is not the budget number (bench Test 3).** That needs the phone at ~100 %, in *deployed*
-  config (hotspot + 4G + Node-RED, screen off), read at its *steady* draw. This was a 41-second
-  snapshot at unknown state-of-charge on the bench. 1.78 W here is charge-in current, not the
-  idle floor the pack has to carry forever.
-- **0.36 A can't confirm or deny the 500 mA cap (bench Test 4).** It's *under* 500 mA, so it's
-  ambiguous: either the phone is fairly full and just topping up, or the data pins aren't shorted
-  and this is a limited port — one frame can't distinguish them. **To test the cap: run the phone
-  LOW, then plug in and watch** — pins at ~500 mA = D+/D− open (bad); climbs toward ~2 A = shorted
-  (good).
+So the "4.93 V looks low" note from the first frame was right and is now quantified. ⚠️ **But this
+resistance is a PC USB port and its cable — not the deployed pack→buck→cable path.** It does not
+condemn the field rig; it demonstrates the mechanism, and it's exactly why `docs/03` says short
+thick cable + set the buck to 5.15–5.2 V. The number that matters must be re-measured on the real
+buck.
 
-Next: leave it on the meter through the deployed config and read the steady plateau (Test 3), and
-separately drain the phone and watch the peak (Test 4). Bench sheet:
-`docs/bench/03-bench-phone-power.md`.
+**What these frames do NOT settle — the source rules them out structurally:**
+
+- **Not the budget number (bench Test 3).** That needs the phone at ~100 % in *deployed* config
+  (hotspot + 4G + Node-RED, screen off) at its *steady* draw off the pack. This is charge-in
+  current on a PC port, tapering to trickle — a different thing entirely.
+- **Cannot test the 500 mA cap (bench Test 4), and not because of the number.** A PC port
+  enumerates the phone as a data host (SDP), so the phone caps *itself* and will never ask for the
+  ~2 A DCP path regardless of D+/D−. The 66 mA here is near-full trickle, not a cap. **Test 4 only
+  works off the pack+buck path with the phone run LOW** — pinned at ~500 mA = D+/D− open (bad),
+  climbing toward ~2 A = shorted (good).
+
+Next, both off the pack (not the PC): steady plateau in deployed config (Test 3), and a low-phone
+peak (Test 4). Bench sheet: `docs/bench/03-bench-phone-power.md`.
 
 ---
 
