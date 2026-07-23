@@ -11,8 +11,11 @@ You don't have a bench 12 V supply. You have the **3S2P Li-ion pack**. That pack
 | State | Voltage |
 |---|---|
 | Full charge | 12.6 V |
-| Nominal | 11.1 V |
+| Nominal | 10.95 V |
 | Empty (cutoff) | ~9.0 V |
+
+(Cells are Samsung INR18650-32E — 3200 mAh, 3.65 V nominal, so the pack is 6.4 Ah / **~70 Wh**.
+Datasheet in `hardware/`, pack details in `hardware/3S2P.md`.)
 
 Now compare that against what each sensor demands — straight from the manuals in `hardware/`:
 

@@ -26,7 +26,7 @@ prototype with one board a farmer can build, deploy, and repair.
 | Soil sensor | THC-S, RS485 Modbus, **4800 8N1**, addr 1, runs **4.5–30V** (pack-direct), regs 0x0000–2 | docs/02, farm-node.ino |
 | Both sensors | Ship as **slave address 1** from factory; blind register writes can brick them | docs/01, docs/02 |
 | Valve | 12V solenoid, normally-closed, needs flyback diode (1N5819), ~0.5–1A inrush | docs/02 |
-| Battery | 3S2P 18650, 12.6V full → sags to ~9.0–9.6V near cutoff | hardware/3S2P.md |
+| Battery | 3S2P **Samsung INR18650-32E** (3200mAh, 3.65V nom) → 6.4Ah / **~70Wh**, 10.95V nom, 12.6V full → sags to ~9.0–9.6V near cutoff. **Charge rated 0–45°C only**; 12.8A max discharge; ~53mΩ pack | hardware/3S2P.md, hardware/18650-cells-INR18650-32E.pdf |
 | Charger | CN3722 MPPT buck, CV set 12.6V, needs panel ≥~15V; **3S chosen over 4S for chargeability** | hardware/3S2P.md |
 | Panel | 20W, Vmp 18.6V@25°C (~16.5V hot), Voc ~22V, Isc ~1.1A | hardware/3S2P.md |
 | Valve sag risk | 12V solenoid may not pull in below ~15% SoC — **unsolved in prototype**, must be designed | STATUS.md, docs/02 |

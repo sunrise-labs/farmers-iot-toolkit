@@ -304,23 +304,30 @@ Never above 5.25 V.
 
 ---
 
-## Test 6 — Confirm the 18650 cell capacity (5 minutes, do it while something else runs)
+## ~~Test 6 — Confirm the 18650 cell capacity~~ ✅ **ANSWERED 2026-07-23, no bench work needed**
 
-**Why:** Every pack number in `docs/03` and `devlog.md` is derived from an assumed ~2500 mAh
-cell. If the cells are actually 2000 mAh, every autonomy figure is 20% optimistic. If they're
-salvaged laptop cells, it could be much worse.
+The cells are **Samsung SDI INR18650-32E** — datasheet now in
+`hardware/18650-cells-INR18650-32E.pdf`. That closes this test from paper:
 
-- Read the printed capacity off the cells
-- Note the brand and whether they were new or salvaged
-- If salvaged or unbranded, **treat the printed number as fiction** and assume 60–70% of it —
-  cheap 18650s are routinely relabelled, and a "5000 mAh" 18650 does not exist
+| | |
+|---|---|
+| Cell capacity | **3200 mAh** typical (3100 min) |
+| Cell nominal | **3.65 V** — not the 3.7 V that gets assumed |
+| Pack | 6.4 Ah × 10.95 V = **~70 Wh** |
+| Usable at 80 % DoD (emergency) | **56 Wh** |
+| **Everyday usable (~55 %)** | **~38 Wh** ← use this one |
+
+**This was 27 % more pack than the docs assumed**, so every autonomy figure below improved.
+It does **not** change which Tier you build — the panel is the constraint, not the bucket.
+
+> **Still worth 60 seconds at the bench:** pull one cell and check the wrapper actually says
+> INR18650-32E. The datasheet tells you what was *ordered*; the wrapper tells you what
+> *arrived*. Relabelled 18650s are common enough that this is cheap insurance — and if they
+> turn out to be something else, redo the sums with `mAh × 2 × 10.95 ÷ 1000`.
 
 ```
-Cell marking:     ____________________
-Claimed mAh:      ____
-Realistic mAh:    ____
-Pack total:  claimed_mAh × 2 × 11.1 V ÷ 1000  =  ____ Wh
-Everyday usable (×0.55):                          ____ Wh
+Wrapper says:     ____________________   (expect: INR18650-32E)
+Matches?          Y / N   — if N, recompute everything below
 ```
 
 ---
@@ -330,7 +337,7 @@ Everyday usable (×0.55):                          ____ Wh
 When you're done, you should be able to complete this sentence and stop guessing:
 
 > The phone draws **____ W** unplugged and **____ W** plugged in, of which **____ W** is the
-> modem. On a **____ Wh** usable pack against a 20 W panel, that means we build **Tier ____**.
+> modem. On a **~38 Wh** usable pack against a 20 W panel, that means we build **Tier ____**.
 
 Then update:
 - `STATUS.md` → the "How to power the base-station phone in the field" open decision → resolved

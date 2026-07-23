@@ -123,7 +123,7 @@ Solar-powered LoRa field node: socketed Heltec WiFi LoRa 32 V3 + 3S2P 18650 powe
 | Buck 5V | **MP1584** or **TPS563201** | From VBAT |
 | Boost 18V | **MT3608**(bare) / **MP3423** | Low-current, water probe only |
 | Rev-pol | P-FET ideal diode (e.g. **DMP3017SFG**) | On battery + solar inputs |
-| Charge temp cutoff | **10k NTC** on cells → **CN3722 NTC pin** | The MPPT already has a temp-sense input (3S2P.md flagged it unpopulated) — populate it; no extra IC |
+| Charge temp cutoff | **10k NTC** on cells → **CN3722 NTC pin**, **trip at 45 °C** | The MPPT already has a temp-sense input (3S2P.md flagged it unpopulated) — populate it; no extra IC. 45 °C is the INR18650-32E's rated **charge** ceiling (discharge is fine to 60 °C) — a spec number, not a guess |
 | LED/GPIO expander | **PCF8574** (I²C) *if not using SC16IS752 GPIO* | Offloads ~7 status LEDs + soil selects |
 | Brown-out detect | voltage supervisor + reservoir/supercap | Fires H-bridge close as rail collapses |
 | Connectors | GX16-4 (water), GX12-4 ×4 (soil), screw terminals (valve/solar) | Panel-mount, pigtail to board headers (F2) |

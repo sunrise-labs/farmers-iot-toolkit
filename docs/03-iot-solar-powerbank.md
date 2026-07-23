@@ -22,6 +22,12 @@ batteries:
     quantity: 6
     configuration: "3S2P (3 in series, 2 in parallel)"
     approx_cost_usd: 15
+    ours: "Samsung SDI INR18650-32E — 3200mAh, 3.65V nominal. Datasheet in hardware/"
+    notes: >
+      Any 18650 works. Capacity sets your energy budget, so use the real figure
+      from the wrapper, not a guess — and treat unbranded or salvaged cells as
+      60-70% of whatever they claim. Charging is only rated to 45C; see the
+      temperature warning in the safety section.
 
 solar:
   - name: "20W solar panel (Vmp 18.6V)"
@@ -59,7 +65,8 @@ total_approx_cost_usd: 75
 power_source: "20W solar panel"
 power_output: "5V USB (via DC-DC converter)"
 power_notes: >
-  The 3S2P battery pack gives roughly 11.1V nominal (12.6V fully charged).
+  The 3S2P battery pack gives roughly 11V nominal (12.6V fully charged, ~70Wh
+  stored with 3200mAh cells).
   A buck converter steps this down to 5V for USB-powered devices.
   With 6 batteries, this can power a sleeping ESP32 for many days without sun.
   Devices that never sleep — especially a phone running a WiFi hotspot — will
@@ -107,7 +114,7 @@ ESP32 devices around the clock. A protection board keeps the batteries safe.
 
 | # | Part | What it does | Est. cost | Link to buy |
 |---|------|-------------|-----------|-------------|
-| 1 | 18650 lithium batteries (x6) | Store energy from the solar panel | ~$15 | *(add link)* |
+| 1 | 18650 lithium batteries (x6) — ours are Samsung INR18650-32E, 3200mAh | Store energy from the solar panel | ~$15 | *(add link)* |
 | 2 | 20W solar panel, **Vmp 18.6V** | Charges the batteries using sunlight | ~$20 | *(add link)* |
 | 3 | 3S BMS board | Protects batteries from damage (overcharge, short circuit) | ~$5 | *(add link)* |
 | 4 | Solar charge controller (3S lithium) | Manages charging from the solar panel | ~$10 | *(add link)* |
@@ -160,7 +167,27 @@ ESP32 devices around the clock. A protection board keeps the batteries safe.
 - **Always include a fuse** — it cuts power if something goes wrong
 - **Keep batteries dry** — use a sealed, weatherproof enclosure
 - **Buy batteries from reputable sellers** — cheap fakes can be unsafe
+- **Never charge a hot battery** — see the note below, this is the one that catches solar builds
 - **If a battery looks swollen, smells bad, or gets very hot, stop using it immediately and dispose of it safely**
+
+> ### ⚠️ Charging has a temperature limit, and discharging doesn't (much)
+>
+> Look at what our cells' datasheet actually permits:
+>
+> | | Allowed temperature |
+> |---|---|
+> | **Charging** | **0 to 45 °C** |
+> | Discharging | −20 to 60 °C |
+>
+> That gap is the important part. A sealed box in tropical sun runs 20–30 °C above
+> the air outside — so at midday it can easily be **above 45 °C inside**, which is
+> exactly when the panel is trying hardest to charge. *Powering* your sensors in
+> that heat is fine. *Charging* in it damages the cells and, over time, is how a
+> pack starts to swell.
+>
+> **What to do:** shade and vent the enclosure (as above), and if you are building
+> the PCB version, fit the temperature sensor that pauses charging when the cells
+> get hot. Check your own cells' datasheet — most 18650s are similar, but confirm.
 
 > ### ⚠️ If you power a phone from this: do not leave it at 100% in a hot box
 >
@@ -194,17 +221,36 @@ ESP32 devices around the clock. A protection board keeps the batteries safe.
 This sounds complicated but it is simple:
 
 - **3S** = 3 batteries connected in **series** (end to end) — this adds up
-  the voltage (3.7V x 3 = 11.1V nominal, 12.6V when fully charged)
+  the voltage (3.65V x 3 = ~11V nominal, 12.6V when fully charged)
 - **2P** = 2 of these 3-battery chains connected in **parallel** (side by
   side) — this doubles the capacity so it lasts longer
 
 ```
-  Group A:  [bat1]--[bat2]--[bat3]  = 11.1V
+  Group A:  [bat1]--[bat2]--[bat3]  = 11V
                       +
-  Group B:  [bat4]--[bat5]--[bat6]  = 11.1V
+  Group B:  [bat4]--[bat5]--[bat6]  = 11V
 
-  A and B in parallel = 11.1V, double the capacity
+  A and B in parallel = 11V, double the capacity
 ```
+
+### How much energy is actually in there?
+
+Look up your cells' capacity in mAh (printed on the wrapper) and multiply:
+
+```
+  mAh  x  2 (the two parallel chains)  x  11V  ÷ 1000  =  watt-hours stored
+```
+
+Ours are **Samsung INR18650-32E, 3200mAh** (datasheet in `hardware/`), so:
+
+```
+  3200  x  2  x  11  ÷ 1000  =  ~70 Wh
+```
+
+> **Check the number on the wrapper before you trust it.** Cheap and salvaged
+> 18650s are routinely relabelled — if yours are unbranded, or claim something
+> like "5000mAh" (no such 18650 exists), assume 60–70% of the printed figure.
+> A pack built on a fictional capacity will surprise you on the first cloudy week.
 
 ### Why 3 in series and not 4?
 
@@ -426,13 +472,14 @@ A heavily overcast tropical day collects only **10–25%** of a clear day:
 | Sensors + duty-cycled phone (~22–29 Wh/day) | ✅ surplus | ❌ **deficit of 7–23 Wh/day** |
 
 With the phone attached, a wet-season cloud sequence drains the pack in roughly
-**2–4 days — under 2 days in the worst case.** That is the number to design
+**2–5 days — still under 2 days in the worst case.** That is the number to design
 against, not the sunny-day margin.
 
-> **A caution about the "usable" figure.** The 44Wh usable number assumes draining
-> the pack to 80%, which is an *emergency* depth, not an everyday one. Cycling that
-> deep daily in tropical heat wears the cells out in a year or two. For everyday
-> planning, treat usable as ~28–33Wh — which halves the autonomy above again.
+> **A caution about the "usable" figure.** Our ~70Wh pack gives **56Wh** if you
+> drain it to 80% depth — but that is an *emergency* depth, not an everyday one.
+> Cycling that deep daily in tropical heat wears the cells out in a year or two.
+> For everyday planning treat usable as **~38Wh** (about 55%), which roughly halves
+> the autonomy above again.
 
 ### The cheapest fix is almost always another panel
 
@@ -481,10 +528,10 @@ Look at the two numbers side by side:
 
 | | Energy stored |
 |---|---|
-| The 3S2P pack, everyday-usable | ~28–33 Wh |
+| The 3S2P pack, everyday-usable | ~38 Wh |
 | **The phone's own battery** (5100 mAh) | **~19.4 Wh** |
 
-**The phone is carrying two-thirds of a second pack, and most people treat it purely
+**The phone is carrying half of a second pack, and most people treat it purely
 as a load.** So stop charging it constantly. Charge it in bursts when the sun is
 making surplus, and let it coast on its own battery overnight — exactly as it would
 in your pocket.

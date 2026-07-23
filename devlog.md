@@ -8,6 +8,58 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-23 — The cells are Samsung INR18650-32E: the pack is 70 Wh, not 55
+
+Datasheet arrived and is now in `hardware/18650-cells-INR18650-32E.pdf` (Samsung SDI, v2.0,
+made in Korea). It closes the "confirm the cell capacity" caveat that every pack number in this
+project was hanging off.
+
+| | Was assumed | Actually |
+|---|---|---|
+| Cell capacity | ~2500 mAh (back-derived) | **3200 mAh** typical, 3100 min |
+| Cell nominal | 3.7 V | **3.65 V** |
+| Pack nominal | 11.1 V | **10.95 V** |
+| Pack energy | ~55 Wh | **~70 Wh** (6.4 Ah × 10.95 V) |
+| Usable @ 80 % DoD | 44 Wh | **56 Wh** |
+| Everyday usable (~55 %) | 28–33 Wh | **~38 Wh** |
+
+**27 % more pack than the docs were designed against**, which improves every autonomy figure —
+phone-attached wet-season drain goes from ~2–4 days to ~2–5 days, and phone autonomy from
+0.5–1.3 days to 0.6–1.5.
+
+**It changes no design conclusion.** The binding constraint on this system was never the size of
+the bucket, it's the 20 W panel's daily harvest. `docs/03` already says this better than I can:
+more batteries don't make the tap run faster. Tier selection for the phone charger is unchanged
+and still waits on the measurement.
+
+### Three things the datasheet settles that we'd been hand-waving
+
+- ⚠️ **Charging is rated 0–45 °C. Discharging is fine to −20…60 °C.** That asymmetry is the
+  useful part: *powering* sensors in a hot box is fine, *charging* in one is not — and a sealed
+  box in tropical sun runs 20–30 °C over ambient at exactly the hour the panel is pushing
+  hardest. The NTC charge-temperature cutoff already chosen in `pcb/DESIGN-BRIEF.md` (C2) now
+  has a trip point with a spec behind it rather than a general worry about heat. Set it at 45 °C;
+  recorded in `ATO-HANDOFF.md`.
+- **The sag to ~9.0 V is state-of-charge, not impedance.** ≤35 mΩ/cell → ~53 mΩ for the pack, so
+  a 1 A load costs ~53 mV and 2 A costs ~105 mV. When the valve question talks about "a pack
+  that sags to 9.0 V", that's a *discharged* pack — not the solenoid pulling it down. A 0.5–1 A
+  inrush is nothing to cells rated 6.4 A continuous (12.8 A for the pack). Doesn't solve the
+  valve pull-in problem, but it does rule out one suspect: don't go looking for dynamic sag.
+- **The MPPT can't overdrive these cells.** 20 W panel through the CN3722 tops out around 1.6 A
+  at 12.6 V, under the 1.92 A pack standard-charge current (2 × 960 mA). No derating needed.
+
+### Propagated to
+
+`hardware/3S2P.md` (source of truth — full spec table + a "what the datasheet corrected"
+comparison), `docs/03` (frontmatter, parts table, the 3S2P explainer now has a "how much energy
+is actually in there?" worked example, the usable-figure caution, the phone-as-second-pack
+table, and a new ⚠️ safety box on the charge-temperature limit), `docs/bench/00-bench-rig.md`,
+`docs/bench/03-bench-phone-power.md` (Test 6 struck out as answered — but keep the 60-second
+wrapper check, since the datasheet says what was *ordered* and the wrapper says what *arrived*),
+`pcb/DESIGN-BRIEF.md`, `pcb/ATO-HANDOFF.md`, `STATUS.md`.
+
+---
+
 ## 2026-07-22 — Powering the base-station phone off the pack: duty-cycle the CHARGER, not the phone
 
 The field phone is an **OPPO A3 4G (CPH2669)**: 5100 mAh (**~19.4 Wh**), Snapdragon 6s Gen 1,
@@ -30,12 +82,14 @@ Screen off, hotspot up, 4G attached, Node-RED running. Buck loss taken at 85%:
 
 Against a 20 W panel: **50–60 Wh clear, 6–15 Wh heavy overcast.** So a clear day is break-even
 at best and a deficit at worst — marginal *in full sun* — and an overcast run is a 10–56 Wh/day
-deficit. With ~28–33 Wh everyday-usable in the pack that's **0.5–1.3 days of autonomy.**
+deficit. With ~38 Wh everyday-usable in the pack that's **0.6–1.5 days of autonomy.**
+*(Updated 2026-07-23 — was 0.5–1.3 on the pre-datasheet 28–33 Wh estimate.)*
 
 Mauke is a small island a long way from a tower, so the poor-signal row is a live risk, not a
-hypothetical. A straining modem can outdraw everything else on the phone combined. ⚠️ The pack
-figure is derived from the doc's "44 Wh at 80% DoD", implying ~2500 mAh cells — **confirm the
-actual cell capacity**, every number here scales off it.
+hypothetical. A straining modem can outdraw everything else on the phone combined. ~~⚠️ The pack
+figure is derived from the doc's "44 Wh at 80% DoD", implying ~2500 mAh cells — confirm the
+actual cell capacity.~~ **Resolved 2026-07-23: Samsung INR18650-32E, 3200 mAh → pack is ~70 Wh,
+~38 Wh everyday-usable. See the entry above.**
 
 ### Why you can't just make the phone sleep
 
@@ -50,8 +104,8 @@ Three facts that kill the obvious approach:
 
 ### The reframe: the phone's own battery IS the night buffer
 
-19.4 Wh in the phone vs ~28–33 Wh everyday-usable in the pack. The phone is carrying **60–70% of
-a second pack** and we were treating it as a load. Charge it in bursts from daytime surplus and
+19.4 Wh in the phone vs ~38 Wh everyday-usable in the pack. The phone is carrying **half a
+second pack** and we were treating it as a load. Charge it in bursts from daytime surplus and
 let it coast on its own cell overnight. Three wins at once: skips the pack's round-trip loss,
 removes the "sits at 100% in a hot box" fire/degradation mode `docs/03` already calls *when, not
 if*, and puts the field gear ahead of the phone in the failure order.
