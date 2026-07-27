@@ -9,6 +9,7 @@ self-contained Arduino sketch for the **ESP8266 NodeMCU**.
 | `farm-node/` | ①+② combined — both sensors on one ESP8266, POSTs each | **Proven on hardware.** What Ian's farm runs |
 | `bench-both/` | Bench tool — both sensors, serial only, dumps raw frames on failure | Bench tool, not a deliverable |
 | `soil-moisture/` | ② Soil moisture + irrigation valve (THC-S, RS485) | Not started — the *sensor* half is proven in `farm-node/`; this folder is for the standalone module plus the valve logic |
+| `soil-node-sleep/` | ② sensor-only **deep-sleep** variant — battery-swap, no panel, no valve | **Compile-verified, not yet flashed.** Wakes every N min, reads, POSTs, sleeps. Needs the **D0→RST jumper** (fitted *after* flashing). Build guide: `docs/deep-sleep-soil-node.md` |
 
 > **`water-level.ino` drives D1 as a DE pin. Do not run it on a combined node** — D1
 > is soil's HW-0519 TXD there, and an auto-direction board derives transmit-enable
@@ -117,6 +118,8 @@ across the whole flash and reboot.
 
 **Gotcha:** OTA needs the radio awake. If a node is ever put into deep sleep to save
 battery, it can't be reflashed while asleep — wake it (schedule or reset) first.
+This is why `soil-node-sleep/` has no OTA at all: awake ~15 s per cycle is too short
+a window to catch. That node reflashes over USB only, with its D0→RST jumper pulled.
 
 ## How data reaches the base station
 
