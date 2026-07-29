@@ -3,7 +3,7 @@
 title: "Deep-Sleep Soil Node (battery-swap variant)"
 module_id: null        # variant of Module 2's sensor half, not a fifth module
 difficulty: medium
-status: in-progress    # firmware written + compile-verified; not yet bench-proven
+status: testing        # bench-proven 2026-07-28 on a Winbond-flash board; field soak pending
 
 # ---- What It Does (plain language) ----
 summary: >
@@ -99,15 +99,15 @@ a second bed, a far corner, or anywhere a panel isn't worth rigging — build th
 | Sensor | THC-S over RS485/Modbus, 4800 8N1, address 1, registers 0x0000–0x0002 |
 | Transceiver | HW-0519 auto-direction — **no DE pin, ever** |
 | Pins | RS485 on **D6 (RX) / D5 (TX)** — same as farm-node's soil bus. **D0→RST** wake jumper. Optional: **D2** sensor-power FET gate, **A0** battery gauge |
-| Power | 1S3P/1S4P holder → **MT3608 @ 5.0–5.2 V** → NodeMCU Vin + MAX485 VCC + THC-S brown |
-| Cycle | wake → read (5 retries) → join WiFi (15 s cap) → POST JSON → sleep `SLEEP_MINUTES` (default 10, max 60) |
+| Power | 1S3P/1S4P holder → **MT3608 @ 5.0–5.2 V** → NodeMCU Vin + THC-S brown. MAX485 VCC from the ESP **3V3** pin |
+| Cycle | wake → read (5 retries) → join WiFi (25 s cap) → POST JSON → sleep `SLEEP_MINUTES` (default 10, max 60). Measured awake time: **4.2 s** when WiFi joins promptly |
 | Reporting | POST to `/soil` on the gateway (= the hotspot phone), same JSON as farm-node plus `vbat`, `sleep_min`, `awake_ms`. Failed reads still POST `"ok":false` |
 | Low battery | with the gauge fitted: below 3.30 V it POSTs `"low_battery":true` and sleeps until you swap cells and press reset |
 
 ## The battery math
 
 Assumptions: Samsung INR18650-32E cells (3100–3200 mAh each), 10-minute cycle,
-~15 s awake at ~80 mA per wake (≈2 mA average), NodeMCU + boost sleep floor
+~15 s awake at ~80 mA per wake (≈2 mA average; bench-measured 4.2 s on good cycles, so this is conservative), NodeMCU + boost sleep floor
 ~4 mA, MAX485 idle ~1 mA, THC-S idle ~10–15 mA *when left powered*.
 
 | Build | Average draw | 1S3P (~9.6 Ah) | 1S4P (~12.8 Ah) |
@@ -140,8 +140,8 @@ a schedule, not when the node goes quiet.
             │   before wiring any loads │  │
             │                           │  │
             │              MAX485 HW-0519  │
-            │                VCC ◄──────┘  │
-            │                GND ◄─────────┘
+            │                VCC ◄── NodeMCU **3V3** pin (NOT the 5 V rail —
+            │                GND ◄─────────┘   3.3 V logic into D6, matches farm-node)
             │                RXD ──── D6
             │                TXD ──── D5      (auto-direction — NO DE pin)
             │                A ────── THC-S yellow
@@ -160,6 +160,29 @@ Sensor wire colours are the same as every other soil doc in this toolkit:
 probe never answers, A/B swapped is the first suspect.
 
 ## Build steps
+
+### 0. Check your board's flash chip — before building anything
+
+Deep sleep has a hardware prerequisite that nothing on the board's silkscreen
+tells you: **the flash chip must wake from power-down fast enough for the boot
+ROM.** Brand-name flash (Winbond, GigaDevice) does; the anonymous clone flash
+on many NodeMCU boards does not — those boards *sleep* fine but never wake (the
+reset fires, the boot ROM starts, and it hangs trying to read firmware from a
+chip that's still asleep). We lost two days to this; you get to spend one minute:
+
+```bash
+python3 ~/.arduino15/packages/esp8266/hardware/esp8266/<ver>/tools/esptool/esptool.py \
+    --port /dev/ttyUSB0 flash_id
+```
+
+| `Manufacturer:` | Verdict |
+|---|---|
+| `ef` (Winbond) or `c8` (GigaDevice) | ✅ build the sleep node on this board |
+| anything else (we hit `c4`) | ❌ **don't** — it will zombie on wake. The board is still perfectly good for always-on nodes (Module ② / farm-node); label it and pick another for sleeping |
+
+If every board you own fails the check, a 100 nF cap from RST to GND *sometimes*
+rescues them (it stretches the reset, buying the flash time) — but treat that as
+a salvage attempt, not a design. Buy a board with real flash.
 
 ### 1. Set the boost voltage — before anything is connected
 
@@ -288,9 +311,23 @@ pins.
 
 ## Gotchas
 
-- **Flashing fails with the D0→RST jumper fitted.** D0 fights the auto-reset
-  circuit and `esptool` times out at `Connecting...`. Pull it, flash, refit.
-  This will bite you exactly once per forgotten time.
+- **The node sleeps but never wakes → it's almost certainly the flash chip.**
+  See step 0. The tell on serial: the wake reset fires on time, you get a burst
+  of boot noise, and the sketch never starts — while the reset *button* always
+  works (a long press gives the flash time to wake; the ~100 µs D0 pulse
+  doesn't). Don't spend time on the jumper, a diode, or the power supply first —
+  we did, and it was the flash chip all along (devlog 2026-07-28).
+- **Flashing fails with the D0→RST jumper fitted.** D0 actively drives the RST
+  line while the chip is awake, fighting the auto-reset circuit — `esptool`
+  times out at `Connecting...`. Pull it, flash, refit. This will bite you
+  exactly once per forgotten time.
+- **A sleeping node can't keep the phone's hotspot alive.** An always-on node
+  holds a connection, so Android never sees "no clients". This node is
+  disconnected ~95 % of the time — if the phone auto-disables its idle hotspot
+  (many do), every wake finds no network. Turn off the hotspot's auto-off /
+  timeout setting, and remember the base station phone must itself stay
+  charged — a flat phone looks exactly like a broken node from the data's
+  point of view.
 - **No OTA, on purpose.** The node is awake ~15 s per cycle — too short a window
   to catch for a wireless flash, and firmware listening for OTA is firmware
   burning battery. Reflashing means walking to the node with a cable. Weigh that

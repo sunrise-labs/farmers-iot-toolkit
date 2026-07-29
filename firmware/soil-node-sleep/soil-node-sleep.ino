@@ -177,8 +177,12 @@ void goToSleep() {
   Serial.printf("SLEEP  %d min  (awake %lu ms)\n", SLEEP_MINUTES, millis() - wokeAt);
   Serial.flush();
 #if !BENCH_MODE
-  WiFi.disconnect(true);
-  delay(10);
+  // Shut the radio down CLEANLY and give it time to finish before sleeping.
+  // deepSleep() entered mid-WiFi-teardown can hang some boards permanently
+  // ("zombie mode" — asleep-looking, never wakes, only a power cycle recovers).
+  // WiFi.disconnect(true) immediately before sleep is the classic trigger.
+  WiFi.mode(WIFI_OFF);
+  delay(100);
 #endif
   // ESP.deepSleep() maxes out around 71 minutes (32-bit us timer wrapped in
   // uint64). Clamp rather than silently wrapping to a bogus interval.
@@ -319,8 +323,8 @@ void setup() {
                   vbat, VBAT_CUTOFF_V);
     sensorPowerOff();
     Serial.flush();
-    WiFi.disconnect(true);
-    delay(10);
+    WiFi.mode(WIFI_OFF);   // same clean shutdown as goToSleep() — see note there
+    delay(100);
     ESP.deepSleep(0);   // forever — only a reset wakes it
   }
 

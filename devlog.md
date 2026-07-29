@@ -8,6 +8,74 @@ Format per entry: date, what we were doing, what bit us, and what actually worke
 
 ---
 
+## 2026-07-28 — Deep-sleep soil node: the zombie-wake saga (it's the FLASH CHIP)
+
+Bench bring-up of `firmware/soil-node-sleep/` (built 2026-07-27). Sensor read and the full
+wake→read→WiFi→POST→sleep cycle worked first try. **Self-wake did not** — and the two days of
+suspects that followed are worth recording precisely because every one of them was reasonable
+and wrong.
+
+### The symptom
+
+With D0→RST fitted, the node slept and the wake fired **exactly on schedule** (boot noise on
+serial at sleep+60 s, every time) — but the sketch never ran afterward. Every *button* press
+booted fine. Both NodeMCU boards tried behaved identically.
+
+### Suspects eliminated, in order
+
+1. **The jumper/diode.** Plain wire and a salvaged silicon diode (0.46 V fwd, band to D0)
+   behaved identically. The wake *reset* was always arriving — the failure was after it.
+2. **Sleep-entry ("zombie") firmware pattern.** Replaced `WiFi.disconnect(true)` + 10 ms with
+   `WiFi.mode(WIFI_OFF)` + 100 ms before `deepSleep()`. Good hygiene, changed nothing.
+3. **MT3608 power transient at wake** (RF-cal inrush from a ~4 mA sleep floor). Disproved
+   clean: USB-only power showed the identical failure.
+4. **Boot mode / GPIO0.** Decoded the ROM boot message at its native **74880 baud** —
+   `rst cause:2, boot mode:(3,6)` = *normal flash boot*, not download mode. The ROM then hung
+   **before the first `load` line** — i.e. at the moment it first reads the flash chip.
+
+### The actual cause: clone flash that can't wake from deep-power-down fast enough
+
+`esptool flash_id` on the two failing boards: **Manufacturer 0xC4** (anonymous clone flash).
+A third board from the pile: **0xEF = Winbond W25Q32** — and it self-woke **4/4 with a plain
+wire**, no diode, no cap, 84 s cadence like clockwork. During deep sleep the flash is put into
+deep-power-down; the ~100 µs wake reset gives it microseconds to recover. Winbond makes it;
+the 0xC4 part doesn't, so the ROM reads garbage and hangs. A long button press gives any chip
+time — which is why the thumb always worked and the timer never did.
+
+### ✅ THE RULE: run `flash_id` before trusting deep sleep on any board
+
+```
+python3 <esp8266-core>/tools/esptool/esptool.py --port /dev/ttyUSB0 flash_id
+```
+- `Manufacturer: ef` (Winbond) / `c8` (GigaDevice) → deep sleep works, plain D0→RST wire.
+- Anonymous vendors (`c4` seen here) → expect zombie wakes. **Still fine for always-on
+  nodes** (farm-node) — label the board and don't use it for sleepers.
+
+### Gotchas collected on the way
+
+- **D0→RST (wire OR diode) blocks USB flashing** — GPIO16 drives HIGH while awake, fighting
+  the auto-reset. Pull it to flash, refit after. (`--no-stub` esptool talks to the chip with
+  the diode fitted, but the stub loader dies — not worth relying on.)
+- **`WIFI_TIMEOUT_S 15` was too tight** for the OPPO hotspot — join times observed from 4 s
+  to >15 s. Now 25 s in config.
+- **The hotspot died mid-bench because the phone went flat** — module ④'s open power problem
+  biting on the bench. Related design fact: a *sleeping* node is disconnected ~95 % of the
+  time and **cannot hold an Android hotspot open** the way always-on farm-node does — check
+  the phone's hotspot auto-off setting for sleep-node-only deployments.
+- **A flapping USB device (CP210x re-enumerated 97×) was the CABLE**, not the board. Swap the
+  cable before diagnosing anything USB.
+- **Serial observation can perturb the experiment:** opening the port glitches DTR/RTS and can
+  reset the board (and park C4-flash boards in download mode). Hold one port open across the
+  whole test and use the physical button; decode boot messages at 74880 (needs termios2/BOTHER
+  — stock pyserial won't set it).
+- Measured: **awake 4.2 s/cycle** when WiFi joins promptly (est. was 15 s) — battery estimates
+  in `docs/deep-sleep-soil-node.md` improve accordingly.
+
+**Deployed:** Winbond board + plain wire + 10 min sleep. C4 boards labelled and returned to
+the always-on spares pile.
+
+---
+
 ## 2026-07-23 — USB-meter readings on the OPPO from a PC port (a charge curve, NOT the budget)
 
 Put the OPPO A3 on charge through a USB power meter. **Source is a PC USB port, not the 3S2P

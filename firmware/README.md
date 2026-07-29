@@ -9,7 +9,7 @@ self-contained Arduino sketch for the **ESP8266 NodeMCU**.
 | `farm-node/` | ①+② combined — both sensors on one ESP8266, POSTs each | **Proven on hardware.** What Ian's farm runs |
 | `bench-both/` | Bench tool — both sensors, serial only, dumps raw frames on failure | Bench tool, not a deliverable |
 | `soil-moisture/` | ② Soil moisture + irrigation valve (THC-S, RS485) | Not started — the *sensor* half is proven in `farm-node/`; this folder is for the standalone module plus the valve logic |
-| `soil-node-sleep/` | ② sensor-only **deep-sleep** variant — battery-swap, no panel, no valve | **Compile-verified, not yet flashed.** Wakes every N min, reads, POSTs, sleeps. Needs the **D0→RST jumper** (fitted *after* flashing). Build guide: `docs/deep-sleep-soil-node.md` |
+| `soil-node-sleep/` | ② sensor-only **deep-sleep** variant — battery-swap, no panel, no valve | **Proven on hardware 2026-07-28** — 4/4 self-wakes, reads, POSTs. ⚠️ **Requires brand-name flash** (run `esptool flash_id`: `ef`/`c8` good, clone flash zombies on wake — devlog 2026-07-28). D0→RST wire fitted *after* flashing. Guide: `docs/deep-sleep-soil-node.md` |
 
 > **`water-level.ino` drives D1 as a DE pin. Do not run it on a combined node** — D1
 > is soil's HW-0519 TXD there, and an auto-direction board derives transmit-enable
