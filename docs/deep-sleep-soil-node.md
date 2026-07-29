@@ -177,8 +177,8 @@ python3 ~/.arduino15/packages/esp8266/hardware/esp8266/<ver>/tools/esptool/espto
 
 | `Manufacturer:` | Verdict |
 |---|---|
-| `ef` (Winbond) or `c8` (GigaDevice) | ✅ build the sleep node on this board |
-| anything else (we hit `c4`) | ❌ **don't** — it will zombie on wake. The board is still perfectly good for always-on nodes (Module ② / farm-node); label it and pick another for sleeping |
+| `ef` (Winbond), `c8` (GigaDevice), `20` (XMC) | ✅ build the sleep node on this board — `ef` and `20` both bench-proven here (4/4 and 5/5 self-wakes) |
+| anything else (we hit `c4`) | ❌ **don't** — it will zombie on wake. The board is still perfectly good for always-on nodes (Module ② / farm-node); label it and pick another for sleeping. If a vendor isn't listed, run the 1-minute-sleep wake test before trusting it |
 
 If every board you own fails the check, a 100 nF cap from RST to GND *sometimes*
 rescues them (it stretches the reset, buying the flash time) — but treat that as
