@@ -8,6 +8,19 @@ Option B)
 https://www.aliexpress.com/item/1005004653397155.html
 
 
+# Solar panel
+Voltify Mono PERC Solar Panel 20W 375x350x17mm
+https://www.marine-deals.com.au/rv-solar-panels-chargers/voltify-mono-perc-solar-panel-20w-375x350x17mm/p/177917/c/1686
+AUD $31.99 (SKU 177917) — also sold on the marine-deals NZ site
+
+Mono-crystalline PERC, 32 cells, 15.44% module efficiency
+Max power 20W (+3% tolerance) · Vmp 18.6V · Imp 1.08A · Voc 22.8V · Isc 1.15A
+375 x 350 x 17mm, 2.5kg · anodised aluminium frame with mounting slot
+3.2mm ultra-white tempered glass · bypass diodes · waterproof (marine-rated) junction box
+25-year linear power warranty · IEC 61215 / IEC 61730 / TUV / CE
+Vmp 18.6V suits the CN3722 MPPT above (spec'd for an 18V panel into a 3S pack)
+
+
 # Water level sensor
 ### went with RS485 variant
 Option A)
