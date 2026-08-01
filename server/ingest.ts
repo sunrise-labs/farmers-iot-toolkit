@@ -368,7 +368,7 @@ function renderPage(): string {
                 `<p class="sub">${[
                   l.temp_c != null ? `${l.temp_c} °C` : null,
                   l.ec != null ? `EC ${l.ec}` : null,
-                  l.valve != null ? `valve ${l.valve ? "OPEN" : "shut"}` : null,
+                  l.valve != null ? `valve ${l.valve ? "OPEN" : "closed"}` : null,
                 ]
                   .filter(Boolean)
                   .join(" · ")}</p>`;
@@ -394,20 +394,20 @@ function renderPage(): string {
 
   const valvePanel = `<div class="card valve ${commanded ? "open" : ""}">
     <h2>Master valve</h2>
-    <p class="big">${commanded ? "OPEN" : "SHUT"}</p>
+    <p class="big">${commanded ? "OPEN" : "CLOSED"}</p>
     <p class="sub">commanded ${ago(cmd.updated_at)}${cmd.source ? ` · by ${escapeHtml(cmd.source)}` : ""}${
-      commanded && ttlLeft != null ? ` · auto-shuts in ${ttlLeft} min` : ""
+      commanded && ttlLeft != null ? ` · auto-closes in ${ttlLeft} min` : ""
     }</p>
     <p class="sub ${agrees ? "muted" : "err"}">${
       report == null
         ? "node has not reported a valve position yet"
         : agrees
-          ? `node confirms ${reported ? "open" : "shut"} · ${ago(report.received_at)}`
-          : `⚠ node still reports ${reported ? "OPEN" : "SHUT"} — not applied yet`
+          ? `node confirms ${reported ? "open" : "closed"} · ${ago(report.received_at)}`
+          : `⚠ node still reports ${reported ? "OPEN" : "CLOSED"} — not applied yet`
     }</p>
     <div class="btns">
       <button id="vopen"  ${commanded ? "disabled" : ""}>Open</button>
-      <button id="vshut" ${commanded ? "" : "disabled"}>Shut</button>
+      <button id="vclose" ${commanded ? "" : "disabled"}>Close</button>
     </div>
     <p class="muted" id="vmsg">A command reaches the valve on the node's next report — up to a minute or two.</p>
   </div>`;
@@ -470,7 +470,7 @@ function renderPage(): string {
   .btns button:disabled { opacity:.4; cursor:default; }
   .btns button:not(:disabled):hover { border-color:var(--fg); }
   #vopen:not(:disabled) { color:var(--good); }
-  #vshut:not(:disabled) { color:var(--bad); }
+  #vclose:not(:disabled) { color:var(--bad); }
   .big { font-size:2.2rem; font-weight:600; margin:0; line-height:1.1; }
   .big small { font-size:1rem; color:var(--mut); font-weight:400; }
   .sub { margin:.25rem 0 0; color:var(--mut); font-size:.9rem; }
@@ -520,7 +520,7 @@ async function setValve(state) {
   }
 }
 document.getElementById('vopen').addEventListener('click', () => setValve(1));
-document.getElementById('vshut').addEventListener('click', () => setValve(0));
+document.getElementById('vclose').addEventListener('click', () => setValve(0));
 </script>
 </body></html>`;
 }
