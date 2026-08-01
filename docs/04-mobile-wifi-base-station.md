@@ -375,6 +375,50 @@ When all four modules are running, your system looks like this:
 ```
 
 
+## Seeing your farm from anywhere
+
+The phone has 3G/4G, so it can reach the internet — but the internet cannot reach
+it. Mobile carriers put phones behind **CGNAT**: your phone shares one public
+address with thousands of others, so there is no port to forward and no address to
+type. Everything you read about "port forward to your Raspberry Pi" assumes a home
+broadband line and does not apply here.
+
+There are two honest ways around it, and they solve different problems.
+
+**To read your data from anywhere: push it out.** The phone sends readings to a
+small server you control. Nothing on your farm is ever exposed, it works on any
+carrier without configuration, and it survives dropouts because the phone keeps a
+backlog and re-sends. This is what we deploy — see [`server/`](../server/README.md)
+for the receiver and [`flows/push-to-cloud-flow.json`](../flows/push-to-cloud-flow.json)
+for the eight nodes you import into Node-RED. Cost on a metered SIM is tiny: about
+60 requests a day.
+
+**To edit your flows from anywhere: use a tunnel.** [Tailscale](https://tailscale.com)
+is the least trouble — install the Android app, sign in, and the phone gets a private
+address only your devices can reach. Note that Android routes tethered hotspot
+clients *around* the VPN, which is exactly what you want: your sensor nodes keep
+talking to the phone locally, untouched.
+
+> ### ⚠️ Do not put the Node-RED editor on the public internet
+> A tunnel like Cloudflare Tunnel or ngrok gives you a public URL in one command,
+> and it is very tempting. But the Node-RED editor can run arbitrary code and, in
+> this build, opens your irrigation valve. If you expose it, set `adminAuth` in
+> `settings.js` **first**. A private tunnel like Tailscale avoids the question
+> entirely.
+
+> ### ⚠️ Android freezes timers when the phone sleeps
+> This one cost us real debugging. A Node-RED `inject` node set to repeat every 30
+> seconds simply **stops firing** once Android dozes — no error, no warning, and the
+> flow still looks healthy in the editor. Anything you schedule on a timer will
+> quietly stall.
+>
+> Two defences, and you want both. Hold a wake-lock (`termux-wake-lock`, plus
+> Termux set to *Unrestricted* battery — see Step 4). And where you can, make work
+> **event-driven** rather than scheduled: our push flow sends on each arriving
+> reading, because the incoming request has already woken the phone. The repeating
+> inject is kept only as a backstop.
+
+
 ## Notes and learnings
 
 *(This section will be updated as the module is built and tested. We will

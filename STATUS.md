@@ -37,6 +37,11 @@
 - ✅ **Two RS485 buses, not one shared bus (2026-07-16).** Both sensors ship as slave address 1 and run different bauds (soil 4800, water 9600). Sharing one bus would need address *and* baud register writes on sensors we own exactly one of each — where a bad write costs you the ability to talk to the thing at all. A second transceiver (~$1) deletes both problems: one slave per bus, one baud per SoftwareSerial instance, zero writes. Pins: D5/D6 water, D7/D1 soil, D2 relay — all five safe pins spent. See `firmware/farm-node/`.
 - ✅ **Ian's farm runs ONE combined node (2026-07-16)** — both sensors on one ESP8266, one enclosure, one battery. The **module docs still describe two independent nodes**, deliberately: a farmer must be able to build Module ① alone, and that's the better teaching story. Both are true and the flow supports either — each sensor has its own endpoint, so nothing cares where the POST came from.
 
+## Decisions (cont.)
+
+- ✅ **Remote access (2026-08-01): push out, don't expose in.** The base-station phone is behind carrier CGNAT — no inbound port exists. Rather than tunnelling in, Node-RED buffers every reading and POSTs it in batches to **`farm-ingest`** on the hetzner VPS (`server/`, live at `https://farm.sunriselabs.io`). Store-and-forward with a `client_id` dedupe key, so a 4G dropout costs latency and never data. Nothing on the farm is reachable from the internet; a tunnel (Tailscale) stays the answer for *editing flows*, not for telemetry. See `server/README.md`.
+- ⚠️ **Found while building it: Android freezes Node-RED's timers when the phone dozes.** A 30 s repeating `inject` stops firing with no error and the flow still looks healthy. The push is therefore **event-driven** — each arriving reading triggers the drain, because the incoming request has already woken the phone — with the inject kept only as a backstop. Anything else in these flows that relies on a timer is suspect. Wake-lock is still required.
+
 ## Open decisions
 
 - **Website hosting:** on the Float site or Ian's own domain? Affects step 5.

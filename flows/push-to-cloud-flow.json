@@ -1,0 +1,151 @@
+[
+    {
+        "id": "fa11c0de00000001",
+        "type": "comment",
+        "z": "fcafa14fdc883280",
+        "name": "PUSH TO CLOUD — store-and-forward to farm-ingest",
+        "info": "The phone is behind carrier CGNAT, so nothing can dial IN to it. This group\ndials OUT instead: readings are buffered in flow context and POSTed in batches\nto the VPS. Survives 4G dropouts — nothing is deleted from the buffer until\nthe server has answered 200.\n\n**Change the URL or token in the `drain outbox` function** — both live at the\ntop of that one node, nowhere else.\n\nBoth `http in` nodes feed `queue for cloud` directly rather than going through\nthe `store …` functions, because those return null on `ok:false` and the fault\nrows are the ones you most want off the phone.\n\nThe push is EVENT-DRIVEN: every arriving reading triggers a drain. Android\nfreezes Termux's JS timers when the phone dozes, so a purely scheduled push\nsilently stops while everything still looks healthy. An ESP POST has already\nwoken the process, so draining on that event needs no wake-lock. The 30 s\ninject is only a backstop for retrying while no new readings are arriving.\n\n⚠️ The buffer lives in memory. A Node-RED restart drops whatever is queued.\nTo survive restarts, add a filesystem context store in settings.js.",
+        "x": 250,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "fa11c0de00000002",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "queue for cloud",
+        "func": "// Buffer every reading — good AND faulted — for the cloud push.\n//\n// Wired straight off the 'http in' nodes ON PURPOSE. The 'store water'/'store soil'\n// functions return null when ok:false, so tapping them would drop exactly the rows\n// that tell you a probe died. A silent node and a broken probe are different repairs.\n\nconst p = msg.payload || {};\nconst url = (msg.req && msg.req.url) || \"\";\nconst kind = url.indexOf(\"soil\") !== -1 ? \"soil\"\n           : url.indexOf(\"water\") !== -1 ? \"water\"\n           : (p.moisture_pct !== undefined ? \"soil\" : \"water\");\n\n// client_id makes redelivery idempotent. A batch whose response is lost in a 4G\n// dropout gets re-sent; without this key the server would count it twice, and it\n// would do so precisely during bad signal — when the data matters most.\nconst seq = (flow.get(\"pushSeq\") || 0) + 1;\nflow.set(\"pushSeq\", seq);\n\nconst row = Object.assign({}, p, {\n    kind: kind,\n    client_id: kind + \":\" + (p.node || \"unknown\") + \":\" + Date.now() + \":\" + seq\n});\n\nconst outbox = flow.get(\"outbox\") || [];\noutbox.push(row);\n\n// ~17 hours of backlog for two sensors at 60 s. Past that, drop the OLDEST —\n// during a long outage the newest readings are the ones worth having.\nconst CAP = 2000;\nif (outbox.length > CAP) outbox.splice(0, outbox.length - CAP);\nflow.set(\"outbox\", outbox);\n\nnode.status({ fill: outbox.length > 50 ? \"yellow\" : \"grey\", shape: \"ring\", text: \"queued \" + outbox.length });\n\n// Drain right here, on the arriving reading, rather than waiting for the timer.\n//\n// Android freezes Termux's JS timers whenever the phone dozes — a 30 s setInterval\n// simply stops running, and the backlog grows forever while everything LOOKS fine.\n// An incoming POST from the ESP has already woken the process, so draining on that\n// event needs no wake-lock and no scheduler. The inject stays as a backstop.\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 680,
+        "wires": [
+            [
+                "fa11c0de00000004"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000003",
+        "type": "inject",
+        "z": "fcafa14fdc883280",
+        "name": "every 30 s (backstop)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "15",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000004"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000004",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "drain outbox  ← URL + TOKEN HERE",
+        "func": "// ── EDIT HERE: where the readings go ────────────────────────────────────────\nconst INGEST_URL = \"https://YOUR-SERVER.example.com/ingest/batch\";\nconst INGEST_TOKEN = \"PASTE-YOUR-FARM_TOKEN-HERE\";\n// ────────────────────────────────────────────────────────────────────────────\n\nconst BATCH = 50;      // ~8 KB per POST — cheap on a metered SIM\nconst LOCK_MS = 90000; // if a POST neither succeeds nor errors, unstick after this\n\nconst outbox = flow.get(\"outbox\") || [];\nif (outbox.length === 0) {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"up to date\" });\n    return null;\n}\n\n// Don't stack POSTs on top of each other on slow 4G. The server dedupes anyway,\n// but piling requests onto a marginal link only makes the link worse.\nconst lock = flow.get(\"pushLock\") || 0;\nif (Date.now() - lock < LOCK_MS) {\n    node.status({ fill: \"blue\", shape: \"ring\", text: \"sending… (\" + outbox.length + \" queued)\" });\n    return null;\n}\nflow.set(\"pushLock\", Date.now());\n\nconst batch = outbox.slice(0, BATCH);\n\n// NOTHING is removed from the outbox here. Items are only dropped once the server\n// has confirmed 200. Delete-then-send loses data on every failed request.\nmsg.batchIds = batch.map(function (r) { return r.client_id; });\nmsg.url = INGEST_URL;\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer \" + INGEST_TOKEN\n};\nmsg.payload = { readings: batch };\n\nnode.status({ fill: \"blue\", shape: \"dot\", text: \"sending \" + batch.length + \" of \" + outbox.length });\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000005"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000005",
+        "type": "http request",
+        "z": "fcafa14fdc883280",
+        "name": "POST → farm-ingest",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "timeout": "30000",
+        "x": 690,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000006"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000006",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "confirm / keep",
+        "func": "// Only a 200 that CAME FROM farm-ingest clears the buffer.\n//\n// Checking the status code alone is not enough: a misconfigured vhost, a captive\n// portal, or a proxy error page all return 200 with a body that isn't ours. That\n// would silently delete readings we never delivered — the worst possible failure\n// for a store-and-forward queue. Demand the service's own {ok:true} envelope.\nflow.set(\"pushLock\", 0);\n\nconst body = msg.payload || {};\nconst delivered = msg.statusCode === 200 && body.ok === true && typeof body.accepted === \"number\";\n\nif (!delivered) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"HTTP \" + msg.statusCode + \" — kept, will retry\" });\n    node.warn(\"farm-ingest did not confirm the batch (HTTP \" + msg.statusCode + \"): \" +\n              JSON.stringify(body).slice(0, 200));\n    return null;\n}\n\nconst sent = msg.batchIds || [];\nconst done = {};\nsent.forEach(function (id) { done[id] = true; });\n\nconst outbox = (flow.get(\"outbox\") || []).filter(function (r) { return !done[r.client_id]; });\nflow.set(\"outbox\", outbox);\n\nnode.status({\n    fill: outbox.length ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: \"sent \" + sent.length + \" (\" + (body.accepted || 0) + \" new, \" + (body.duplicates || 0) + \" dup) · \" + outbox.length + \" queued\"\n});\nreturn null;",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 760,
+        "wires": []
+    },
+    {
+        "id": "fa11c0de00000007",
+        "type": "catch",
+        "z": "fcafa14fdc883280",
+        "name": "network failure",
+        "scope": [
+            "fa11c0de00000005"
+        ],
+        "uncaught": false,
+        "x": 690,
+        "y": 830,
+        "wires": [
+            [
+                "fa11c0de00000008"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000008",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "offline — keep queued",
+        "func": "// Network-level failure: no signal, DNS down, TLS refused, timeout. The batch is\n// still in the outbox untouched — clear the lock and let the next tick retry.\nflow.set(\"pushLock\", 0);\nconst queued = (flow.get(\"outbox\") || []).length;\nnode.status({ fill: \"red\", shape: \"ring\", text: \"offline — \" + queued + \" queued\" });\nreturn null;",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 830,
+        "wires": []
+    }
+]

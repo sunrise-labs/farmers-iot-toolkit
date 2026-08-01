@@ -1,0 +1,28 @@
+[Unit]
+Description=farm-ingest — receives farm telemetry pushed out by the base-station phone
+Documentation=https://github.com/tairea/farmers-iot-toolkit/blob/main/server/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# The bearer token lives here, chmod 600, NEVER in the repo. ingest.ts refuses to
+# start if FARM_TOKEN is missing or short — an unauthenticated ingest endpoint on
+# the public internet is worse than no ingest endpoint.
+EnvironmentFile=%h/farm-ingest/.env
+
+WorkingDirectory=%h/farm-ingest
+ExecStart=/usr/local/bin/bun run %h/farm-ingest/ingest.ts
+
+Restart=always
+RestartSec=5
+
+# The phone will retry anything we drop (store-and-forward), so a hard restart
+# costs at most one polling interval of latency — never data.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=farm-ingest
+
+[Install]
+WantedBy=default.target
