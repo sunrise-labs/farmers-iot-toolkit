@@ -1,25 +1,141 @@
 [
     {
-        "id": "farm_both_tab",
+        "id": "fcafa14fdc883280",
         "type": "tab",
         "label": "Farmers IoT — both sensors",
         "disabled": false,
-        "info": "Receives readings from the water tank probe (Module 1) and the soil\nprobe (Module 2), and serves a live page at GET / so you can watch both\nfrom a phone browser.\n\nWorks whether the two sensors are on one ESP8266 or two — each has its\nown endpoint, so nothing cares where the POST came from.\n\nSUPERSEDES flows/water-level-flow.json. Do not import both: two `http in`\nnodes on /water will conflict.\n\nCore nodes only — no node-red-dashboard install. Every extra install step\nis a place a build dies on someone else's phone.\n\nTest with no hardware at all:\n\n    curl -X POST http://localhost:1880/water -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"water-tank-1\",\"ok\":true,\"raw\":139,\"depth_mm\":113}'\n\n    curl -X POST http://localhost:1880/soil -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"soil-bed-1\",\"ok\":true,\"moisture_pct\":22.4,\"temp_c\":20.2,\"ec\":0}'\n\nThen open http://<phone-ip>:1880/ in a browser.\n"
+        "info": "Receives readings from the water tank probe (Module 1) and the soil\nprobe (Module 2), and serves a live page at GET /page — one card per reporting node, so extra\nsoil beds appear on their own.\n\nWorks whether the two sensors are on one ESP8266 or two — each has its\nown endpoint, so nothing cares where the POST came from.\n\nSUPERSEDES flows/water-level-flow.json. Do not import both: two `http in`\nnodes on /water will conflict.\n\nCore nodes only — no node-red-dashboard install. Every extra install step\nis a place a build dies on someone else's phone.\n\nTest with no hardware at all:\n\n    curl -X POST http://localhost:1880/water -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"water-tank-1\",\"ok\":true,\"raw\":139,\"depth_mm\":113}'\n\n    curl -X POST http://localhost:1880/soil -H 'Content-Type: application/json' \\\n         -d '{\"node\":\"soil-bed-1\",\"ok\":true,\"moisture_pct\":22.4,\"temp_c\":20.2,\"ec\":0}'\n\nThen open http://<phone-ip>:1880/page in a browser.\n"
     },
     {
-        "id": "both_notes",
+        "id": "f8c6abf3c86ea1f5",
+        "type": "ui_tab",
+        "name": "Maani Plantation",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "09631a93c01a2b6c",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-light",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif",
+                "edited": false
+            },
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4B7930",
+                "baseColor": "#4B7930",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+            },
+            "themeState": {
+                "base-color": {
+                    "default": "#0094CE",
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-titlebar-backgroundColor": {
+                    "value": "#0094CE",
+                    "edited": false
+                },
+                "page-backgroundColor": {
+                    "value": "#fafafa",
+                    "edited": false
+                },
+                "page-sidebar-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-textColor": {
+                    "value": "#1bbfff",
+                    "edited": false
+                },
+                "group-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "group-backgroundColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "widget-textColor": {
+                    "value": "#111111",
+                    "edited": false
+                },
+                "widget-backgroundColor": {
+                    "value": "#0094ce",
+                    "edited": false
+                },
+                "widget-borderColor": {
+                    "value": "#ffffff",
+                    "edited": false
+                },
+                "base-font": {
+                    "value": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen-Sans,Ubuntu,Cantarell,Helvetica Neue,sans-serif"
+                }
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
+            }
+        },
+        "site": {
+            "name": "Node-RED Dashboard",
+            "hideToolbar": "false",
+            "allowSwipe": "false",
+            "lockMenu": "false",
+            "allowTempTheme": "true",
+            "dateFormat": "DD/MM/YYYY",
+            "sizes": {
+                "sx": 48,
+                "sy": 48,
+                "gx": 6,
+                "gy": 6,
+                "cx": 6,
+                "cy": 6,
+                "px": 0,
+                "py": 0
+            }
+        }
+    },
+    {
+        "id": "766fb58593dbe099",
+        "type": "ui_group",
+        "name": "Water Tank",
+        "tab": "f8c6abf3c86ea1f5",
+        "order": 1,
+        "disp": true,
+        "width": 6,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "dc3b371660d82dcf",
         "type": "comment",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "READ ME — endpoints, payloads, and the one thing people forget",
-        "info": "ENDPOINTS\n  POST /water            Module 1, the QDY30A tank probe\n  POST /soil             Module 2, the THC-S soil probe\n  GET  /valve            returns 1/0 — the node POLLS this for the valve\n  POST /valve/set?v=1|0  the page Open/Close buttons set the desired state\n  GET  /                 live page showing both sensors + valve buttons\n\nVALVE IS MANUAL FOR NOW: no moisture thresholds. The buttons set\nflow.valveCmd; the node polls GET /valve every ~1s and drives the relay.\nThe node echoes its ACTUAL pin state back in the /soil payload as `valve`,\nso the page can show confirmed vs commanded.\n\nTHE ONE THING PEOPLE FORGET: every `http in` needs an `http response`.\nWithout it the request never completes and the ESP blocks until timeout.\n",
+        "info": "ENDPOINTS\n  POST /water            Module 1, the QDY30A tank probe\n  POST /soil             Module 2, the THC-S soil probe\n  GET  /valve            returns 1/0 — the node POLLS this for the valve\n  POST /valve/set?v=1|0  the page Open/Close buttons set the desired state\n  GET  /page             live page: a card per node + valve buttons\n\nVALVE IS MANUAL FOR NOW: no moisture thresholds. The buttons set\nflow.valveCmd; the node polls GET /valve every ~1s and drives the relay.\nThe node echoes its ACTUAL pin state back in the /soil payload as `valve`,\nso the page can show confirmed vs commanded.\n\nTHE ONE THING PEOPLE FORGET: every `http in` needs an `http response`.\nWithout it the request never completes and the ESP blocks until timeout.\n",
         "x": 250,
         "y": 60,
         "wires": []
     },
     {
-        "id": "both_water_in",
+        "id": "6042937f8610fc79",
         "type": "http in",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "POST /water",
         "url": "/water",
         "method": "post",
@@ -29,16 +145,17 @@
         "y": 140,
         "wires": [
             [
-                "both_water_store",
-                "both_water_resp",
-                "both_water_debug"
+                "8fa2948ed8c0879e",
+                "59fccee597a5ab69",
+                "4717fcf54ca79116",
+                "fa11c0de00000002"
             ]
         ]
     },
     {
-        "id": "both_water_resp",
+        "id": "59fccee597a5ab69",
         "type": "http response",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "200 OK",
         "statusCode": "200",
         "headers": {},
@@ -47,9 +164,9 @@
         "wires": []
     },
     {
-        "id": "both_water_debug",
+        "id": "4717fcf54ca79116",
         "type": "debug",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "water raw",
         "active": true,
         "tosidebar": true,
@@ -64,11 +181,11 @@
         "wires": []
     },
     {
-        "id": "both_water_store",
+        "id": "8fa2948ed8c0879e",
         "type": "function",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "store water",
-        "func": "// Keep the latest reading in flow context so the page node can read it.\n// Stamped with an ARRIVAL TIME, because a node that stopped reporting looks\n// identical to one that never started unless you track when you last heard it.\nconst p = msg.payload;\nflow.set(\"water\", Object.assign({}, p, { at: Date.now() }));\n\n// ok:false means the ESP is alive and the probe is not. Show it as a fault\n// rather than dropping it — that's a different repair job from silence.\nif (p.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + p.error });\n    return null;\n}\n\nlet text = p.depth_mm + \" mm\";\nif (p.percent !== undefined) text += \"  (\" + p.percent + \"%)\";\nnode.status({ fill: \"green\", shape: \"dot\", text: text });\n\nreturn { payload: p.depth_mm, topic: p.node };\n",
+        "func": "// Keep the latest reading PER NODE, not one slot per sensor kind.\n//\n// The old single 'soil' slot meant soil-bed-2 overwrote soil-bed-1 and the page\n// showed whichever reported last — with no hint the others existed. Keyed on node,\n// a new bed appears by reporting rather than by an edit here.\n//\n// 'gaps' is a short rolling history of arrival intervals. The page uses its median\n// to decide when a node has gone quiet, because a deep-sleep node at 10 minutes and\n// farm-node at 60 seconds cannot share one fixed threshold.\nconst p = msg.payload;\nconst now = Date.now();\nconst key = \"water:\" + (p.node || \"unknown\");\nconst nodes = flow.get(\"nodes\") || {};\nconst prev = nodes[key];\n\nconst gaps = (prev && prev.gaps) ? prev.gaps.slice() : [];\nif (prev && prev.at) {\n    gaps.push(now - prev.at);\n    if (gaps.length > 8) gaps.shift();\n}\n\nnodes[key] = Object.assign({}, p, {\n    kind: \"water\",\n    node: p.node || \"unknown\",\n    at: now,\n    gaps: gaps\n});\nflow.set(\"nodes\", nodes);\n\n// The old single-slot keys stay written so nothing that still reads them breaks.\nflow.set(\"water\", Object.assign({}, p, { at: now }));\n\n// ok:false means the ESP is alive and the probe is not. Show it as a fault\n// rather than dropping it — that's a different repair job from silence.\nif (p.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + p.error });\n    return null;\n}\n\nlet text = p.depth_mm + \" mm\";\nif (p.percent !== undefined) text += \"  (\" + p.percent + \"%)\";\nnode.status({ fill: \"green\", shape: \"dot\", text: text });\n\nreturn { payload: p.depth_mm, topic: p.node };",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -82,9 +199,9 @@
         ]
     },
     {
-        "id": "both_soil_in",
+        "id": "7da67b6b4492951a",
         "type": "http in",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "POST /soil",
         "url": "/soil",
         "method": "post",
@@ -94,16 +211,17 @@
         "y": 300,
         "wires": [
             [
-                "both_soil_store",
-                "both_soil_resp",
-                "both_soil_debug"
+                "623736eba3a16904",
+                "1490f7e3e6274188",
+                "b277b2fc6723b198",
+                "fa11c0de00000002"
             ]
         ]
     },
     {
-        "id": "both_soil_resp",
+        "id": "1490f7e3e6274188",
         "type": "http response",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "200 OK",
         "statusCode": "200",
         "headers": {},
@@ -112,9 +230,9 @@
         "wires": []
     },
     {
-        "id": "both_soil_debug",
+        "id": "b277b2fc6723b198",
         "type": "debug",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "soil raw",
         "active": true,
         "tosidebar": true,
@@ -129,11 +247,11 @@
         "wires": []
     },
     {
-        "id": "both_soil_store",
+        "id": "623736eba3a16904",
         "type": "function",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "store soil",
-        "func": "const p = msg.payload;\nflow.set(\"soil\", Object.assign({}, p, { at: Date.now() }));\n\nif (p.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + p.error });\n    return null;\n}\n\nnode.status({\n    fill: \"green\", shape: \"dot\",\n    text: p.moisture_pct + \" %  |  \" + p.temp_c + \" C  |  EC \" + p.ec\n});\n\nreturn { payload: p.moisture_pct, topic: p.node };\n",
+        "func": "// Keep the latest reading PER NODE, not one slot per sensor kind.\n//\n// The old single 'soil' slot meant soil-bed-2 overwrote soil-bed-1 and the page\n// showed whichever reported last — with no hint the others existed. Keyed on node,\n// a new bed appears by reporting rather than by an edit here.\n//\n// 'gaps' is a short rolling history of arrival intervals. The page uses its median\n// to decide when a node has gone quiet, because a deep-sleep node at 10 minutes and\n// farm-node at 60 seconds cannot share one fixed threshold.\nconst p = msg.payload;\nconst now = Date.now();\nconst key = \"soil:\" + (p.node || \"unknown\");\nconst nodes = flow.get(\"nodes\") || {};\nconst prev = nodes[key];\n\nconst gaps = (prev && prev.gaps) ? prev.gaps.slice() : [];\nif (prev && prev.at) {\n    gaps.push(now - prev.at);\n    if (gaps.length > 8) gaps.shift();\n}\n\nnodes[key] = Object.assign({}, p, {\n    kind: \"soil\",\n    node: p.node || \"unknown\",\n    at: now,\n    gaps: gaps\n});\nflow.set(\"nodes\", nodes);\n\n// The old single-slot keys stay written so nothing that still reads them breaks.\nflow.set(\"soil\", Object.assign({}, p, { at: now }));\n\nif (p.ok === false) {\n    node.status({ fill: \"red\", shape: \"ring\", text: \"probe fault: \" + p.error });\n    return null;\n}\n\nnode.status({\n    fill: \"green\", shape: \"dot\",\n    text: (p.node || \"soil\") + \": \" + p.moisture_pct + \" %  |  \" + p.temp_c + \" C\"\n});\n\nreturn { payload: p.moisture_pct, topic: p.node };",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -147,28 +265,29 @@
         ]
     },
     {
-        "id": "both_page_in",
+        "id": "e3306f9782ac5a27",
         "type": "http in",
-        "z": "farm_both_tab",
-        "name": "GET /",
-        "url": "/",
+        "z": "fcafa14fdc883280",
+        "name": "GET /page",
+        "url": "/page",
         "method": "get",
         "upload": false,
+        "skipBodyParsing": false,
         "swaggerDoc": "",
         "x": 140,
         "y": 440,
         "wires": [
             [
-                "both_page_build"
+                "29e3211fd487e017"
             ]
         ]
     },
     {
-        "id": "both_page_build",
+        "id": "29e3211fd487e017",
         "type": "function",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "build page",
-        "func": "// A live page from core nodes only — no node-red-dashboard install.\n// Every extra install step is a place a build dies on someone else's phone.\nconst now = Date.now();\nconst STALE_MS = 90000;   // ~1.5x the firmware's default 60s report interval\n\nfunction card(title, r, body) {\n    if (!r) {\n        return '<div class=\"c wait\"><h2>' + title + '</h2>'\n             + '<p class=\"big\">--</p><p class=\"s\">waiting for first reading</p></div>';\n    }\n    const secs = Math.round((now - r.at) / 1000);\n    if (r.ok === false) {\n        return '<div class=\"c bad\"><h2>' + title + '</h2>'\n             + '<p class=\"big\">FAULT</p><p class=\"s\">' + r.error + '</p>'\n             + '<p class=\"s\">' + secs + 's ago</p></div>';\n    }\n    const stale = (now - r.at) > STALE_MS;\n    return '<div class=\"c ' + (stale ? 'stale' : 'good') + '\"><h2>' + title + '</h2>'\n         + body(r)\n         + '<p class=\"s\">' + secs + 's ago' + (stale ? ' &mdash; STALE' : '') + '</p></div>';\n}\n\nconst waterCard = card('Water tank', flow.get('water'), function (r) {\n    let s = '<p class=\"big\">' + r.depth_mm + '<span>mm</span></p>';\n    if (r.percent !== undefined) s += '<p class=\"s\">' + r.percent + '% full</p>';\n    if (r.raw !== undefined) s += '<p class=\"s\">raw ' + r.raw + '</p>';\n    return s;\n});\n\nconst soilCard = card('Soil', flow.get('soil'), function (r) {\n    return '<p class=\"big\">' + r.moisture_pct + '<span>%</span></p>'\n         + '<p class=\"s\">' + r.temp_c + ' &deg;C &nbsp;|&nbsp; EC ' + r.ec + ' &micro;S/cm</p>';\n});\n\n// Valve — MANUAL. flow.valveCmd is what the buttons set (the desired state).\n// The node echoes its ACTUAL pin state back in the /soil payload as `valve`,\n// shown here as confirmation — commanded and confirmed are not the same thing.\nconst vcmd = flow.get('valveCmd') ? 1 : 0;\nconst soilR = flow.get('soil');\nconst confirmed = (soilR && soilR.valve) ? soilR.valve : null;\nconst valveCard =\n    '<div class=\"c ' + (vcmd ? 'vopen' : 'vclosed') + '\"><h2>Valve &mdash; manual</h2>'\n  + '<p class=\"big\">' + (vcmd ? 'OPEN' : 'CLOSED') + '</p>'\n  + '<div class=\"btns\">'\n  + '<button class=\"b bo' + (vcmd ? ' on' : '') + '\" onclick=\"setValve(1)\">Open</button>'\n  + '<button class=\"b bc' + (vcmd ? '' : ' on') + '\" onclick=\"setValve(0)\">Close</button>'\n  + '</div>'\n  + '<p class=\"s\">' + (confirmed ? 'node reports: ' + confirmed : 'no node confirmation yet') + '</p></div>';\n\nmsg.headers = { 'content-type': 'text/html; charset=utf-8' };\nmsg.payload =\n'<!DOCTYPE html><html><head><meta charset=\"utf-8\">'\n+ '<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">'\n+ '<meta http-equiv=\"refresh\" content=\"2\">'\n+ '<title>Farmers IoT</title><style>'\n+ 'body{margin:0;padding:16px;background:#12161c;color:#e8eef6;'\n+ 'font-family:system-ui,-apple-system,sans-serif}'\n+ 'h1{font-size:1.1rem;font-weight:600;color:#8fa3bb;margin:0 0 16px}'\n+ '.g{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}'\n+ '.c{background:#1b212b;border-radius:12px;padding:18px;border-left:5px solid #3a4553}'\n+ '.c.good{border-left-color:#3fb950}.c.stale{border-left-color:#d29922}'\n+ '.c.bad{border-left-color:#f85149}.c.wait{border-left-color:#3a4553}'\n+ '.c.vopen{border-left-color:#3fb950}.c.vclosed{border-left-color:#3a4553}'\n+ 'h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;'\n+ 'color:#8fa3bb;margin:0 0 10px;font-weight:600}'\n+ '.big{font-size:2.6rem;font-weight:700;margin:0;line-height:1.1}'\n+ '.big span{font-size:1rem;font-weight:500;color:#8fa3bb;margin-left:6px}'\n+ '.s{margin:6px 0 0;font-size:.85rem;color:#8fa3bb}'\n+ '.c.bad .big{color:#f85149;font-size:1.8rem}'\n+ '.btns{display:flex;gap:8px;margin-top:12px}'\n+ '.b{flex:1;padding:12px;border:0;border-radius:8px;font-size:1rem;font-weight:600;'\n+ 'cursor:pointer;background:#2a323d;color:#e8eef6}'\n+ '.b.bo.on{background:#3fb950;color:#08130a}'\n+ '.b.bc.on{background:#f85149;color:#160809}'\n+ '</style></head><body><h1>Farmers IoT Toolkit</h1><div class=\"g\">'\n+ waterCard + soilCard + valveCard\n+ '</div>'\n+ '<script>function setValve(v){'\n+ 'fetch(\"/valve/set?v=\"+v,{method:\"POST\"}).then(function(){location.reload();});'\n+ '}</script>'\n+ '</body></html>';\n\nreturn msg;\n",
+        "func": "// A live page from core nodes only — no node-red-dashboard install. Every extra\n// install step is a place a build dies on someone else's phone.\n//\n// Deliberately mirrors the cloud dashboard (farm.sunriselabs.io): one card per\n// reporting node, the same colour semantics, the same valve panel. Same system,\n// two windows — and this one keeps working with no internet at all, which is the\n// whole reason it exists.\nconst now = Date.now();\nconst nodes = flow.get(\"nodes\") || {};\n\nfunction esc(s) {\n    return String(s === undefined || s === null ? \"\" : s).replace(/[&<>\"']/g, function (c) {\n        return { \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\", '\"': \"&quot;\", \"'\": \"&#39;\" }[c];\n    });\n}\n\nfunction ago(ms) {\n    const s = Math.max(0, Math.round((now - ms) / 1000));\n    if (s < 60) return s + \"s ago\";\n    if (s < 3600) return Math.floor(s / 60) + \"m ago\";\n    if (s < 86400) return Math.floor(s / 3600) + \"h ago\";\n    return Math.floor(s / 86400) + \"d ago\";\n}\n\n// How long this node may be quiet before we call it stale — learned from its own\n// arrival history, so the 10-minute sleep node and the 60-second farm-node can\n// share a page without one of them being permanently wrong.\nfunction staleAfter(r) {\n    if (!r.gaps || r.gaps.length < 3) return 20 * 60000;\n    const g = r.gaps.slice().sort(function (a, b) { return a - b; });\n    const median = g[Math.floor(g.length / 2)] || 60000;\n    return Math.max(3 * median, 5 * 60000);\n}\n\nconst list = Object.keys(nodes).map(function (k) { return nodes[k]; });\nlist.sort(function (a, b) {\n    const rank = function (r) { return r.kind === \"water\" ? 0 : r.kind === \"soil\" ? 1 : 2; };\n    return rank(a) - rank(b) || String(a.node).localeCompare(String(b.node));\n});\n\nconst cards = list.map(function (r) {\n    const title = r.kind === \"water\" ? \"Water tank\" : r.kind === \"soil\" ? \"Soil\" : esc(r.kind);\n    const quiet = now - r.at;\n    const cls = r.ok === false ? \"bad\" : quiet > staleAfter(r) ? \"stale\" : \"good\";\n\n    let body;\n    if (r.ok === false) {\n        body = '<p class=\"err\">FAULT &mdash; ' + esc(r.error || \"no error given\") + \"</p>\";\n    } else if (r.kind === \"water\") {\n        body = '<p class=\"big\">' + esc(r.depth_mm) + \"<span>mm</span></p>\";\n        if (r.percent !== undefined) body += '<p class=\"s\">' + esc(r.percent) + \"% full</p>\";\n        if (r.raw !== undefined) body += '<p class=\"s\">raw ' + esc(r.raw) + \"</p>\";\n    } else {\n        body = '<p class=\"big\">' + esc(r.moisture_pct) + \"<span>%</span></p>\";\n        const bits = [];\n        if (r.temp_c !== undefined) bits.push(esc(r.temp_c) + \" &deg;C\");\n        if (r.ec !== undefined) bits.push(\"EC \" + esc(r.ec));\n        if (r.vbat !== undefined) bits.push(esc(r.vbat) + \" V\");\n        if (r.valve !== undefined) bits.push(\"valve \" + (r.valve ? \"OPEN\" : \"shut\"));\n        body += '<p class=\"s\">' + bits.join(\" &middot; \") + \"</p>\";\n    }\n\n    const meta = [ago(r.at)];\n    if (cls === \"stale\") meta.push(\"<b>quiet</b>\");\n    if (r.rssi !== undefined) meta.push(esc(r.rssi) + \" dBm\");\n    if (r.sleep_min !== undefined) meta.push(\"sleeps \" + esc(r.sleep_min) + \"m\");\n\n    return '<div class=\"c ' + cls + '\"><h2>' + title\n         + ' <span class=\"nm\">' + esc(r.node) + \"</span></h2>\"\n         + body\n         + '<p class=\"s\">' + meta.join(\" &middot; \") + \"</p></div>\";\n}).join(\"\");\n\n// Valve — MANUAL. flow.valveCmd is the DESIRED state (set by these buttons, or by\n// the cloud dashboard arriving on a push response). The node echoes its ACTUAL pin\n// state back in /soil as `valve`; commanded and confirmed are not the same thing.\nconst vcmd = flow.get(\"valveCmd\") ? 1 : 0;\nlet confirmedBy = null, confirmedVal = null;\nlist.forEach(function (r) {\n    if (r.valve !== undefined && r.valve !== null) { confirmedBy = r.node; confirmedVal = r.valve ? 1 : 0; }\n});\nconst agrees = confirmedVal !== null && confirmedVal === vcmd;\n\nconst valveCard =\n    '<div class=\"c valve' + (vcmd ? \" open\" : \"\") + '\"><h2>Master valve</h2>'\n  + '<p class=\"big\">' + (vcmd ? \"OPEN\" : \"SHUT\") + \"</p>\"\n  + '<div class=\"btns\">'\n  + '<button class=\"b bo\" onclick=\"setValve(1)\"' + (vcmd ? \" disabled\" : \"\") + \">Open</button>\"\n  + '<button class=\"b bc\" onclick=\"setValve(0)\"' + (vcmd ? \"\" : \" disabled\") + \">Shut</button>\"\n  + \"</div>\"\n  + '<p class=\"s ' + (agrees ? \"\" : \"err\") + '\">'\n  + (confirmedVal === null\n      ? \"no node has reported a valve position yet\"\n      : agrees\n        ? \"confirmed \" + (confirmedVal ? \"open\" : \"shut\") + \" by \" + esc(confirmedBy)\n        : \"&#9888; \" + esc(confirmedBy) + \" still reports \" + (confirmedVal ? \"OPEN\" : \"SHUT\") + \" &mdash; not applied yet\")\n  + \"</p></div>\";\n\n// Backhaul health. If the cloud push is broken this is where you find out, rather\n// than by noticing farm.sunriselabs.io has quietly stopped moving.\nconst ps = flow.get(\"pushState\") || {};\nconst queued = (flow.get(\"outbox\") || []).length;\nconst pushLine = ps.at\n    ? (ps.ok ? \"cloud sync OK &middot; \" + ago(ps.at) : \"&#9888; cloud sync failing &middot; \" + esc(ps.error) + \" &middot; \" + ago(ps.at))\n    : \"cloud sync: nothing sent yet\";\n\nmsg.headers = { \"content-type\": \"text/html; charset=utf-8\" };\nmsg.payload =\n'<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\">'\n+ '<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">'\n+ '<meta http-equiv=\"refresh\" content=\"5\">'\n+ \"<title>Farmers IoT &mdash; base station</title><style>\"\n+ \"body{margin:0;padding:16px;background:#12161c;color:#e8eef6;\"\n+ \"font-family:system-ui,-apple-system,sans-serif}\"\n+ \"h1{font-size:1.1rem;font-weight:600;color:#8fa3bb;margin:0 0 4px}\"\n+ \"h1 small{font-weight:400;opacity:.8}\"\n+ \".sync{font-size:.8rem;color:#8fa3bb;margin:0 0 16px}\"\n+ \".g{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}\"\n+ \".c{background:#1b212b;border-radius:12px;padding:18px;border-left:5px solid #3a4553}\"\n+ \".c.good{border-left-color:#3fb950}.c.stale{border-left-color:#d29922}\"\n+ \".c.bad{border-left-color:#f85149}.c.valve{border-left-color:#3a4553}\"\n+ \".c.valve.open{border-left-color:#3fb950}\"\n+ \"h2{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;\"\n+ \"color:#8fa3bb;margin:0 0 10px;font-weight:600}\"\n+ \".nm{text-transform:none;letter-spacing:0;font-weight:400;opacity:.75}\"\n+ \".big{font-size:2.6rem;font-weight:700;margin:0;line-height:1.1}\"\n+ \".big span{font-size:1rem;font-weight:500;color:#8fa3bb;margin-left:6px}\"\n+ \".s{margin:6px 0 0;font-size:.85rem;color:#8fa3bb}\"\n+ \".err{color:#f85149}\"\n+ \".c.bad .big{color:#f85149;font-size:1.8rem}\"\n+ \".btns{display:flex;gap:8px;margin-top:12px}\"\n+ \".b{flex:1;padding:12px;border:0;border-radius:8px;font-size:1rem;font-weight:600;\"\n+ \"cursor:pointer;background:#2a323d;color:#e8eef6}\"\n+ \".b:disabled{opacity:.4;cursor:default}\"\n+ \".b.bo:not(:disabled){color:#3fb950}.b.bc:not(:disabled){color:#f85149}\"\n+ \"footer{margin-top:16px;font-size:.75rem;color:#8fa3bb}\"\n+ \"</style></head><body>\"\n+ \"<h1>Farmers IoT Toolkit <small>&middot; base station</small></h1>\"\n+ '<p class=\"sync\">' + pushLine + (queued ? \" &middot; \" + queued + \" queued\" : \"\") + \"</p>\"\n+ '<div class=\"g\">' + (cards || '<div class=\"c\"><h2>No nodes yet</h2><p class=\"s\">waiting for a first reading</p></div>') + valveCard + \"</div>\"\n+ \"<footer>This page works with no internet. Same data at farm.sunriselabs.io when the phone has signal.</footer>\"\n+ '<script>function setValve(v){'\n+ 'document.querySelectorAll(\".b\").forEach(function(b){b.disabled=true;});'\n+ 'fetch(\"/valve/set?v=\"+v,{method:\"POST\"}).then(function(){location.reload();});'\n+ \"}</script>\"\n+ \"</body></html>\";\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -179,14 +298,14 @@
         "y": 440,
         "wires": [
             [
-                "both_page_resp"
+                "7872e612fe744f37"
             ]
         ]
     },
     {
-        "id": "both_page_resp",
+        "id": "7872e612fe744f37",
         "type": "http response",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "serve page",
         "statusCode": "200",
         "headers": {},
@@ -195,9 +314,9 @@
         "wires": []
     },
     {
-        "id": "both_valve_get_in",
+        "id": "af1df82f3513adcf",
         "type": "http in",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "GET /valve",
         "url": "/valve",
         "method": "get",
@@ -207,14 +326,14 @@
         "y": 540,
         "wires": [
             [
-                "both_valve_get_fn"
+                "a4d4b43e12d844c7"
             ]
         ]
     },
     {
-        "id": "both_valve_get_fn",
+        "id": "a4d4b43e12d844c7",
         "type": "function",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "valve cmd -> 1/0",
         "func": "// The node polls this to learn the desired valve state. Plain \"1\"/\"0\" so the\n// firmware needs no JSON parser. flow.valveCmd is set by the page buttons.\nmsg.payload = flow.get('valveCmd') ? '1' : '0';\nmsg.headers = { 'content-type': 'text/plain' };\nreturn msg;\n",
         "outputs": 1,
@@ -227,14 +346,14 @@
         "y": 540,
         "wires": [
             [
-                "both_valve_get_resp"
+                "be546a4878ed3a8f"
             ]
         ]
     },
     {
-        "id": "both_valve_get_resp",
+        "id": "be546a4878ed3a8f",
         "type": "http response",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "200",
         "statusCode": "200",
         "headers": {},
@@ -243,9 +362,9 @@
         "wires": []
     },
     {
-        "id": "both_valve_set_in",
+        "id": "f1a73ae531fdfba1",
         "type": "http in",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "POST /valve/set",
         "url": "/valve/set",
         "method": "post",
@@ -255,14 +374,14 @@
         "y": 620,
         "wires": [
             [
-                "both_valve_set_fn"
+                "744d15d58e216b88"
             ]
         ]
     },
     {
-        "id": "both_valve_set_fn",
+        "id": "744d15d58e216b88",
         "type": "function",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "set desired valve state",
         "func": "// The page's Open/Close buttons POST here with ?v=1 (open) or ?v=0 (close).\n// This only records the DESIRED state; the node applies it on its next poll and\n// reports back what the pin actually did.\nconst v = (msg.req && msg.req.query && msg.req.query.v) || msg.payload;\nconst on = String(v).indexOf('1') >= 0;\nflow.set('valveCmd', on ? 1 : 0);\nnode.status({ fill: on ? 'green' : 'grey', shape: 'dot',\n              text: on ? 'commanded OPEN' : 'commanded CLOSED' });\nmsg.payload = on ? '1' : '0';\nmsg.headers = { 'content-type': 'text/plain' };\nreturn msg;\n",
         "outputs": 1,
@@ -275,19 +394,172 @@
         "y": 620,
         "wires": [
             [
-                "both_valve_set_resp"
+                "ff10b1b0f22123bc"
             ]
         ]
     },
     {
-        "id": "both_valve_set_resp",
+        "id": "ff10b1b0f22123bc",
         "type": "http response",
-        "z": "farm_both_tab",
+        "z": "fcafa14fdc883280",
         "name": "200",
         "statusCode": "200",
         "headers": {},
         "x": 560,
         "y": 620,
+        "wires": []
+    },
+    {
+        "id": "fa11c0de00000001",
+        "type": "comment",
+        "z": "fcafa14fdc883280",
+        "name": "PUSH TO CLOUD — store-and-forward to farm-ingest",
+        "info": "The phone is behind carrier CGNAT, so nothing can dial IN to it. This group\ndials OUT instead: readings are buffered in flow context and POSTed in batches\nto the VPS. Survives 4G dropouts — nothing is deleted from the buffer until\nthe server has answered 200.\n\n**Change the URL or token in the `drain outbox` function** — both live at the\ntop of that one node, nowhere else.\n\nBoth `http in` nodes feed `queue for cloud` directly rather than going through\nthe `store …` functions, because those return null on `ok:false` and the fault\nrows are the ones you most want off the phone.\n\nThe push is EVENT-DRIVEN: every arriving reading triggers a drain. Android\nfreezes Termux's JS timers when the phone dozes, so a purely scheduled push\nsilently stops while everything still looks healthy. An ESP POST has already\nwoken the process, so draining on that event needs no wake-lock. The 30 s\ninject is only a backstop for retrying while no new readings are arriving.\n\n⚠️ The buffer lives in memory. A Node-RED restart drops whatever is queued.\nTo survive restarts, add a filesystem context store in settings.js.",
+        "x": 250,
+        "y": 620,
+        "wires": []
+    },
+    {
+        "id": "fa11c0de00000002",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "queue for cloud",
+        "func": "// Buffer every reading — good AND faulted — for the cloud push.\n//\n// Wired straight off the 'http in' nodes ON PURPOSE. The 'store water'/'store soil'\n// functions return null when ok:false, so tapping them would drop exactly the rows\n// that tell you a probe died. A silent node and a broken probe are different repairs.\n\nconst p = msg.payload || {};\nconst url = (msg.req && msg.req.url) || \"\";\nconst kind = url.indexOf(\"soil\") !== -1 ? \"soil\"\n           : url.indexOf(\"water\") !== -1 ? \"water\"\n           : (p.moisture_pct !== undefined ? \"soil\" : \"water\");\n\n// client_id makes redelivery idempotent. A batch whose response is lost in a 4G\n// dropout gets re-sent; without this key the server would count it twice, and it\n// would do so precisely during bad signal — when the data matters most.\nconst seq = (flow.get(\"pushSeq\") || 0) + 1;\nflow.set(\"pushSeq\", seq);\n\nconst row = Object.assign({}, p, {\n    kind: kind,\n    client_id: kind + \":\" + (p.node || \"unknown\") + \":\" + Date.now() + \":\" + seq\n});\n\nconst outbox = flow.get(\"outbox\") || [];\noutbox.push(row);\n\n// ~17 hours of backlog for two sensors at 60 s. Past that, drop the OLDEST —\n// during a long outage the newest readings are the ones worth having.\nconst CAP = 2000;\nif (outbox.length > CAP) outbox.splice(0, outbox.length - CAP);\nflow.set(\"outbox\", outbox);\n\nnode.status({ fill: outbox.length > 50 ? \"yellow\" : \"grey\", shape: \"ring\", text: \"queued \" + outbox.length });\n\n// Drain right here, on the arriving reading, rather than waiting for the timer.\n//\n// Android freezes Termux's JS timers whenever the phone dozes — a 30 s setInterval\n// simply stops running, and the backlog grows forever while everything LOOKS fine.\n// An incoming POST from the ESP has already woken the process, so draining on that\n// event needs no wake-lock and no scheduler. The inject stays as a backstop.\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 480,
+        "y": 680,
+        "wires": [
+            [
+                "fa11c0de00000004"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000003",
+        "type": "inject",
+        "z": "fcafa14fdc883280",
+        "name": "every 30 s (backstop)",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "15",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 160,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000004"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000004",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "drain outbox  ← URL + TOKEN HERE",
+        "func": "// ── EDIT HERE: where the readings go ────────────────────────────────────────\nconst INGEST_URL = \"https://YOUR-SERVER.example.com/ingest/batch\";\nconst INGEST_TOKEN = \"PASTE-YOUR-FARM_TOKEN-HERE\";\n// ────────────────────────────────────────────────────────────────────────────\n\nconst BATCH = 50;      // ~8 KB per POST — cheap on a metered SIM\nconst LOCK_MS = 90000; // if a POST neither succeeds nor errors, unstick after this\n\nconst outbox = flow.get(\"outbox\") || [];\nif (outbox.length === 0) {\n    node.status({ fill: \"green\", shape: \"dot\", text: \"up to date\" });\n    return null;\n}\n\n// Don't stack POSTs on top of each other on slow 4G. The server dedupes anyway,\n// but piling requests onto a marginal link only makes the link worse.\nconst lock = flow.get(\"pushLock\") || 0;\nif (Date.now() - lock < LOCK_MS) {\n    node.status({ fill: \"blue\", shape: \"ring\", text: \"sending… (\" + outbox.length + \" queued)\" });\n    return null;\n}\nflow.set(\"pushLock\", Date.now());\n\nconst batch = outbox.slice(0, BATCH);\n\n// NOTHING is removed from the outbox here. Items are only dropped once the server\n// has confirmed 200. Delete-then-send loses data on every failed request.\nmsg.batchIds = batch.map(function (r) { return r.client_id; });\nmsg.url = INGEST_URL;\nmsg.headers = {\n    \"Content-Type\": \"application/json\",\n    \"Authorization\": \"Bearer \" + INGEST_TOKEN\n};\nmsg.payload = { readings: batch };\n\nnode.status({ fill: \"blue\", shape: \"dot\", text: \"sending \" + batch.length + \" of \" + outbox.length });\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000005"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000005",
+        "type": "http request",
+        "z": "fcafa14fdc883280",
+        "name": "POST → farm-ingest",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": "ignore",
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "insecureHTTPParser": false,
+        "authType": "",
+        "senderr": false,
+        "headers": [],
+        "timeout": "30000",
+        "x": 690,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000006"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000006",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "confirm / keep",
+        "func": "// Only a 200 that CAME FROM farm-ingest clears the buffer.\n//\n// Checking the status code alone is not enough: a misconfigured vhost, a captive\n// portal, or a proxy error page all return 200 with a body that isn't ours. That\n// would silently delete readings we never delivered — the worst possible failure\n// for a store-and-forward queue. Demand the service's own {ok:true} envelope.\nflow.set(\"pushLock\", 0);\n\nconst body = msg.payload || {};\nconst delivered = msg.statusCode === 200 && body.ok === true && typeof body.accepted === \"number\";\n\nif (!delivered) {\n    // Surfaced on the local page too — a broken backhaul should be visible there,\n    // not discovered by noticing the cloud dashboard stopped moving.\n    flow.set(\"pushState\", { ok: false, at: Date.now(), error: \"HTTP \" + msg.statusCode });\n    node.status({ fill: \"red\", shape: \"ring\", text: \"HTTP \" + msg.statusCode + \" — kept, will retry\" });\n    node.warn(\"farm-ingest did not confirm the batch (HTTP \" + msg.statusCode + \"): \" +\n              JSON.stringify(body).slice(0, 200));\n    return null;\n}\nflow.set(\"pushState\", { ok: true, at: Date.now(), error: null });\n\nconst sent = msg.batchIds || [];\nconst done = {};\nsent.forEach(function (id) { done[id] = true; });\n\nconst outbox = (flow.get(\"outbox\") || []).filter(function (r) { return !done[r.client_id]; });\nflow.set(\"outbox\", outbox);\n\n// ── downlink: the valve command rides home on this response ─────────────────\n//\n// Applied on the EDGE of seq, never re-asserted. The local page's Open/Close\n// buttons must keep working with no internet; if every push re-applied the cloud's\n// state, a button pressed at the tank would be silently undone a minute later.\n//\n// On first contact we adopt the seq WITHOUT acting. Node-RED's context is in\n// memory, so a restart forgets valveCmd and the valve falls shut — and it should\n// STAY shut until a human asks again, rather than a stale cloud \"open\" re-opening\n// it unattended. Fail closed is the only safe default for irrigation.\nconst v = body.valve;\nif (v && typeof v.seq === \"number\") {\n    const lastSeq = flow.get(\"valveSeq\");\n    if (lastSeq === undefined) {\n        flow.set(\"valveSeq\", v.seq);\n    } else if (v.seq !== lastSeq) {\n        flow.set(\"valveSeq\", v.seq);\n        flow.set(\"valveCmd\", v.state ? 1 : 0);\n        node.warn(\"valve \" + (v.state ? \"OPEN\" : \"SHUT\") + \" commanded from the cloud (seq \" + v.seq + \")\");\n    }\n}\n\nnode.status({\n    fill: outbox.length ? \"yellow\" : \"green\",\n    shape: \"dot\",\n    text: \"sent \" + sent.length + \" (\" + (body.accepted || 0) + \" new, \" + (body.duplicates || 0) + \" dup) · \" + outbox.length + \" queued\"\n});\n\n// Anything still queued? Go straight round again instead of waiting to be poked.\n//\n// Without this, the tail of a burst sits undelivered until the NEXT reading happens\n// to arrive — and on a dozing phone the 30 s inject that was supposed to cover that\n// case never fires. Each pass strictly shrinks the outbox, so this terminates.\nif (outbox.length > 0) return { payload: \"continue\" };\nreturn null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 760,
+        "wires": [
+            [
+                "fa11c0de00000004"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000007",
+        "type": "catch",
+        "z": "fcafa14fdc883280",
+        "name": "network failure",
+        "scope": [
+            "fa11c0de00000005"
+        ],
+        "uncaught": false,
+        "x": 690,
+        "y": 830,
+        "wires": [
+            [
+                "fa11c0de00000008"
+            ]
+        ]
+    },
+    {
+        "id": "fa11c0de00000008",
+        "type": "function",
+        "z": "fcafa14fdc883280",
+        "name": "offline — keep queued",
+        "func": "// Network-level failure: no signal, DNS down, TLS refused, timeout. The batch is\n// still in the outbox untouched — clear the lock and let the next tick retry.\nflow.set(\"pushLock\", 0);\nconst queued = (flow.get(\"outbox\") || []).length;\nflow.set(\"pushState\", { ok: false, at: Date.now(), error: \"offline\" });\nnode.status({ fill: \"red\", shape: \"ring\", text: \"offline — \" + queued + \" queued\" });\nreturn null;",
+        "outputs": 0,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 830,
         "wires": []
     }
 ]

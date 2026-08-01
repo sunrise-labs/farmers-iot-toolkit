@@ -275,7 +275,7 @@ you lose over-discharge and short-circuit protection silently.
 | uplink | `POST` | `/water` | `{node, ok, raw, depth_mm, [percent], rssi, uptime_s}` |
 | uplink | `POST` | `/soil` | `{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}` |
 | **downlink** | `GET` (poll, 1 s) | `/valve` | returns `"1"` / `"0"` |
-| page | `GET` | `/` | live readings + Open/Close buttons |
+| page | `GET` | `/page` | live readings (one card per node) + Open/Close buttons |
 | page action | `POST` | `/valve/set` | sets `flow.valveCmd` |
 | firmware | espota :8266 | `farm-node-1.local` | OTA, auth `OTA_PASSWORD` |
 
