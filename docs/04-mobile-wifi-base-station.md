@@ -393,6 +393,12 @@ for the receiver and [`flows/push-to-cloud-flow.json`](../flows/push-to-cloud-fl
 for the eight nodes you import into Node-RED. Cost on a metered SIM is tiny: about
 60 requests a day.
 
+The same channel carries commands back the other way. Because the phone is already
+POSTing, the server answers each batch with the desired valve state — so you can open
+and shut the irrigation valve from the dashboard without anything on your farm being
+reachable from the internet. Expect a minute or two of latency, and read the safety
+notes in [`server/README.md`](../server/README.md) before leaving it unattended.
+
 **To edit your flows from anywhere: use a tunnel.** [Tailscale](https://tailscale.com)
 is the least trouble — install the Android app, sign in, and the phone gets a private
 address only your devices can reach. Note that Android routes tethered hotspot
@@ -412,11 +418,13 @@ talking to the phone locally, untouched.
 > flow still looks healthy in the editor. Anything you schedule on a timer will
 > quietly stall.
 >
-> Two defences, and you want both. Hold a wake-lock (`termux-wake-lock`, plus
-> Termux set to *Unrestricted* battery — see Step 4). And where you can, make work
-> **event-driven** rather than scheduled: our push flow sends on each arriving
-> reading, because the incoming request has already woken the phone. The repeating
-> inject is kept only as a backstop.
+> Three defences, and you want all of them. Hold a wake-lock (`termux-wake-lock`,
+> plus Termux set to *Unrestricted* battery — see Step 4). Make work **event-driven**
+> rather than scheduled: our push flow sends on each arriving reading, because the
+> incoming request has already woken the phone. And let work **re-trigger itself** —
+> when a batch is delivered and more is still queued, the flow loops straight back
+> instead of waiting to be poked, so a backlog drains without a clock. The repeating
+> inject survives only as a backstop.
 
 
 ## Notes and learnings

@@ -39,9 +39,12 @@ Deployed at `~/farm-ingest/` on `hetzner-ian`, reachable at
 |---|---|---|---|
 | `POST` | `/ingest` | Bearer | One reading, or an array, or `{readings:[…]}` |
 | `POST` | `/ingest/batch` | Bearer | Same handler — the name the flow uses |
+| `POST` | `/valve/set` | Bearer or cookie | `{state:0\|1, ttl_s?, source?}` — queue a valve command |
 | `GET` | `/` | Bearer or `?k=` | Live page, auto-refreshes every 60 s |
 | `GET` | `/api/readings?kind=&limit=` | Bearer or cookie | JSON rows, newest first |
-| `GET` | `/api/latest` | Bearer or cookie | Newest row per sensor kind |
+| `GET` | `/api/latest` | Bearer or cookie | Newest row **per node** |
+| `GET` | `/api/nodes` | Bearer or cookie | Every node seen, with liveness |
+| `GET` | `/api/valve` | Bearer or cookie | Commanded state vs what the node last reported |
 | `GET` | `/health` | none | Liveness. Says nothing about the data. |
 
 The payload is **exactly what the ESP nodes already POST to Node-RED**, plus two
@@ -81,6 +84,66 @@ liveness signal, not a timestamp.
 captive portal, or a proxy error page all return 200 with a body that isn't ours —
 and trusting the status code would silently delete readings that were never
 delivered. That is the worst failure a store-and-forward queue can have.
+
+---
+
+## Nodes on the dashboard
+
+One card per **node**, not per sensor kind. Nothing is hardcoded to a node name — a
+bed appears the first time it reports, so flashing `soil-bed-3` is the whole
+install. Cards go green (fresh), amber (quiet), or red (the node reported a fault).
+
+"Quiet" is learned from each node's own history rather than fixed, because the nodes
+do not agree on a cadence: `farm-node` reports every 60 s while the deep-sleep
+battery-swap node wakes far less often. A single threshold would either cry wolf over
+the sleeper or stay green for hours after a live node died. The rule is
+`3 × that node's median gap`, floored at 5 minutes.
+
+---
+
+## Valve control from the dashboard
+
+The phone cannot be dialled into, so a command has to be something it *collects*. It
+already POSTs batches, so **every batch is answered with the desired valve state** —
+no extra requests, no extra data, and still nothing exposed on the farm.
+
+```
+you press Open  →  server records state + bumps seq
+                →  node's next reading POST comes in
+                →  response carries {valve:{state,seq}}
+                →  Node-RED sets flow.valveCmd
+                →  ESP's 1 s poll of GET /valve sees "1"
+                →  relay closes
+```
+
+Expect **up to a minute or two** end to end — one reporting interval plus one ESP
+poll. The dashboard says so, and shows commanded state against what the node last
+actually reported, so a command that hasn't landed yet is visible rather than
+mysterious.
+
+Three rules make this safe to leave running:
+
+**Commands are applied on the edge of `seq`, never re-asserted.** The local Node-RED
+page has its own Open/Close buttons and must keep working with no internet at all. If
+the cloud re-applied its state on every push, a button pressed at the tank would be
+silently undone a minute later.
+
+**First contact adopts the sequence without acting.** Node-RED's context is in
+memory, so a restart forgets `valveCmd` and the valve falls shut — and it should stay
+shut until a human asks again, rather than a stale cloud "open" re-opening it
+unattended. The practical effect is that the very first command after a Node-RED
+restart is absorbed as a baseline; in normal running the phone pushes constantly, so
+the baseline is adopted long before anyone presses anything.
+
+**An open command expires.** `FARM_VALVE_TTL_S` (default 1800 s) auto-closes the
+valve with a bumped `seq`, so the phone sees a real edge and shuts it.
+
+> ### ⚠️ The expiry is a backstop, not a guarantee
+> If the phone cannot reach the server at all, no expiry computed here will ever
+> arrive. The only thing that closes a valve when *the link itself* is what failed is
+> **`VALVE_MAX_OPEN_S` in the firmware**, and it currently ships as `0` — disabled.
+> Set it before leaving remote valve control switched on unattended: an open valve on
+> a 6000 L tank is a bad thing to discover a day late.
 
 ---
 
