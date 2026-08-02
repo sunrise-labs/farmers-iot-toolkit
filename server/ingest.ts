@@ -340,6 +340,40 @@ function ago(iso: string): string {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+/** The unauthenticated door. Kept deliberately plain and self-explanatory. */
+function renderLogin(error?: string): string {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maani Plantation — farm telemetry</title>
+<style>
+  :root { color-scheme: light dark; --bg:#fff; --fg:#111; --mut:#666; --line:#e3e3e3; --card:#fafafa; --bad:#b3261e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1113; --fg:#e8e8e8; --mut:#9aa0a6; --line:#272b30; --card:#16191c; --bad:#f85149; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         padding:1.5rem; background:var(--bg); color:var(--fg);
+         font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .box { width:100%; max-width:24rem; border:1px solid var(--line); border-radius:12px;
+         padding:1.5rem; background:var(--card); }
+  h1 { font-size:1.05rem; margin:0 0 .25rem; }
+  p { color:var(--mut); font-size:.85rem; margin:0 0 1rem; }
+  input { width:100%; padding:.7rem; font-size:1rem; border:1px solid var(--line);
+          border-radius:8px; background:var(--bg); color:var(--fg); margin-bottom:.6rem; }
+  button { width:100%; padding:.7rem; font-size:.95rem; font-weight:600; cursor:pointer;
+           border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--fg); }
+  button:hover { border-color:var(--fg); }
+  .err { color:var(--bad); font-weight:600; }
+</style></head><body>
+<form class="box" method="post" action="/login">
+  <h1>Maani Plantation</h1>
+  <p${error ? ' class="err"' : ""}>${error ? escapeHtml(error) : "Paste your access key to view the farm."}</p>
+  <input name="k" type="password" autocomplete="current-password" placeholder="access key" autofocus>
+  <button type="submit">View farm</button>
+</form>
+</body></html>`;
+}
+
 function renderPage(): string {
   const latest = qLatestPerNode.all() as any[];
   const recent = qRecent.all({ $kind: null, $limit: 60 }) as any[];
@@ -634,12 +668,34 @@ const server = Bun.serve({
       return json({ commanded: c, reported: report ?? null });
     }
 
+    // Token entry. POST rather than a query string so the secret does not end up
+    // in nginx's access log, which `?k=` unavoidably does.
+    if (req.method === "POST" && path === "/login") {
+      const form = await req.formData().catch(() => null);
+      const k = form?.get("k");
+      if (typeof k !== "string" || !tokenOk(k.trim())) {
+        return new Response(renderLogin("That key was not accepted."), {
+          status: 401,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
+      }
+      return new Response(null, {
+        status: 302,
+        headers: {
+          location: "/",
+          "set-cookie": `farm_token=${encodeURIComponent(TOKEN)}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax`,
+        },
+      });
+    }
+
     if (path === "/") {
       if (!authed) {
-        return new Response(
-          "farm-ingest\n\nAdd ?k=<token> to view, or send Authorization: Bearer <token>.\n",
-          { status: 401, headers: { "content-type": "text/plain; charset=utf-8" } },
-        );
+        // A bare 401 of plain text is indistinguishable from "the site is down" on a
+        // phone — which is exactly how this looked from the field. Give it a door.
+        return new Response(renderLogin(), {
+          status: 401,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        });
       }
       const headers: Record<string, string> = { "content-type": "text/html; charset=utf-8" };
       // First visit carries the token in the URL; park it in a cookie so the
