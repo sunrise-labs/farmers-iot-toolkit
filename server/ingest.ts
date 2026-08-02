@@ -121,6 +121,26 @@ const insert = db.query(`
 const num = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
+/**
+ * Valve position, normalised to 1 / 0 / null.
+ *
+ * `farm-node.ino` reports the pin as the STRING "open" or "closed"; bench payloads
+ * and curl tests send 1/0 or true/false. Accepting only the numeric form silently
+ * dropped every real field reading's valve state to null — and any code that
+ * truthiness-tests the raw value reads "closed" as OPEN, which is worse than
+ * dropping it. Normalise once, here, and let everything downstream trust it.
+ */
+function valveState(v: unknown): number | null {
+  if (v === true || v === 1) return 1;
+  if (v === false || v === 0) return 0;
+  if (typeof v === "string") {
+    const s = v.trim().toLowerCase();
+    if (s === "open" || s === "1" || s === "true") return 1;
+    if (s === "closed" || s === "shut" || s === "0" || s === "false") return 0;
+  }
+  return null;
+}
+
 type Stored = { accepted: number; duplicates: number };
 
 function store(items: unknown[]): Stored {
@@ -158,7 +178,7 @@ function store(items: unknown[]): Stored {
         $moisture_pct: num(r.moisture_pct),
         $temp_c: num(r.temp_c),
         $ec: num(r.ec),
-        $valve: r.valve === true || r.valve === 1 ? 1 : r.valve === false || r.valve === 0 ? 0 : null,
+        $valve: valveState(r.valve),
         $rssi: num(r.rssi),
         $uptime_s: num(r.uptime_s),
         $payload: JSON.stringify(r),
