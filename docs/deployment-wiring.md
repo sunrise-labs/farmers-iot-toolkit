@@ -111,8 +111,8 @@ Board: NodeMCU 1.0 (ESP-12E). Five safe GPIOs exist and all five are spent.
 |---|---|---|---|---|
 | **D7** | 13 | in | HW-0519 **#1** `RXD` | water RX |
 | **D1** | 5 | out | HW-0519 **#1** `TXD` | water TX |
-| **D6** | 12 | in | HW-0519 **#2** `RXD` | soil RX |
-| **D5** | 14 | out | HW-0519 **#2** `TXD` | soil TX |
+| **D6** | 12 | in | HW-0519 **#2** `RXD` | soil RX — **free since `ENABLE_SOIL 0`** |
+| **D5** | 14 | out | HW-0519 **#2** `TXD` | soil TX — **free since `ENABLE_SOIL 0`** |
 | **D2** | 4 | out | relay `IN` | valve command (**active-HIGH** on this node) |
 | **3V3** | — | pwr out | HW-0519 #1 + #2 `VCC` | logic rail |
 | **VBUS** | — | pwr | 5 V in / relay `VCC` | ⚠ **VBUS, not VIN** |
@@ -174,7 +174,19 @@ the D2 valve is the master on the 6000 L tank and that doesn't change.
 
 ---
 
-## 5. Soil bus (module ②, sensing half) — 4800 8N1, slave addr 1 ✅
+## 5. Soil bus (module ②, sensing half) — 4800 8N1, slave addr 1 ⚪ *moved off this board*
+
+> **2026-08-03: the soil probe left this node.** It now runs as a standalone deep-sleep node
+> (`firmware/soil-node-sleep/`, 10-minute cadence), so `config.h` here sets **`ENABLE_SOIL 0`** and
+> the soil bus is not initialised at all — D6/D5 are free and no `/soil` message is published.
+>
+> This mattered more than tidiness. With the probe gone but the code still enabled, the board kept
+> POSTing `{"node":"soil-bed-1","ok":false}` every cycle — **under the same name as the real
+> soil-bed-1**, so two devices published into one identity and the dashboards interleaved a healthy
+> node with a phantom failing one. On 2026-08-01 that produced a 90 % fault rate for "soil-bed-1"
+> that belonged to a probe which was not connected.
+>
+> The wiring below is kept for anyone building the combined node as documented.
 
 ```
    probe BROWN (+)  ──────► pack+ (4.5–30 V, no regulator needed)
@@ -272,7 +284,7 @@ you lose over-discharge and short-circuit protection silently.
 
 | Direction | Method | Endpoint | Payload |
 |---|---|---|---|
-| uplink | `POST` | `/water` | `{node, ok, raw, depth_mm, [percent], rssi, uptime_s}` |
+| uplink | `POST` | `/water` | `{node, ok, raw, depth_mm, [percent], valve, rssi, uptime_s}` |
 | uplink | `POST` | `/soil` | `{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}` |
 | **downlink** | `GET` (poll, 1 s) | `/valve` | returns `"1"` / `"0"` |
 | page | `GET` | `/page` | live readings (one card per node) + Open/Close buttons |
@@ -295,8 +307,9 @@ you lose over-discharge and short-circuit protection silently.
 **Failed reads still POST**, with `"ok":false` and an `error` field. A silent node is
 indistinguishable from dead WiFi or a flat battery; an explicit error says "node alive, probe isn't".
 
-**Deployed config:** SSID `FarmIoT`, `REPORT_INTERVAL_S 10` (bring-up — **raise to 60 for the
-field**), `VALVE_ACTIVE_LOW 0`, `OTA_HOSTNAME farm-node-1`, `OTA_PASSWORD` still the placeholder
+**Deployed config:** SSID `FarmIoT`, `ENABLE_SOIL 0` (soil probe moved to its own deep-sleep
+node 2026-08-03 — this board is water + valve only), `REPORT_INTERVAL_S 10` (bring-up — **raise to
+60 for the field**), `VALVE_ACTIVE_LOW 0`, `OTA_HOSTNAME farm-node-1`, `OTA_PASSWORD` still the placeholder
 `change-me-ota` ⚠️ **change it before the node leaves the desk** — anyone on the hotspot can
 otherwise overwrite the firmware.
 

@@ -44,6 +44,8 @@
 - ✅ **Dashboard is per-node (2026-08-01).** One card per reporting node, so `soil-bed-2`/`-3` appear by reporting rather than by a code edit. Staleness is learned per node (3× its own median gap) because the deep-sleep node's cadence is nothing like `farm-node`'s.
 - ⚠️ **Found while building it: Android freezes Node-RED's timers when the phone dozes.** A 30 s repeating `inject` stops firing with no error and the flow still looks healthy. The push is therefore **event-driven** — each arriving reading triggers the drain, because the incoming request has already woken the phone — with the inject kept only as a backstop. Anything else in these flows that relies on a timer is suspect. Wake-lock is still required.
 
+- ✅ **`farm-node` is water + valve only as of 2026-08-03** (`ENABLE_SOIL 0`). The soil probe moved to its own deep-sleep node, but the combined sketch kept reading a bus with nothing on it and POSTing `{"node":"soil-bed-1","ok":false}` every cycle — **under the same node name as the real soil-bed-1**, so two devices published into one identity. That is what produced the "90 % soil-bed-1 fault rate" on 2026-08-01: a probe that was not connected. `ENABLE_SOIL` is a compile-time flag defaulting to 1, so the combined build the module docs describe is unchanged. The valve's pin state now also rides on the `/water` payload — it used to be reported *only* in the soil message, so disabling soil would otherwise have blinded both dashboards to whether the valve obeyed.
+
 ## Open decisions
 
 - **Website hosting:** on the Float site or Ian's own domain? Affects step 5.

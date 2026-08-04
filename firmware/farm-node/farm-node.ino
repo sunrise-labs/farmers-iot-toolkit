@@ -105,8 +105,16 @@
 
 #define SENSOR_ADDR 1      // both sensors ship as address 1 — fine, separate buses
 
+// Older config.h files predate ENABLE_SOIL. Default to the combined build so an
+// un-updated config keeps behaving exactly as it did before.
+#ifndef ENABLE_SOIL
+#define ENABLE_SOIL 1
+#endif
+
 SoftwareSerial water(WATER_RX, WATER_TX);
+#if ENABLE_SOIL
 SoftwareSerial soil(SOIL_RX, SOIL_TX);
+#endif
 
 // --- valve (Module 2), MANUAL control for now ---------------------------------
 // No moisture thresholds yet: the base station (Node-RED) holds the desired
@@ -357,6 +365,16 @@ void otaDelay(unsigned long ms) { delay(ms); }
 // Only publish RSSI when there's a link to measure. Disconnected, WiFi.RSSI()
 // returns a sentinel (we saw 31) that looks exactly like a real reading — and
 // publishing a sentinel as data is the same sin as reporting a wrong depth.
+// The valve's ACTUAL pin state, as a JSON fragment.
+//
+// It rides on the water payload as well as the soil one because it belongs to the
+// NODE, not to either probe. That matters once ENABLE_SOIL is 0: the soil message
+// used to be the only place the valve was ever reported, so turning the soil half
+// off would have silently blinded both dashboards to whether the valve obeyed.
+String valveField() {
+  return String(",\"valve\":\"") + (valveOpen ? "open" : "closed") + "\"";
+}
+
 void appendTail(String &json) {
 #if !BENCH_MODE
   if (WiFi.status() == WL_CONNECTED) json += ",\"rssi\":" + String(WiFi.RSSI());
@@ -385,6 +403,7 @@ void readAndSendWater() {
       if (pct > 100.0f) pct = 100.0f;     // overfull reads as full, not 103%
       json += ",\"percent\":" + String(pct, 1);
     }
+    json += valveField();
     appendTail(json);
     Serial.printf("WATER  raw=%-6d depth=%d mm%s\n", raw, depth_mm,
                   depth_mm < 0 ? "  (below zero — check the dry offset)" : "");
@@ -393,7 +412,8 @@ void readAndSendWater() {
     // identical to a dead node or dead WiFi; an explicit error tells the
     // dashboard the node is alive and the probe is not.
     json = String("{\"node\":\"") + NODE_ID_WATER + "\",\"ok\":false"
-         + ",\"error\":\"no valid modbus frame\"";
+         + ",\"error\":\"no valid modbus frame\""
+         + valveField();
     appendTail(json);
     Serial.println(F("WATER  FAILED — check 18V at the probe, and blue=A yellow=B"));
   }
@@ -401,6 +421,7 @@ void readAndSendWater() {
   postJSON(POST_PATH_WATER, json);
 }
 
+#if ENABLE_SOIL
 void readAndSendSoil() {
   uint16_t v[3];
   String json;
@@ -428,6 +449,7 @@ void readAndSendSoil() {
   Serial.println(json);
   postJSON(POST_PATH_SOIL, json);
 }
+#endif  // ENABLE_SOIL
 
 void setup() {
   Serial.begin(115200);          // debug, over USB
@@ -439,11 +461,20 @@ void setup() {
   valveOpen = false;
 
   water.begin(WATER_BAUD);
+#if ENABLE_SOIL
   soil.begin(SOIL_BAUD);
+#endif
   delay(500);
+#if ENABLE_SOIL
   Serial.println(F("\n\nFarmers IoT Toolkit — combined node (water + soil + valve)"));
   Serial.printf("water=%s  soil=%s  dry_offset=%d  tank_full=%d mm\n",
                 NODE_ID_WATER, NODE_ID_SOIL, DRY_OFFSET_COUNTS, TANK_FULL_MM);
+#else
+  Serial.println(F("\n\nFarmers IoT Toolkit — water + valve node (soil disabled)"));
+  Serial.printf("water=%s  dry_offset=%d  tank_full=%d mm\n",
+                NODE_ID_WATER, DRY_OFFSET_COUNTS, TANK_FULL_MM);
+  Serial.println(F("ENABLE_SOIL 0 — soil bus not initialised; D6/D5 are free."));
+#endif
   Serial.printf("valve on GPIO%d  active-%s  poll=%ds  max-open=%ds  (manual)\n",
                 VALVE_PIN, VALVE_ACTIVE_LOW ? "LOW" : "HIGH",
                 VALVE_POLL_S, VALVE_MAX_OPEN_S);
@@ -468,7 +499,9 @@ void loop() {
   otaHandle();     // service any in-flight update before the blocking sensor reads
 
   readAndSendWater();
+#if ENABLE_SOIL
   readAndSendSoil();
+#endif
   Serial.println();
 
 #if BENCH_MODE

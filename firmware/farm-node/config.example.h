@@ -45,7 +45,20 @@
 //        -d '{"node":"test","ok":true,"depth_mm":500}'
 // The node prints the phone's address on serial as `gateway :` when it connects.
 
-// Names for the two readings. If you run more than one of either, make these unique.
+// ─── Which probes are actually on this board ────────────────────────────────
+// 1 = read the THC-S soil probe on the second RS485 bus and POST it.
+// 0 = water probe (and valve) only — the soil bus is not initialised at all,
+//     freeing D6/D5 and their interrupt.
+//
+// Set this to 0 once the soil probe moves to its own node. Leaving it at 1 with
+// no probe attached does not merely waste a read: the node keeps POSTing
+// `{"node":"soil-bed-1","ok":false}` every cycle, and if a REAL soil-bed-1
+// exists elsewhere, two different devices publish under one name and the
+// dashboard interleaves a healthy node with a phantom failing one.
+#define ENABLE_SOIL      1
+
+// Names for the readings. If you run more than one of either, make these unique
+// — and make sure no OTHER node is already using the name.
 #define NODE_ID_WATER  "water-tank-1"
 #define NODE_ID_SOIL   "soil-bed-1"
 
