@@ -89,10 +89,19 @@
 // Endpoint on the base station that returns "1" (open) or "0" (closed).
 #define VALVE_PATH        "/valve"
 
-// Safety: force the valve shut after this many seconds open, even in manual mode
-// (guards against "opened it and walked away"). 0 = disabled. Turn it on before
-// you leave the node unattended.
-#define VALVE_MAX_OPEN_S  0
+// Safety: force the valve shut after this many seconds open, even in manual mode.
+// 0 = disabled — but think hard before you set that.
+//
+// This is the LAST line of defence, and the only one that lives on the node
+// itself. A failed valve poll deliberately HOLDS the last state (so a brief WiFi
+// blip doesn't cycle your valve) — which means an OPEN valve plus a dead base
+// station stays open until someone walks out to it. Nothing upstream can save
+// you, because the thing that failed is the link to upstream.
+//
+// Default is 30 minutes: longer than a real irrigation run, far shorter than the
+// time it takes to empty a tank onto one spot. Raise it if your runs are longer;
+// don't set it to 0 on a node you leave alone.
+#define VALVE_MAX_OPEN_S  1800
 
 // ─── OTA — over-the-air firmware update ─────────────────────────────────────
 // Reflash this node over WiFi, no USB cable. This is what makes the node

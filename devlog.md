@@ -33,6 +33,24 @@ more. It has the valve and no moisture reading. Automatic watering now has to be
 base-station decision — Node-RED sees `soil-bed-*` and drives `/valve` — which is
 arguably where it belonged anyway, since one valve serves beds that report separately.
 
+### Same pass: `VALVE_MAX_OPEN_S` finally turned on (1800 s)
+
+It had sat at `0` since the valve shipped, and remote control going live on 2026-08-01
+quietly made that worse. The reasoning that matters: **the server's `FARM_VALVE_TTL_S`
+expiry cannot save you, because the failure it needs to survive is the link itself.** A
+failed valve poll deliberately HOLDS the last state (right call — a WiFi blip shouldn't
+cycle a solenoid), so *valve open + hotspot dead = open forever*, and nothing upstream
+is in a position to notice. `VALVE_MAX_OPEN_S` is the only guard that runs on the node,
+which makes it the only one that works when the node is alone. 1800 s mirrors the
+server default so both ends agree on one ceiling.
+
+Also changed the **`config.example.h` default from 0 to 1800**. Shipping a teaching
+toolkit whose flood-safety timer defaults to *off* — with a comment politely suggesting
+you enable it — puts the failure on the farmer who didn't read carefully. Safe by
+default; make people opt *out* of the guard, not into it.
+
+`REPORT_INTERVAL_S` 10 → 60, the field value it always said to use.
+
 Format per entry: date, what we were doing, what bit us, and what actually worked.
 
 ---
