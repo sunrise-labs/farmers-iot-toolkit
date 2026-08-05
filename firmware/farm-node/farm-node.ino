@@ -1,28 +1,39 @@
 /*
- * farm-node.ino — Farmers IoT Toolkit, COMBINED NODE (modules 1 + 2 sensing)
+ * farm-node.ino — Farmers IoT Toolkit, WATER + VALVE NODE (module 1 sensing,
+ *                 module 2 actuation)
  *
- * Reads BOTH sensors from one ESP8266 and POSTs each as JSON to the Node-RED
- * base station (Module 4). Import flows/both-sensors-flow.json to receive them.
+ * Reads the water-tank probe, POSTs it as JSON to the Node-RED base station
+ * (Module 4), and drives the master irrigation valve from a state the base
+ * station holds. Import flows/both-sensors-flow.json to receive it.
  *
- *   water  QDY30A  RS485 @ 9600 -> HW-0519 #1 -> RXD=D7  TXD=D1   (probe needs 18V)
- *   soil   THC-S   RS485 @ 4800 -> HW-0519 #2 -> RXD=D6  TXD=D5   (probe runs on 5V)
- *   (pins as physically soldered 2026-07-19 — water & soil swapped vs the original
- *    D5/D6-water, D7/D1-soil layout; firmware follows the iron, not the other way.)
+ *   water  QDY30A  RS485 @ 9600 -> HW-0519 -> RXD=D7  TXD=D1   (probe needs 18V)
+ *   valve  relay board                     -> IN=D2            (see VALVE_ACTIVE_LOW)
+ *   (pins as physically soldered 2026-07-19 — water sits on D7/D1, which was the
+ *    soil pair in the original layout; firmware follows the iron, not the other
+ *    way round.)
  *
- * TWO SEPARATE BUSES, one transceiver each. That is what lets both sensors keep
- * slave address 1 AND run different bauds with no register writes on either — a
- * dollar of hardware deletes two problems that would otherwise need risky writes
- * to registers we own exactly one sensor of. Proven on hardware 2026-07-16.
+ * ** THE SOIL PROBE IS NOT ON THIS BOARD. ** It moved to its own battery-powered
+ * deep-sleep node (firmware/soil-node-sleep/) on 2026-08-03, and the soil bus was
+ * removed from this sketch on 2026-08-05. Do not re-add it here. While it was
+ * still compiled in, this board polled a bus with nothing on it and POSTed
+ * {"node":"soil-bed-1","ok":false} every cycle — under the SAME name as the real
+ * soil-bed-1, so two devices published into one identity and the dashboard
+ * reported a healthy node as 90% faulty. See STATUS.md 2026-08-03.
  *
- * ** NO DE PIN. ** Both boards are HW-0519 auto-direction — they derive transmit
- * enable from TXD via an onboard 74HC04. water-level.ino toggles D1 as DE, which
- * was harmless when D1 was disconnected but D1 is now water's TXD: driving it would
- * clamp the water board's driver onto the water bus and the sensor could never reply.
- * Never add a DE pin back on a combined node.
+ * The one-ESP8266-two-RS485-buses build (both sensors, one board, separate
+ * transceivers so each keeps slave address 1 and its own baud with zero register
+ * writes) is still demonstrated in firmware/bench-both/ — that is where to look
+ * for it, not here.
  *
- * Pin budget is exactly spent: D7/D1 water, D6/D5 soil, D2 free for the valve.
+ * ** NO DE PIN. ** The HW-0519 is auto-direction — it derives transmit enable from
+ * TXD via an onboard 74HC04. water-level.ino toggles D1 as DE, which is exactly
+ * wrong on this board: D1 is water's TXD here, so driving it as DE would clamp the
+ * transceiver's driver onto the bus and the probe could never reply. Never run
+ * water-level.ino on this node, and never add a DE pin back to this sketch.
+ *
+ * Pins in use: D7/D1 water, D2 valve. D6/D5 are FREE since the soil bus left.
  * D3/D4/D8 are boot straps and D0 has no interrupts (so it cannot do SoftwareSerial
- * RX). There is no sixth safe pin. See docs/02 for the full table.
+ * RX). See docs/02 for the full table.
  *
  * Board: NodeMCU 1.0 (ESP-12E Module)   [Arduino IDE -> Boards Manager -> esp8266]
  * No libraries to install. Modbus frame and CRC are hand-rolled so you can see
@@ -91,30 +102,16 @@
 #define VALVE_MAX_OPEN_S 0
 #endif
 
-// --- water bus ---
-#define WATER_RX   D7      // GPIO13 <- HW-0519 #1 RXD  (as soldered 2026-07-19)
-#define WATER_TX   D1      // GPIO5  -> HW-0519 #1 TXD  (as soldered 2026-07-19)
-#define WATER_BAUD 9600    // QDY30A default. NOT 4800 — that's the soil probe.
+// --- water bus (the only RS485 bus on this node) ---
+#define WATER_RX   D7      // GPIO13 <- HW-0519 RXD  (as soldered 2026-07-19)
+#define WATER_TX   D1      // GPIO5  -> HW-0519 TXD  (as soldered 2026-07-19)
+#define WATER_BAUD 9600    // QDY30A default. NOT 4800 — that's the THC-S soil probe,
+                           // which lives on its own node now (soil-node-sleep/).
 #define WATER_REG  0x0004  // level, int16 SIGNED, 1 count = 1 mm (ruler-confirmed)
 
-// --- soil bus ---
-#define SOIL_RX    D6      // GPIO12 <- HW-0519 #2 RXD  (as soldered 2026-07-19)
-#define SOIL_TX    D5      // GPIO14 -> HW-0519 #2 TXD  (as soldered 2026-07-19)
-#define SOIL_BAUD  4800    // THC-S default. NOT 9600 — that's the water probe.
-#define SOIL_REG   0x0000  // 0=moisture /10 %, 1=temp /10 C SIGNED, 2=EC uS/cm
-
-#define SENSOR_ADDR 1      // both sensors ship as address 1 — fine, separate buses
-
-// Older config.h files predate ENABLE_SOIL. Default to the combined build so an
-// un-updated config keeps behaving exactly as it did before.
-#ifndef ENABLE_SOIL
-#define ENABLE_SOIL 1
-#endif
+#define SENSOR_ADDR 1      // the QDY30A ships as address 1 and we never rewrite it
 
 SoftwareSerial water(WATER_RX, WATER_TX);
-#if ENABLE_SOIL
-SoftwareSerial soil(SOIL_RX, SOIL_TX);
-#endif
 
 // --- valve (Module 2), MANUAL control for now ---------------------------------
 // No moisture thresholds yet: the base station (Node-RED) holds the desired
@@ -367,10 +364,11 @@ void otaDelay(unsigned long ms) { delay(ms); }
 // publishing a sentinel as data is the same sin as reporting a wrong depth.
 // The valve's ACTUAL pin state, as a JSON fragment.
 //
-// It rides on the water payload as well as the soil one because it belongs to the
-// NODE, not to either probe. That matters once ENABLE_SOIL is 0: the soil message
-// used to be the only place the valve was ever reported, so turning the soil half
-// off would have silently blinded both dashboards to whether the valve obeyed.
+// It rides on the water payload because the valve belongs to the NODE, not to a
+// probe. It used to be reported ONLY in the soil message — which meant dropping
+// the soil half would have silently blinded both dashboards to whether the valve
+// ever obeyed. /water is now the only place it is published, so nothing here may
+// become conditional on a sensor again.
 String valveField() {
   return String(",\"valve\":\"") + (valveOpen ? "open" : "closed") + "\"";
 }
@@ -421,36 +419,6 @@ void readAndSendWater() {
   postJSON(POST_PATH_WATER, json);
 }
 
-#if ENABLE_SOIL
-void readAndSendSoil() {
-  uint16_t v[3];
-  String json;
-
-  if (readWithRetry(soil, SOIL_REG, 3, v, 5)) {
-    float moisture = v[0] / 10.0f;
-    float tempC    = (int16_t)v[1] / 10.0f;   // SIGNED — 0xFF9B is -10.1C, not 65435
-    uint16_t ec    = v[2];
-
-    json = String("{\"node\":\"") + NODE_ID_SOIL + "\",\"ok\":true"
-         + ",\"moisture_pct\":" + String(moisture, 1)
-         + ",\"temp_c\":" + String(tempC, 1)
-         + ",\"ec\":" + String(ec)
-         + ",\"valve\":\"" + (valveOpen ? "open" : "closed") + "\"";  // actual pin state
-    appendTail(json);
-    Serial.printf("SOIL   moisture=%.1f %%   temp=%.1f C   EC=%u uS/cm\n",
-                  moisture, tempC, ec);
-  } else {
-    json = String("{\"node\":\"") + NODE_ID_SOIL + "\",\"ok\":false"
-         + ",\"error\":\"no valid modbus frame\""
-         + ",\"valve\":\"" + (valveOpen ? "open" : "closed") + "\"";  // report even on fault
-    appendTail(json);
-    Serial.println(F("SOIL   FAILED — check 5V on brown/black, and yellow=A blue=B"));
-  }
-  Serial.println(json);
-  postJSON(POST_PATH_SOIL, json);
-}
-#endif  // ENABLE_SOIL
-
 void setup() {
   Serial.begin(115200);          // debug, over USB
 
@@ -461,20 +429,11 @@ void setup() {
   valveOpen = false;
 
   water.begin(WATER_BAUD);
-#if ENABLE_SOIL
-  soil.begin(SOIL_BAUD);
-#endif
   delay(500);
-#if ENABLE_SOIL
-  Serial.println(F("\n\nFarmers IoT Toolkit — combined node (water + soil + valve)"));
-  Serial.printf("water=%s  soil=%s  dry_offset=%d  tank_full=%d mm\n",
-                NODE_ID_WATER, NODE_ID_SOIL, DRY_OFFSET_COUNTS, TANK_FULL_MM);
-#else
-  Serial.println(F("\n\nFarmers IoT Toolkit — water + valve node (soil disabled)"));
+  Serial.println(F("\n\nFarmers IoT Toolkit — water + valve node"));
   Serial.printf("water=%s  dry_offset=%d  tank_full=%d mm\n",
                 NODE_ID_WATER, DRY_OFFSET_COUNTS, TANK_FULL_MM);
-  Serial.println(F("ENABLE_SOIL 0 — soil bus not initialised; D6/D5 are free."));
-#endif
+  Serial.println(F("soil probe is a separate node (soil-node-sleep) — D6/D5 free here."));
   Serial.printf("valve on GPIO%d  active-%s  poll=%ds  max-open=%ds  (manual)\n",
                 VALVE_PIN, VALVE_ACTIVE_LOW ? "LOW" : "HIGH",
                 VALVE_POLL_S, VALVE_MAX_OPEN_S);
@@ -499,9 +458,6 @@ void loop() {
   otaHandle();     // service any in-flight update before the blocking sensor reads
 
   readAndSendWater();
-#if ENABLE_SOIL
-  readAndSendSoil();
-#endif
   Serial.println();
 
 #if BENCH_MODE

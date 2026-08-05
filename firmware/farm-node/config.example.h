@@ -38,29 +38,20 @@
 #define POST_HOST        ""
 #define POST_PORT        1880
 #define POST_PATH_WATER  "/water"
-#define POST_PATH_SOIL   "/soil"
 
 // Test the endpoints before you blame the firmware — from any device on the hotspot:
 //   curl -X POST http://<phone-ip>:1880/water -H 'Content-Type: application/json' \
 //        -d '{"node":"test","ok":true,"depth_mm":500}'
 // The node prints the phone's address on serial as `gateway :` when it connects.
 
-// ─── Which probes are actually on this board ────────────────────────────────
-// 1 = read the THC-S soil probe on the second RS485 bus and POST it.
-// 0 = water probe (and valve) only — the soil bus is not initialised at all,
-//     freeing D6/D5 and their interrupt.
+// Name for this node's water reading. If you run more than one water node, make
+// this unique — and make sure no OTHER node is already using the name. Two
+// devices publishing under one name is a real failure we have had: the dashboard
+// interleaves them and reports a healthy node as faulty.
 //
-// Set this to 0 once the soil probe moves to its own node. Leaving it at 1 with
-// no probe attached does not merely waste a read: the node keeps POSTing
-// `{"node":"soil-bed-1","ok":false}` every cycle, and if a REAL soil-bed-1
-// exists elsewhere, two different devices publish under one name and the
-// dashboard interleaves a healthy node with a phantom failing one.
-#define ENABLE_SOIL      1
-
-// Names for the readings. If you run more than one of either, make these unique
-// — and make sure no OTHER node is already using the name.
+// (The soil probe is not on this board — it has its own sketch in
+//  firmware/soil-node-sleep/, with its own NODE_ID.)
 #define NODE_ID_WATER  "water-tank-1"
-#define NODE_ID_SOIL   "soil-bed-1"
 
 // How often to read and send, in seconds. Ignored in bench mode, which polls
 // every 2s so you get a fast feedback loop while wiring.
@@ -80,9 +71,9 @@
 #define TANK_FULL_MM   0
 
 // ─── Valve (Module 2 — MANUAL control for now) ──────────────────────────────
-// The valve is driven through a relay on this pin. D2 is the last free-and-safe
-// pin once both sensors are wired (D5/D6 water, D7/D1 soil). Don't move it onto
-// a boot-strap pin (D3/D4/D8) or D0.
+// The valve is driven through a relay on this pin. Water sits on D7/D1, leaving
+// D2 (and, since the soil bus moved off this board, D6/D5) free. Don't move it
+// onto a boot-strap pin (D3/D4/D8) or D0.
 #define VALVE_PIN         D2
 
 // Most 1-channel relay boards are ACTIVE-LOW: IN LOW energises the relay. That

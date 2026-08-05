@@ -4,6 +4,35 @@ Running log of decisions, gotchas, and dead-ends found during development. Newes
 entries at the top. The point is to save future-us (and anyone else building this
 rig) the hours we burned the first time.
 
+---
+
+## 2026-08-05 — soil code deleted from `farm-node`, not just flagged off
+
+`ENABLE_SOIL 0` (2026-08-03) stopped the phantom `soil-bed-1` POSTs, but left the whole
+soil bus compiled in behind a flag that **defaulted to 1**. That is the trap one stale
+`config.h` away from returning — and the failure it produces is the nasty kind: two
+devices publishing under one node name, so the dashboard reports a *healthy* node as 90 %
+faulty. A default-on flag guarding a footgun is not a fix, it's a delay. Deleted:
+`SOIL_*` defines, the second `SoftwareSerial`, `readAndSendSoil()`, `NODE_ID_SOIL`,
+`POST_PATH_SOIL`, and every `#if ENABLE_SOIL`.
+
+**What made this safe to delete, checked before cutting:** no module doc ever pointed a
+farmer at `farm-node/` (`docs/02` points at a still-unwritten `firmware/soil-moisture/`),
+so the "docs describe two independent nodes" teaching story never depended on this sketch
+being combined. And the one-ESP-two-RS485-buses demonstration — the interesting part,
+where two sensors keep slave address 1 and different bauds with zero register writes —
+still lives in `firmware/bench-both/`. Nothing was lost that anything referenced.
+
+`arduino-cli compile` clean: 128 lines out, flash 28 %, **IRAM still 95 %**. Worth
+noting the IRAM didn't move — `SoftwareSerial`'s interrupt handlers are already resident
+whether one instance or two exist, so dropping a bus buys code space, not IRAM headroom.
+D6/D5 are now genuinely free, which is the first spare pin pair this board has ever had.
+
+**Consequence to hold onto:** moisture-threshold irrigation cannot live on this node any
+more. It has the valve and no moisture reading. Automatic watering now has to be a
+base-station decision — Node-RED sees `soil-bed-*` and drives `/valve` — which is
+arguably where it belonged anyway, since one valve serves beds that report separately.
+
 Format per entry: date, what we were doing, what bit us, and what actually worked.
 
 ---

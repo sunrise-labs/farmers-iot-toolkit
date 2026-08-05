@@ -6,15 +6,15 @@ self-contained Arduino sketch for the **ESP8266 NodeMCU**.
 | Folder | Module | Status |
 |---|---|---|
 | `water-level/` | ① Water tank level (QDY30A pressure probe, RS485) | **Proven on hardware** — reads, POSTs, `200 ok` |
-| `farm-node/` | ①+② combined — both sensors on one ESP8266, POSTs each | **Proven on hardware.** What Ian's farm runs |
+| `farm-node/` | ① water probe + ② **master valve** on one ESP8266 | **Proven on hardware.** What Ian's farm runs. Soil code removed 2026-08-05 — the probe has its own node now |
 | `bench-both/` | Bench tool — both sensors, serial only, dumps raw frames on failure | Bench tool, not a deliverable |
-| `soil-moisture/` | ② Soil moisture + irrigation valve (THC-S, RS485) | Not started — the *sensor* half is proven in `farm-node/`; this folder is for the standalone module plus the valve logic |
+| `soil-moisture/` | ② Soil moisture + irrigation valve (THC-S, RS485) | Not started — this is the **standalone module sketch** a farmer downloads. The sensor half is proven in `bench-both/` and `soil-node-sleep/`, the valve half in `farm-node/` |
 | `soil-node-sleep/` | ② sensor-only **deep-sleep** variant — battery-swap, no panel, no valve | **Proven on hardware 2026-07-28** — 4/4 self-wakes, reads, POSTs. ⚠️ **Requires brand-name flash** (run `esptool flash_id`: `ef`/`c8` good, clone flash zombies on wake — devlog 2026-07-28). D0→RST wire fitted *after* flashing. Guide: `docs/deep-sleep-soil-node.md` |
 
-> **`water-level.ino` drives D1 as a DE pin. Do not run it on a combined node** — D1
-> is soil's HW-0519 TXD there, and an auto-direction board derives transmit-enable
-> from TXD, so a LOW D1 clamps its driver onto the soil bus and the sensor can never
-> reply. `farm-node.ino` drives no DE pin at all, which is correct for HW-0519 boards.
+> **`water-level.ino` drives D1 as a DE pin. Do not run it on `farm-node`'s board** —
+> D1 is that board's HW-0519 TXD, and an auto-direction board derives transmit-enable
+> from TXD, so a LOW D1 clamps its driver onto the bus and the probe can never reply.
+> `farm-node.ino` drives no DE pin at all, which is correct for HW-0519 boards.
 
 ## Why our own code (and not Frugal IoT, ESPHome, Tasmota…)
 

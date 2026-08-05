@@ -82,17 +82,20 @@ bad address/baud write can brick comms). Pins are exactly spent: D5/D6 water, D7
 valve relay. D3/D4/D8 are boot straps, D0 has no interrupts — there is no sixth safe pin.
 
 **`farm-node/` drives NO DE pin; `water-level/` drives D1 as DE.** The boards are HW-0519
-auto-direction (derive TX-enable from TXD). On the combined node D1 is soil's TXD, so driving
-it as DE would clamp the soil driver onto the bus and the sensor could never reply. **Never run
-`water-level.ino` on a combined node, and never add a DE pin back to `farm-node.ino`.**
+auto-direction (derive TX-enable from TXD). On `farm-node`'s board D1 is the water probe's TXD,
+so driving it as DE would clamp that driver onto the bus and the sensor could never reply.
+**Never run `water-level.ino` on `farm-node`'s board, and never add a DE pin back to
+`farm-node.ino`.**
 
 **Modbus values are SIGNED int16** (temperature, water level) — sign-extend, don't read as
 unsigned (0xFF9B is -10.1 °C, not 65435). Water register 0x0004 = 1 count = 1 mm (ruler-confirmed).
 
-**Two truths, both intentional:** the module docs describe *two independent nodes* (a farmer
-must be able to build Module ① alone — better teaching), while Ian's farm runs *one combined
-`farm-node`*. Each sensor has its own endpoint, so the flow supports either. Don't "fix" the
-docs to match the combined build.
+**The module docs describe *two independent nodes*** — a farmer must be able to build Module ①
+alone, which is the better teaching story. Ian's farm now matches that shape: `farm-node/` is
+**water + master valve only** (soil code deleted 2026-08-05) and the soil probe runs on its own
+`soil-node-sleep/` board. Each sensor has its own endpoint, so the flow supports either layout.
+The one-ESP-two-buses combined build still exists as a bench tool in `firmware/bench-both/` —
+that's where to look for it, not in `farm-node/`, and don't re-add soil there.
 
 **Modbus CRC/`readRegisters` is duplicated across sketches on purpose** — each module must be
 independently buildable (download one `.ino`, flash it, no library-install preamble). The cost
