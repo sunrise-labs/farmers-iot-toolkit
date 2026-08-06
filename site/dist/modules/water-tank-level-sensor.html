@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water Tank Level Sensor — Farmers IoT Toolkit</title>
+<meta name="description" content="A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Water Tank Level Sensor — Farmers IoT Toolkit">
+<meta property="og:description" content="A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+</head>
+<body class="page-module" style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">
+    <span class="brand__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M3 20h18" stroke-linecap="round"/>
+        <path d="M12 20V9"/>
+        <path d="M12 9c0-3 2.6-5.4 5.6-5.4C17.6 7 15 9 12 9Z"/>
+        <path d="M12 12.5c0-2.4-2.1-4.3-4.6-4.3C7.4 11.4 9.5 12.5 12 12.5Z"/>
+      </svg>
+    </span>
+    <span class="brand__name">Farmers IoT Toolkit</span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="../index.html#modules">Modules</a>
+    <a href="../index.html#system">How it fits</a>
+    <a href="../index.html#video">Video</a>
+    <a href="../cheatsheet.html">Wiring cheatsheet</a>
+    <a class="topnav__ext" href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Source ↗</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Switch between light and dark" data-theme-toggle>
+    <span aria-hidden="true">◐</span>
+  </button>
+</header>
+
+<main id="main">
+
+<article class="mod">
+  <header class="mod__hero">
+    <div class="mod__rule" aria-hidden="true"></div>
+    <p class="mod__kicker"><span class="mod__n">1</span> Module 1 · Beginner · 1–2 hours</p>
+    <h1 class="mod__h1">Water Tank Level Sensor</h1>
+    <p class="mod__plain">A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.</p>
+
+    <div class="mod__status">
+      <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
+    <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
+      <p>Comms, register map and ruler calibration all confirmed; runs end-to-end to Node-RED. One open fault: the probe reads, then goes silent, then reads again on identical code — a wire, prime suspect the green/ground. Find it before you solder anything into a box.</p>
+    </div>
+
+    <dl class="mod__facts">
+      <div><dt>Parts</dt><dd>~$18<span class="tbc">+1 TBC</span></dd></div>
+      <div><dt>Build time</dt><dd>1–2 hours</dd></div>
+      <div><dt>Steps proven</dt><dd>7 of 7</dd></div>
+      <div><dt>Board</dt><dd>ESP8266</dd></div>
+    </dl>
+  </header>
+
+  <nav class="modnav" aria-label="Modules">
+    <a href="modules/water-tank-level-sensor.html"
+      class="modnav__i is-current"
+      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
+      aria-current="page">
+      <span class="modnav__n">1</span><span class="modnav__t">Water tank level</span></a><a href="modules/soil-moisture-drip-irrigation.html"
+      class="modnav__i"
+      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
+      >
+      <span class="modnav__n">2</span><span class="modnav__t">Soil + irrigation valve</span></a><a href="modules/iot-solar-powerbank.html"
+      class="modnav__i"
+      style="--accent:#C77C1E;--accent-dark:#E8A94A"
+      >
+      <span class="modnav__n">3</span><span class="modnav__t">Solar power</span></a><a href="modules/mobile-wifi-base-station.html"
+      class="modnav__i"
+      style="--accent:#43587A;--accent-dark:#8AA0C8"
+      >
+      <span class="modnav__n">4</span><span class="modnav__t">Base station</span></a>
+  </nav>
+
+  <section class="mod__sec">
+    <h2>Why you would want this</h2>
+    <ul class="ticks"><li>Know the tank is getting low <em>before</em> you run out</li><li>Keep a record of water use across days and weeks</li><li>Check from the house instead of walking to the tank and climbing up</li><li>Plan ahead for dry spells</li></ul>
+  </section>
+
+  <section class="mod__sec mod__sec--choice">
+      <h2>Why a pressure probe and not an ultrasonic one</h2>
+      <p>Nearly every beginner tutorial puts an ultrasonic sensor on the tank lid and bounces sound off the water. It is cheaper, and for a real farm tank it is the wrong tool — this module used to describe that design and we changed it deliberately. A tank is an enclosed cylinder full of reflective surfaces with a moving surface on top: the worst possible case for an echo. A pressure probe ignores every one of those problems because it does not look at the water. It sits underneath it.</p>
+      <div class="table-wrap"><table class="compare">
+        <thead><tr><th scope="col"></th><th scope="col">Ultrasonic, from the top</th><th scope="col">Pressure probe — this module</th></tr></thead>
+        <tbody><tr><th scope="row">How it measures</th><td>Times a sound echo off the surface</td><td>Feels the weight of water above it</td></tr><tr><th scope="row">Tank walls</th><td>Sound bounces off them — false readings</td><td>Doesn't care</td></tr><tr><th scope="row">Ripples, foam, debris</th><td>Scatter the echo</td><td>Doesn't care</td></tr><tr><th scope="row">Condensation on the face</th><td>Blinds it</td><td>Lives underwater anyway</td></tr><tr><th scope="row">Mounting</th><td>Needs clear line of sight straight down</td><td>Just drop it in</td></tr><tr><th scope="row">Cost</th><td>Cheaper</td><td>More</td></tr><tr><th scope="row">Power</th><td>Runs off the board</td><td>Needs 12–36 V — hence the boost converter</td></tr></tbody></table></div>
+    </section>
+
+  <section class="mod__sec" id="bom">
+    <h2>What you will need</h2>
+    <div class="table-wrap">
+    <table class="bom">
+      <caption class="sr-only">Bill of materials for Water Tank Level Sensor</caption>
+      <thead><tr><th scope="col">Part</th><th scope="col">What it does</th><th scope="col" class="num">Est.</th><th scope="col">Link</th></tr></thead>
+      <tbody><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005006889833004.html" rel="noopener nofollow">ESP8266 NodeMCU v3 (ESP-12E)</a>
+        
+        
+      </th>
+      <td>The small computer that runs the node</td>
+      <td class="num">$3</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006889833004.html" rel="noopener nofollow">Buy<span class="sr-only"> ESP8266 NodeMCU v3 (ESP-12E)</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005006415176688.html" rel="noopener nofollow">QDY30A submersible pressure probe</a>
+        
+        <p class="part__caution">Buy the RS485 variant. The same listing sells 4–20 mA, 0–5 V and 0–10 V outputs, and only RS485 works with this guide. Check the options before you pay.</p>
+      </th>
+      <td>Sits on the tank floor and measures the depth of water above it</td>
+      <td class="num"><span class="tbc" title="We have not paid a confirmed price for this yet">TBC</span></td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006415176688.html" rel="noopener nofollow">Buy<span class="sr-only"> QDY30A submersible pressure probe</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">MAX485 / HW-0519 RS485 module</a>
+        
+        <p class="part__caution">The listing ships two different boards. The HW-0519 is auto-direction and needs no DE pin; the classic breakout has DE/RE and costs you a GPIO. Both work — but only the HW-0519 lets both sensors share one ESP8266.</p>
+      </th>
+      <td>Lets the ESP8266 speak RS485 to the probe</td>
+      <td class="num">$2</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">Buy<span class="sr-only"> MAX485 / HW-0519 RS485 module</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005006361814667.html" rel="noopener nofollow">MT3608 boost converter</a>
+        
+        <p class="part__caution">Set it to 18 V with NOTHING on the output, before the probe is ever connected.</p>
+      </th>
+      <td>Lifts the pack to the 18 V the water probe needs</td>
+      <td class="num">$2</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006361814667.html" rel="noopener nofollow">Buy<span class="sr-only"> MT3608 boost converter</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        Jumper wires
+        
+        
+      </th>
+      <td>Connects everything</td>
+      <td class="num">$1</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        Breadboard
+        
+        
+      </th>
+      <td>Lets you build without soldering</td>
+      <td class="num">$3</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        USB cable
+        
+        
+      </th>
+      <td>Powers the ESP8266 and loads code onto it</td>
+      <td class="num">$2</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        Waterproof container
+        
+        
+      </th>
+      <td>Protects the electronics</td>
+      <td class="num">$5</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr></tbody>
+      <tfoot><tr>
+        <th scope="row" colspan="2">Approximate total</th>
+        <td class="num">~$18</td>
+        <td><span class="tbc">+1 TBC</span></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <p class="fineprint">Prices are what we paid or expect to pay, in USD, mostly on AliExpress —
+  they move, and shipping to a small island is its own line item. Links are not affiliate links
+  and we get nothing if you use them.</p>
+  </section>
+
+  <section class="mod__sec" id="wiring">
+    <h2>Wiring</h2>
+    <figure class="figure">
+  <svg viewBox="0 0 1010 354" role="img" aria-label="Water bus — QDY30A wiring: probe wires on the left, RS485 module to ESP8266 pins on the right" class="diagram diagram--bus" style="--accent:#2B6E7A">
+    <rect x="24" y="52" width="118" height="258" rx="9" class="node__box"/>
+    <text x="83" y="40" text-anchor="middle" class="bw__cap">probe</text>
+
+    <line x1="792" y1="46" x2="792" y2="310" class="bw__div"/>
+    <text x="866" y="40" text-anchor="end" class="bw__cap">HW-0519</text>
+
+    <rect x="928" y="52" width="58" height="258" rx="9" class="node__box"/>
+    <text x="957" y="40" text-anchor="middle" class="bw__cap">ESP</text>
+
+    
+      <g class="bw">
+        <line x1="146" y1="78" x2="404" y2="78" style="stroke:#C0392B"/>
+        <circle cx="146" cy="78" r="5" style="fill:#C0392B"/>
+        <circle cx="404" cy="78" r="5" style="fill:#C0392B"/>
+        <text x="83" y="82" text-anchor="middle" class="bw__l">Red</text>
+        <text x="416" y="82" class="bw__r mono">MT3608 OUT+ (18 V)</text>
+      </g>
+      <g class="bw">
+        <line x1="146" y1="124" x2="404" y2="124" style="stroke:#4A7A3B"/>
+        <circle cx="146" cy="124" r="5" style="fill:#4A7A3B"/>
+        <circle cx="404" cy="124" r="5" style="fill:#4A7A3B"/>
+        <text x="83" y="128" text-anchor="middle" class="bw__l">Green</text>
+        <text x="416" y="128" class="bw__r mono">MT3608 OUT− + common ground</text>
+      </g>
+      <g class="bw">
+        <line x1="146" y1="170" x2="404" y2="170" style="stroke:#2B6E7A"/>
+        <circle cx="146" cy="170" r="5" style="fill:#2B6E7A"/>
+        <circle cx="404" cy="170" r="5" style="fill:#2B6E7A"/>
+        <text x="83" y="174" text-anchor="middle" class="bw__l">Blue</text>
+        <text x="416" y="174" class="bw__r mono">HW-0519 #1 A</text>
+      </g>
+      <g class="bw">
+        <line x1="146" y1="216" x2="404" y2="216" style="stroke:#D8A521"/>
+        <circle cx="146" cy="216" r="5" style="fill:#D8A521"/>
+        <circle cx="404" cy="216" r="5" style="fill:#D8A521"/>
+        <text x="83" y="220" text-anchor="middle" class="bw__l">Yellow</text>
+        <text x="416" y="220" class="bw__r mono">HW-0519 #1 B</text>
+      </g>
+    
+      <g class="bw">
+        <text x="866" y="82" text-anchor="end" class="bw__r mono">RXD / RO</text>
+        <line x1="874" y1="78" x2="928" y2="78" class="bw__pin"/>
+        <text x="940" y="82" class="bw__r mono strong">D5</text>
+      </g>
+      <g class="bw">
+        <text x="866" y="128" text-anchor="end" class="bw__r mono">TXD / DI</text>
+        <line x1="874" y1="124" x2="928" y2="124" class="bw__pin"/>
+        <text x="940" y="128" class="bw__r mono strong">D6</text>
+      </g>
+      <g class="bw">
+        <text x="866" y="174" text-anchor="end" class="bw__r mono">DE + RE</text>
+        <line x1="874" y1="170" x2="928" y2="170" class="bw__pin"/>
+        <text x="940" y="174" class="bw__r mono strong">D1</text>
+      </g>
+      <g class="bw">
+        <text x="866" y="220" text-anchor="end" class="bw__r mono">VCC</text>
+        <line x1="874" y1="216" x2="928" y2="216" class="bw__pin"/>
+        <text x="940" y="220" class="bw__r mono strong">3V3</text>
+      </g>
+      <g class="bw">
+        <text x="866" y="266" text-anchor="end" class="bw__r mono">GND</text>
+        <line x1="874" y1="262" x2="928" y2="262" class="bw__pin"/>
+        <text x="940" y="266" class="bw__r mono strong">GND</text>
+      </g>
+    <text x="404" y="340" text-anchor="middle" class="caption mono">9600 8N1 · slave 1</text>
+    <text x="890" y="340" text-anchor="middle" class="caption">Module 1 on its own</text>
+  </svg>
+  <figcaption>Drawn from the same pin data as the tables below, so the two cannot disagree. The
+  right-hand column is the pin set for <b>Module 1 on its own</b> — other builds use different pins,
+  and they are listed underneath.</figcaption>
+</figure>
+        <div class="bus">
+    <div class="bus__head">
+      <h4>Water bus — QDY30A</h4>
+      <dl class="spec">
+        <div><dt>Baud</dt><dd class="mono">9600</dd></div>
+        <div><dt>Frame</dt><dd class="mono">8N1</dd></div>
+        <div><dt>Slave</dt><dd class="mono">1</dd></div>
+      </dl>
+    </div>
+    <div class="table-wrap"><table class="wiring">
+      <thead><tr><th scope="col">Probe wire</th><th scope="col">From</th><th scope="col">Goes to</th><th scope="col">Note</th></tr></thead>
+      <tbody><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#C0392B" aria-hidden="true"></span>Red</th>
+      <td class="mono">probe red</td>
+      <td class="mono">MT3608 OUT+ (18 V)</td>
+      <td class="note">18 V — this wire and nothing else. 18 V into the MAX485 or the ESP destroys both.</td>
+    </tr><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#4A7A3B" aria-hidden="true"></span>Green</th>
+      <td class="mono">probe green</td>
+      <td class="mono">MT3608 OUT− + common ground</td>
+      <td class="note">Prime suspect for the open intermittent. One ground, not two.</td>
+    </tr><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#2B6E7A" aria-hidden="true"></span>Blue</th>
+      <td class="mono">probe blue</td>
+      <td class="mono">HW-0519 #1 A</td>
+      <td class="note">A+ — note this is the OPPOSITE colour convention to the soil probe.</td>
+    </tr><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#D8A521" aria-hidden="true"></span>Yellow</th>
+      <td class="mono">probe yellow</td>
+      <td class="mono">HW-0519 #1 B</td>
+      <td class="note">B−</td>
+    </tr></tbody>
+    </table></div>
+    <div class="pinset pinset--teach">
+      <div class="pinset__head">
+        <h5>Module 1 on its own</h5>
+        <span class="pinset__tag">wire this one</span>
+        <code class="pinset__src">firmware/water-level/water-level.ino</code>
+      </div>
+      <p class="pinset__note">This is what you want if you are building the tank sensor by itself. On a classic DE/RE breakout, join DE and RE and drive them from D1; an auto-direction HW-0519 needs no DE pin at all.</p>
+      <div class="table-wrap"><table class="wiring">
+        <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
+        <tbody><tr>
+          <th scope="row" class="mono">RXD / RO</th>
+          <td class="mono strong">D5</td>
+          <td class="mono dim">GPIO14</td>
+          <td class="note">in — data toward the ESP</td>
+        </tr><tr>
+          <th scope="row" class="mono">TXD / DI</th>
+          <td class="mono strong">D6</td>
+          <td class="mono dim">GPIO12</td>
+          <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">DE + RE</th>
+          <td class="mono strong">D1</td>
+          <td class="mono dim">GPIO5</td>
+          <td class="note">classic breakout only — omit on HW-0519</td>
+        </tr><tr>
+          <th scope="row" class="mono">VCC</th>
+          <td class="mono strong">3V3</td>
+          <td class="mono dim">—</td>
+          <td class="note">power</td>
+        </tr><tr>
+          <th scope="row" class="mono">GND</th>
+          <td class="mono strong">GND</td>
+          <td class="mono dim">—</td>
+          <td class="note">common ground star</td>
+        </tr></tbody>
+      </table></div>
+    </div><div class="pinset">
+      <div class="pinset__head">
+        <h5>Ian's deployed farm-node (water + valve)</h5>
+        
+        <code class="pinset__src">firmware/farm-node/farm-node.ino</code>
+      </div>
+      <p class="pinset__note">Swapped relative to the standalone build — the pins follow how the board was actually soldered on 2026-07-19, and the firmware follows the iron. NEVER run water-level.ino on this board: it drives D1 as DE, and D1 here is the water probe's TXD, so it would clamp the driver onto the bus and the probe could never reply.</p>
+      <div class="table-wrap"><table class="wiring">
+        <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
+        <tbody><tr>
+          <th scope="row" class="mono">RXD</th>
+          <td class="mono strong">D7</td>
+          <td class="mono dim">GPIO13</td>
+          <td class="note">in — data toward the ESP</td>
+        </tr><tr>
+          <th scope="row" class="mono">TXD</th>
+          <td class="mono strong">D1</td>
+          <td class="mono dim">GPIO5</td>
+          <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">VCC</th>
+          <td class="mono strong">3V3</td>
+          <td class="mono dim">—</td>
+          <td class="note">power</td>
+        </tr><tr>
+          <th scope="row" class="mono">GND</th>
+          <td class="mono strong">GND</td>
+          <td class="mono dim">—</td>
+          <td class="note">common ground star</td>
+        </tr></tbody>
+      </table></div>
+    </div>
+    <div class="table-wrap"><table class="wiring">
+      <thead><tr><th scope="col">Register</th><th scope="col">Means</th><th scope="col">Scaling</th><th scope="col">Type</th></tr></thead>
+      <tbody><tr>
+      <th scope="row" class="mono">0x0004</th>
+      <td>Depth above the probe</td>
+      <td class="mono">1 count = 1 mm</td>
+      <td><b class="warnword">signed int16</b></td>
+    </tr></tbody>
+    </table></div>
+  </div>
+        <p class="fineprint">Both RS485 board variants work and the firmware handles both — but only
+        the auto-direction HW-0519 lets Module 1 and Module 2 later share one ESP8266, because the
+        classic DE/RE breakout spends an extra GPIO on direction and the budget is only five.</p>
+  </section>
+
+  <section class="mod__sec" id="build">
+    <h2>Build it, step by step</h2>
+    
+    <ol class="steps"><li class="step">
+      <div class="step__n" aria-hidden="true">01</div>
+      <div class="step__body">
+        <h3>Set the boost converter to 18 V before the probe exists</h3>
+        
+        <p>This is the one step where you can actually destroy something. The MT3608's trimmer ships at a random setting.</p><p>Connect your battery to <b>IN+ / IN−</b> with nothing on the output. Put a multimeter across <b>OUT+ / OUT−</b>. Turn the screw until the meter reads a steady <b>18.0 V</b>, then power down. <i>Now</i> connect the probe.</p>
+        
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p>The trimmer feels like it does nothing. It is a 25-turn part with no end stops, so it spins freely while the wiper sits parked. Pick a direction and turn ~30 full turns slowly, watching the meter, not the screw. It eventually climbs.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">02</div>
+      <div class="step__body">
+        <h3>Wire it up</h3>
+        
+        <p>Four wires out of the probe, four wires between the RS485 module and the ESP8266. The tables below are generated from the same pin data as the wiring cheatsheet, so they cannot drift apart.</p>
+        
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p>The 18 V goes to the probe's red wire and <b>nowhere else</b>. The MAX485 and the ESP8266 are 3.3 V parts — 18 V destroys both. Trace the wire with your finger before switching on.</p>
+  </aside><aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>One ground, not two.</b> The probe's green wire, the boost OUT−, the MAX485 GND and the ESP GND must all be one rail. The probe runs on 18 V and the ESP on 3.3 V — two supplies, one shared return. Miss this and you get failures that look exactly like a broken sensor.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>The TXD and RXD LEDs are a free logic analyser. TXD flashes when the ESP asks; RXD flashes when the probe answers. TXD only means the probe isn't replying — swap blue and yellow before suspecting anything else.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">03</div>
+      <div class="step__body">
+        <h3>Load the code</h3>
+        
+        <p>The firmware is <code>firmware/water-level/</code>. Install the Arduino IDE, add <code>esp8266</code> in Boards Manager, and select <b>NodeMCU 1.0 (ESP-12E)</b>. There are no libraries to install.</p><p>Copy <code>config.example.h</code> to <code>config.h</code> and edit that — never the sketch itself. Start with <code>BENCH_MODE 1</code> so it prints over serial and skips WiFi entirely: bring the sensor up before WiFi joins the list of things that can be broken.</p>
+        <pre class="code" data-lang="bash"><code># always compile --upload. A bare `upload` flashes a stale .bin
+arduino-cli compile --upload \
+  --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/water-level</code></pre>
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>Note the baud rate.</b> This probe is 9600. The soil probe in Module 2 is 4800. Same wiring, different speed — don't carry the number across.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Reads are safe; blind writes are not. Reading a register cannot damage the probe. Writing one you haven't confirmed can land on its address or baud rate and cost you the ability to talk to it at all.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">04</div>
+      <div class="step__body">
+        <h3>Zero it</h3>
+        
+        <p>Read the probe dry, sitting in air. It will not read zero — ours read about <b>26</b>, which is 26 mm of water that does not exist. That is normal and within spec.</p><p>Write that number down. Your depth is <code>reading − dry_reading</code>. Do this once at install; if readings drift over months, do it again.</p>
+        
+        
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">05</div>
+      <div class="step__body">
+        <h3>Check it actually moves</h3>
+        
+        <p>Lower the probe into a bucket. The number should climb clearly, hold steady when it stops moving, and fall back when you lift it out. If it does not respond to depth, stop — nothing after this will work.</p>
+        
+        <aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Don't try to calibrate better than ±25 mm. That is the manufacturer's spec (0.5% of 5 m) and it is far better than irrigation needs. We tried a bucket and a ruler and learned that a 90 mm bucket cannot measure an instrument whose own error bar is 25 mm.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">06</div>
+      <div class="step__body">
+        <h3>Install on your tank</h3>
+        
+        <p>Lower the probe to the <b>bottom</b> and let it sit flat. Protect the ESP8266, MAX485 and boost converter inside the waterproof container. Measure your tank's water depth when full, once — that is what turns millimetres into “how full is my tank”.</p>
+        
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p>Keep the loose end of the cable <b>dry and open to the air</b>. There is a tiny breather tube running through it, and the probe compares against outside air pressure through it. Seal it, kink it, or let it sit in water and your readings wander with the weather.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">07</div>
+      <div class="step__body">
+        <h3>Point it at the base station</h3>
+        
+        <p>Set <code>BENCH_MODE 0</code>, put your hotspot's name and password in <code>config.h</code>, and leave <code>POST_HOST</code> <b>empty</b>. The phone running the hotspot is the node's gateway by definition, so the node works out the address itself.</p><p>Test the endpoint before you ever blame the firmware:</p>
+        <pre class="code" data-lang="bash"><code>curl -X POST http://&lt;phone-ip&gt;:1880/water \
+  -H 'Content-Type: application/json' \
+  -d '{"node":"test","ok":true,"depth_mm":500}'</code></pre>
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>Never hardcode the phone's IP.</b> Android randomises the hotspot subnet — ours came up on <code>10.215.63.55</code>, not the <code>192.168.43.1</code> every guide quotes — and it can reshuffle on any restart. A hardcoded IP goes stale <i>silently</i>: the node keeps reading perfectly and publishes into the void, and the only symptom is absence.</p>
+  </aside>
+      </div>
+    </li></ol>
+  </section>
+
+  <section class="mod__sec" id="faults">
+    <h2>When it doesn't work</h2>
+    <p>Ordered roughly by how often it has actually been the answer.</p>
+    <div class="table-wrap"><table class="faults">
+    <thead><tr><th scope="col">Symptom</th><th scope="col">Almost always</th><th scope="col">What to do</th></tr></thead>
+    <tbody><tr>
+      <th scope="row">No reading at all</th>
+      <td class="cause">A and B swapped</td>
+      <td>Swap the blue and yellow wires. This is common — try it before anything else.</td>
+    </tr><tr>
+      <th scope="row">No reading, probe cold</th>
+      <td class="cause">Not enough voltage</td>
+      <td>Meter red to green: it must read 18 V, not the raw battery.</td>
+    </tr><tr>
+      <th scope="row">Boost converter reads 0 V</th>
+      <td class="cause">Trimmer parked mid-range</td>
+      <td>It is 25-turn with no end stops. Keep turning, watch the meter.</td>
+    </tr><tr>
+      <th scope="row">Readings 10× off</th>
+      <td class="cause">Wrong scaling</td>
+      <td>1 count = 1 mm. Check you are not treating it as centimetres.</td>
+    </tr><tr>
+      <th scope="row">Reading is about 65000</th>
+      <td class="cause">Read as unsigned</td>
+      <td>It is signed int16. Readings slightly below zero are real and legitimate.</td>
+    </tr><tr>
+      <th scope="row">Reading never changes</th>
+      <td class="cause">Wrong register</td>
+      <td>It is 0x0004.</td>
+    </tr><tr>
+      <th scope="row">Readings fail randomly</th>
+      <td class="cause">No common ground</td>
+      <td>Probe green, boost OUT−, MAX485 GND and ESP GND must be one rail.</td>
+    </tr><tr>
+      <th scope="row">Drifts with the weather</th>
+      <td class="cause">Breather tube blocked or wet</td>
+      <td>Keep the loose cable end dry and open to air.</td>
+    </tr><tr>
+      <th scope="row">Reads, then silent, then reads</th>
+      <td class="cause">The open intermittent</td>
+      <td>A wire. Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering.</td>
+    </tr></tbody>
+  </table></div>
+  </section>
+
+  <section class="mod__sec" id="connects">
+    <h2>How this fits with the others</h2>
+    <div class="related"><a class="related__i" href="iot-solar-powerbank.html"
+        style="--accent:#C77C1E;--accent-dark:#E8A94A">
+        <span class="related__n">3</span>
+        <span class="related__t">IoT Solar Powerbank</span>
+        <span class="related__w">Powers this node off-grid so the tank can be anywhere.</span></a><a class="related__i" href="mobile-wifi-base-station.html"
+        style="--accent:#43587A;--accent-dark:#8AA0C8">
+        <span class="related__n">4</span>
+        <span class="related__t">Mobile WiFi Base Station</span>
+        <span class="related__w">Receives the depth readings and puts them on your phone.</span></a><a class="related__i" href="soil-moisture-drip-irrigation.html"
+        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
+        <span class="related__n">2</span>
+        <span class="related__t">Soil Moisture → Drip Irrigation</span>
+        <span class="related__w">The best cross-check in the toolkit — don't irrigate from an empty tank.</span></a></div>
+  </section>
+
+  <section class="mod__sec mod__sec--source">
+    <h2>The source</h2>
+    <ul class="ticks">
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/docs/01-water-tank-level-sensor.md" rel="noopener">Full module document — docs/01-water-tank-level-sensor.md ↗</a></li>
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/tree/main/firmware/water-level/" rel="noopener">Firmware — firmware/water-level/ ↗</a></li>
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal, including everything that went wrong ↗</a></li>
+      <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
+    </ul>
+    <p class="fineprint">Built and measured on our bench. Not the same as field-soaked.</p>
+  </section>
+</article>
+</main>
+
+<footer class="foot">
+  <div class="foot__grid">
+    <div class="foot__col">
+      <h2 class="foot__h">Farmers IoT Toolkit</h2>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p class="foot__lic">Open source — use, share, and adapt freely.</p>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">Modules</h3>
+      <ul>
+        <li><a href="../modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
+        <li><a href="../modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
+        <li><a href="../modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
+        <li><a href="../modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">Go deeper</h3>
+      <ul>
+        <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Firmware &amp; flows ↗</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal ↗</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/STATUS.md" rel="noopener">Live status ↗</a></li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">The project</h3>
+      <p>A discovery project funded by
+        <a href="https://float.ag" rel="noopener">Float</a>,
+        implemented by
+        <a href="https://sunriselabs.io" rel="noopener">Sunrise Labs</a>
+        in Mauke, Cook Islands.</p>
+      <p class="foot__note">Contributions welcome — a fifth module, a correction, a photo of
+      yours in the field. Open an issue.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Theme: follow the system unless the reader has said otherwise. No cookies, no
+// analytics, no third-party requests anywhere on this site.
+(function () {
+  var KEY = "fit-theme";
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved) document.documentElement.dataset.theme = saved;
+  var btn = document.querySelector("[data-theme-toggle]");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    var dark = document.documentElement.dataset.theme
+      ? document.documentElement.dataset.theme === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

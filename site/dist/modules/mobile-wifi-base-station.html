@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mobile WiFi Base Station — Farmers IoT Toolkit</title>
+<meta name="description" content="An old Android phone becomes the brain: it makes the WiFi network your sensors join, runs Node-RED to collect the readings, and uses its own 4G to get them to you anywhere.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Mobile WiFi Base Station — Farmers IoT Toolkit">
+<meta property="og:description" content="An old Android phone becomes the brain: it makes the WiFi network your sensors join, runs Node-RED to collect the readings, and uses its own 4G to get them to you anywhere.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+</head>
+<body class="page-module" style="--accent:#43587A;--accent-dark:#8AA0C8">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">
+    <span class="brand__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M3 20h18" stroke-linecap="round"/>
+        <path d="M12 20V9"/>
+        <path d="M12 9c0-3 2.6-5.4 5.6-5.4C17.6 7 15 9 12 9Z"/>
+        <path d="M12 12.5c0-2.4-2.1-4.3-4.6-4.3C7.4 11.4 9.5 12.5 12 12.5Z"/>
+      </svg>
+    </span>
+    <span class="brand__name">Farmers IoT Toolkit</span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="../index.html#modules">Modules</a>
+    <a href="../index.html#system">How it fits</a>
+    <a href="../index.html#video">Video</a>
+    <a href="../cheatsheet.html">Wiring cheatsheet</a>
+    <a class="topnav__ext" href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Source ↗</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Switch between light and dark" data-theme-toggle>
+    <span aria-hidden="true">◐</span>
+  </button>
+</header>
+
+<main id="main">
+
+<article class="mod">
+  <header class="mod__hero">
+    <div class="mod__rule" aria-hidden="true"></div>
+    <p class="mod__kicker"><span class="mod__n">4</span> Module 4 · Beginner · 1–2 hours</p>
+    <h1 class="mod__h1">Mobile WiFi Base Station</h1>
+    <p class="mod__plain">An old Android phone becomes the brain: it makes the WiFi network your sensors join, runs Node-RED to collect the readings, and uses its own 4G to get them to you anywhere.</p>
+
+    <div class="mod__status">
+      <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
+    <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
+      <p>Done and documented, receiving live readings from Module 1 and pushing them out to a small cloud service. How to power the phone in the field is designed but not yet measured.</p>
+    </div>
+
+    <dl class="mod__facts">
+      <div><dt>Parts</dt><dd>~$7</dd></div>
+      <div><dt>Build time</dt><dd>1–2 hours</dd></div>
+      <div><dt>Steps proven</dt><dd>6 of 6</dd></div>
+      <div><dt>Board</dt><dd>Android phone</dd></div>
+    </dl>
+  </header>
+
+  <nav class="modnav" aria-label="Modules">
+    <a href="modules/water-tank-level-sensor.html"
+      class="modnav__i"
+      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
+      >
+      <span class="modnav__n">1</span><span class="modnav__t">Water tank level</span></a><a href="modules/soil-moisture-drip-irrigation.html"
+      class="modnav__i"
+      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
+      >
+      <span class="modnav__n">2</span><span class="modnav__t">Soil + irrigation valve</span></a><a href="modules/iot-solar-powerbank.html"
+      class="modnav__i"
+      style="--accent:#C77C1E;--accent-dark:#E8A94A"
+      >
+      <span class="modnav__n">3</span><span class="modnav__t">Solar power</span></a><a href="modules/mobile-wifi-base-station.html"
+      class="modnav__i is-current"
+      style="--accent:#43587A;--accent-dark:#8AA0C8"
+      aria-current="page">
+      <span class="modnav__n">4</span><span class="modnav__t">Base station</span></a>
+  </nav>
+
+  <section class="mod__sec">
+    <h2>Why you would want this</h2>
+    <ul class="ticks"><li>Gives every sensor a network to talk to, even with no router for miles</li><li>All your readings in one place, on a dashboard</li><li>Uses a phone you probably already own — close to free</li><li>No computer needed to see your data</li></ul>
+  </section>
+
+  
+
+  <section class="mod__sec" id="bom">
+    <h2>What you will need</h2>
+    <div class="table-wrap">
+    <table class="bom">
+      <caption class="sr-only">Bill of materials for Mobile WiFi Base Station</caption>
+      <thead><tr><th scope="col">Part</th><th scope="col">What it does</th><th scope="col" class="num">Est.</th><th scope="col">Link</th></tr></thead>
+      <tbody><tr>
+      <th scope="row">
+        Android phone, v7 or newer
+        
+        <p class="part__caution">An old phone you already own is the intended answer. Ours is an OPPO A3 4G (CPH2669).</p>
+      </th>
+      <td>Runs the WiFi hotspot and Node-RED — the brain</td>
+      <td class="num">$0</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        SIM with a data plan
+        
+        
+      </th>
+      <td>Backhaul to the internet</td>
+      <td class="num">$5</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        USB cable
+        
+        
+      </th>
+      <td>Powers the ESP8266 and loads code onto it</td>
+      <td class="num">$2</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr></tbody>
+      <tfoot><tr>
+        <th scope="row" colspan="2">Approximate total</th>
+        <td class="num">~$7</td>
+        <td></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <p class="fineprint">Prices are what we paid or expect to pay, in USD, mostly on AliExpress —
+  they move, and shipping to a small island is its own line item. Links are not affiliate links
+  and we get nothing if you use them.</p>
+  </section>
+
+  <section class="mod__sec" id="wiring">
+    <h2>Wiring</h2>
+    <h3>What the phone answers</h3>
+        <p>There is no wiring here beyond a USB cable — the interesting connections are network
+        ones. These are the endpoints Node-RED serves once you import the bundled flow.</p>
+        <div class="table-wrap"><table class="wiring">
+    <thead><tr><th scope="col"></th><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Payload</th></tr></thead>
+    <tbody><tr>
+      <td><span class="dirpill dirpill--up">uplink</span></td>
+      <th scope="row" class="mono">POST</th>
+      <td class="mono strong">/water</td>
+      <td class="mono dim">{node, ok, raw, depth_mm, valve, rssi, uptime_s}</td>
+    </tr><tr>
+      <td><span class="dirpill dirpill--up">uplink</span></td>
+      <th scope="row" class="mono">POST</th>
+      <td class="mono strong">/soil</td>
+      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}</td>
+    </tr><tr>
+      <td><span class="dirpill dirpill--down">downlink</span></td>
+      <th scope="row" class="mono">GET (poll, 1 s)</th>
+      <td class="mono strong">/valve</td>
+      <td class="mono dim">"1" / "0"</td>
+    </tr><tr>
+      <td><span class="dirpill dirpill--page">page</span></td>
+      <th scope="row" class="mono">GET</th>
+      <td class="mono strong">/page</td>
+      <td class="mono dim">live readings, one card per node</td>
+    </tr><tr>
+      <td><span class="dirpill dirpill--page">page</span></td>
+      <th scope="row" class="mono">POST</th>
+      <td class="mono strong">/valve/set</td>
+      <td class="mono dim">sets flow.valveCmd</td>
+    </tr></tbody>
+  </table></div>
+        <h3>Powering it in the field</h3>
+        <p>On mains, plug it in and forget it. On solar it is the opposite: a plugged-in phone can
+        never enter Android's Doze, so it runs at its awake floor forever and can outrun a 20&nbsp;W
+        panel on its own. Switch the <em>charger</em>, not the phone — and charging must be the
+        default state, because if the phone is flat and the charger is off, nothing is left to turn
+        it back on.</p>
+  </section>
+
+  <section class="mod__sec" id="build">
+    <h2>Build it, step by step</h2>
+    
+    <ol class="steps"><li class="step">
+      <div class="step__n" aria-hidden="true">01</div>
+      <div class="step__body">
+        <h3>Turn on the WiFi hotspot</h3>
+        
+        <p>Settings → Network → Hotspot. Give it a name (ours is <code>FarmIoT</code>) and a password, and write the password down — your sensor nodes need it.</p>
+        
+        <aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Some phones switch the hotspot off automatically when nothing is connected. Look for a “keep hotspot on” setting.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">02</div>
+      <div class="step__body">
+        <h3>Install Termux — from F-Droid, not the Play Store</h3>
+        
+        <p>Termux is a Linux terminal that runs on Android, and it is how Node-RED runs on a phone. Install F-Droid, then search it for Termux.</p>
+        
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>The Play Store version was abandoned years ago and is frozen at an old release.</b> Package installs fail on it in ways that look like network or server errors, and you will waste an afternoon before suspecting the app itself. This is the single most common way this build goes wrong.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Typing on a phone keyboard is miserable. <code>pkg install openssh</code>, run <code>sshd</code>, and type from a laptop on the same hotspot. Worth it if you have one.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">03</div>
+      <div class="step__body">
+        <h3>Install Node-RED inside Termux</h3>
+        
+        <p>Type these one at a time. The first two take a few minutes each.</p>
+        <pre class="code" data-lang="bash"><code>pkg update &amp;&amp; pkg upgrade -y
+pkg install -y nodejs
+npm install -g --unsafe-perm node-red
+node-red</code></pre>
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><code>--unsafe-perm</code> is not optional. Without it the install dies partway through building native modules. It sounds alarming; it isn't — it just lets npm's build scripts run as the current user, which on Termux is the only user there is.</p>
+  </aside><aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>Android will kill Node-RED unless you stop it.</b> Battery saver suspends Termux when the screen sleeps, Node-RED stops, your data vanishes, and <i>nothing reports an error</i>. Two things, both needed: run <code>termux-wake-lock</code>, and set Settings → Apps → Termux → Battery → <b>Unrestricted</b>.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">04</div>
+      <div class="step__body">
+        <h3>Import the ready-made flow and test it with curl</h3>
+        
+        <p>In the Node-RED editor: ☰ → Import, paste <code>flows/water-level-flow.json</code>, Import, Deploy. You now have an endpoint at <code>/water</code>. Test it before any hardware is involved — open the debug sidebar and watch the message arrive.</p>
+        <pre class="code" data-lang="bash"><code>curl -X POST http://&lt;phone-ip&gt;:1880/water \
+  -H 'Content-Type: application/json' \
+  -d '{"node":"test","ok":true,"depth_mm":500}'</code></pre>
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>Every <code>http in</code> needs a paired <code>http response</code>.</b> Without one the request hangs open — the sensor waits, times out, and reports a network failure, while Node-RED shows the message arriving perfectly fine. It looks like a network fault and is not. The bundled flow wires this correctly.</p>
+  </aside><aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>The hotspot IP is not always 192.168.43.1.</b> Every guide on the internet says it is; ours came up on <code>10.215.63.55</code>. Modern Android randomises the subnet and it can change after a restart. Ask a sensor instead — the firmware prints <code>gateway :</code> on serial, and the gateway <i>is</i> the phone.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">05</div>
+      <div class="step__body">
+        <h3>Point a sensor at it</h3>
+        
+        <p>In the node's <code>config.h</code> you only need three things — and an IP address is not one of them.</p>
+        <pre class="code" data-lang="c"><code>#define BENCH_MODE 0                    // was 1 for bring-up
+#define WIFI_SSID  "FarmIoT"
+#define WIFI_PASSWORD "your-hotspot-password"</code></pre>
+        <aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Reading the serial output: <code>POST: failed (-1)</code> means the node couldn't open a socket at all — usually the address isn't on this network. A <i>positive</i> code like 404 means the server answered and didn't like the request, which is a flow problem, not a network one.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">06</div>
+      <div class="step__body">
+        <h3>See your farm from anywhere — push out, don't expose in</h3>
+        
+        <p>The phone has 4G, so it can reach the internet — but the internet cannot reach it. Carriers put phones behind <b>CGNAT</b>: your phone shares one public address with thousands of others, so there is no port to forward and no address to type. Everything you read about port-forwarding assumes a home broadband line and does not apply here.</p><p>So the phone dials out. Node-RED buffers every reading and POSTs it in batches to a small service you control (<code>server/</code>, ours runs at <code>farm.sunriselabs.io</code>). Nothing on the farm is ever exposed, it works on any carrier with zero configuration, and it survives dropouts because the phone keeps a backlog and re-sends. On a metered SIM it costs about 60 requests a day.</p><p>The same channel carries commands back: because the phone is already POSTing, the server answers each batch with the desired valve state — so you can open and shut the irrigation valve from a dashboard without anything on your farm being reachable from the internet.</p>
+        
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>Do not put the Node-RED editor on the public internet.</b> A tunnel like ngrok gives you a public URL in one command and it is very tempting — but the editor runs arbitrary code and, in this build, opens your irrigation valve. If you expose it, set <code>adminAuth</code> first. A private tunnel like Tailscale avoids the question entirely.</p>
+  </aside><aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>Android freezes timers when the phone dozes.</b> A repeating <code>inject</code> node simply stops firing — no error, no warning, and the flow still looks healthy in the editor. Make work <b>event-driven</b> instead: our push flow sends on each arriving reading, because the incoming request has already woken the phone. The repeating inject survives only as a backstop.</p>
+  </aside>
+      </div>
+    </li></ol>
+  </section>
+
+  <section class="mod__sec" id="faults">
+    <h2>When it doesn't work</h2>
+    <p>Ordered roughly by how often it has actually been the answer.</p>
+    <div class="table-wrap"><table class="faults">
+    <thead><tr><th scope="col">Symptom</th><th scope="col">Almost always</th><th scope="col">What to do</th></tr></thead>
+    <tbody><tr>
+      <th scope="row">Node can't find the WiFi network</th>
+      <td class="cause">Hotspot off, or name mismatch</td>
+      <td>Check the hotspot is on and the SSID matches config.h exactly.</td>
+    </tr><tr>
+      <th scope="row">Can't open Node-RED in the browser</th>
+      <td class="cause">Node-RED isn't running</td>
+      <td>Open Termux and start it again — and check the wake-lock.</td>
+    </tr><tr>
+      <th scope="row">Dashboard shows no data</th>
+      <td class="cause">Node posting to the wrong address</td>
+      <td>Leave POST_HOST empty and let the node derive it from the gateway.</td>
+    </tr><tr>
+      <th scope="row">Flow looks healthy but nothing is scheduled</th>
+      <td class="cause">Android froze the timer</td>
+      <td>Make it event-driven; hold a wake-lock; set Termux to Unrestricted.</td>
+    </tr><tr>
+      <th scope="row">Phone battery drains fast</th>
+      <td class="cause">Hotspot + Node-RED never sleep</td>
+      <td>Keep it charged — and on solar, duty-cycle the charger, not the phone.</td>
+    </tr><tr>
+      <th scope="row">Mobile data disappearing quickly</th>
+      <td class="cause">Sending too often</td>
+      <td>Batch readings, or send summaries rather than every sample.</td>
+    </tr></tbody>
+  </table></div>
+  </section>
+
+  <section class="mod__sec" id="connects">
+    <h2>How this fits with the others</h2>
+    <div class="related"><a class="related__i" href="water-tank-level-sensor.html"
+        style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
+        <span class="related__n">1</span>
+        <span class="related__t">Water Tank Level Sensor</span>
+        <span class="related__w">Receives depth readings over WiFi.</span></a><a class="related__i" href="soil-moisture-drip-irrigation.html"
+        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
+        <span class="related__n">2</span>
+        <span class="related__t">Soil Moisture → Drip Irrigation</span>
+        <span class="related__w">Receives soil readings and can command the valve on the reply to a batch.</span></a><a class="related__i" href="iot-solar-powerbank.html"
+        style="--accent:#C77C1E;--accent-dark:#E8A94A">
+        <span class="related__n">3</span>
+        <span class="related__t">IoT Solar Powerbank</span>
+        <span class="related__w">Can power the phone — check the energy budget first.</span></a></div>
+  </section>
+
+  <section class="mod__sec mod__sec--source">
+    <h2>The source</h2>
+    <ul class="ticks">
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/docs/04-mobile-wifi-base-station.md" rel="noopener">Full module document — docs/04-mobile-wifi-base-station.md ↗</a></li>
+      
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal, including everything that went wrong ↗</a></li>
+      <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
+    </ul>
+    <p class="fineprint">Built and measured on our bench. Not the same as field-soaked.</p>
+  </section>
+</article>
+</main>
+
+<footer class="foot">
+  <div class="foot__grid">
+    <div class="foot__col">
+      <h2 class="foot__h">Farmers IoT Toolkit</h2>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p class="foot__lic">Open source — use, share, and adapt freely.</p>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">Modules</h3>
+      <ul>
+        <li><a href="../modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
+        <li><a href="../modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
+        <li><a href="../modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
+        <li><a href="../modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">Go deeper</h3>
+      <ul>
+        <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Firmware &amp; flows ↗</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal ↗</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/STATUS.md" rel="noopener">Live status ↗</a></li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">The project</h3>
+      <p>A discovery project funded by
+        <a href="https://float.ag" rel="noopener">Float</a>,
+        implemented by
+        <a href="https://sunriselabs.io" rel="noopener">Sunrise Labs</a>
+        in Mauke, Cook Islands.</p>
+      <p class="foot__note">Contributions welcome — a fifth module, a correction, a photo of
+      yours in the field. Open an issue.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Theme: follow the system unless the reader has said otherwise. No cookies, no
+// analytics, no third-party requests anywhere on this site.
+(function () {
+  var KEY = "fit-theme";
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved) document.documentElement.dataset.theme = saved;
+  var btn = document.querySelector("[data-theme-toggle]");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    var dark = document.documentElement.dataset.theme
+      ? document.documentElement.dataset.theme === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

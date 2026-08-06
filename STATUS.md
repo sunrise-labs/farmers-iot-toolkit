@@ -27,7 +27,7 @@
 2. **Finish the 3S2P battery build (③).** It powers everything, so nothing gets power-tested until it's done.
 3. ~~Pre-code the sensors~~ — **done** ✅. Both sensors read and POST to Node-RED (`firmware/farm-node/`). What remains is module ②'s valve half (relay, safety cutoff, and the unsolved valve-power question).
 4. **Test all sensors off the battery** (integration of power + sensing). **Includes the base-station phone**: a 24 h inline-USB-meter measurement of the OPPO A3 is the input to every power decision below — see `devlog.md` 2026-07-22 for the measurement plan.
-5. **Build the Toolkit website + seed it with the four module docs.** The biggest remaining knowledge-work piece.
+5. ~~**Build the Toolkit website + seed it with the four module docs.**~~ — **first full build done** ✅ (`site/`, 2026-08-05). Six static pages: hero + modules overview + interaction diagram + video slot + full wiring cheatsheet + four module deep-dives (wiring, BOM with buy links, step-by-step). Zero dependencies, self-hosted fonts, no third-party requests. **Every pin table, bus parameter and BOM row renders from `site/src/data.ts`**, so the site cannot drift from the firmware the way the prose did (see below). Remaining: fill the two `TBC` probe prices, record the overview video (`VIDEO.id` is a slot), and decide hosting.
 6. **Integration demo** — the four modules working together as one system.
 
 ## Decisions
@@ -48,11 +48,21 @@
 
 ## Open decisions
 
-- **Website hosting:** on the Float site or Ian's own domain? Affects step 5.
+- **Website hosting:** on the Float site or Ian's own domain? The build is deliberately host-agnostic — `site/dist/` is relative-linked static HTML with a `.nojekyll`, so it drops onto GitHub Pages, the hetzner box, or inside Float's site unchanged. Deciding late costs nothing.
 - **Tell Float about the module ① sensor change?** Ultrasonic → pressure probe. Deliverable unchanged; see Scope changes above.
 - **How to power the base-station phone in the field (③ + ④).** Phone is an **OPPO A3 4G (CPH2669)** — 5100 mAh (~19.4 Wh), Android 14. **A 20 W panel cannot carry it plugged in 24/7** (est. 20–57 Wh/day at the pack vs 50–60 Wh clear / 6–15 Wh overcast → ~0.6–1.5 days autonomy on the ~38 Wh everyday-usable pack). Recommended: **duty-cycle the charger, not the phone** — Tier 1 a $3 pack-voltage hysteresis relay (ON 12.3 V / OFF 11.6 V), Tier 2 phone-commanded 60–80 % SoC band **defaulting to charging**, Tier 3 a second panel. Also needs a bigger buck than the Mini360 and **D+/D− shorted** or the phone caps at 500 mA. Design + wiring gotchas written into `docs/03` and `docs/04`; **blocked on measurement — bench sheet ready at `docs/bench/03-bench-phone-power.md`** (critical path #4). Tests 1 & 2 need no equipment beyond the phone and can run tonight. ✅ Cell capacity resolved 2026-07-23 (Samsung INR18650-32E, 3200 mAh → pack is ~70 Wh, not the ~55 Wh assumed).
 - **Which backhaul variant are we actually deploying?** PCB decision A2 keeps both LoRa-gateway and phone-4G. **If the node talks LoRa, the phone can sit in the shed on mains and this whole power problem disappears.** Free to decide now, expensive after a solar phone-charging rig is built and documented.
 - **How to power module ②'s valve.** A 12 V solenoid on a pack that sags to 9.0 V may not pull in — and the failure is silent and load-dependent (works on a full battery, quietly stops on a low one, looks exactly like a sensor fault). Separate 12 V supply, MT3608 boost, or a latching valve? **Measure the coil current before choosing.** Bench module ② on a mains 12 V adapter until this is settled; see `docs/02`.
+
+## Found while building the website (2026-08-05)
+
+- ⚠️ **A bus has more than one correct pin assignment, and the docs were flattening them into one.**
+  `firmware/water-level/` (standalone Module ①) is **D5 RX / D6 TX / D1 DE**; the deployed
+  `firmware/farm-node/` is **D7 RX / D1 TX**; `firmware/soil-node-sleep/` is **D6 RX / D5 TX**;
+  `firmware/bench-both/` is water D5/D6 + soil D7/D1. All four are correct *for their own sketch*.
+  The site now models this explicitly — every pin set names the `.ino` it was read out of, and the
+  one a farmer should wire is flagged. This is the same class of failure as
+  `docs/deployment-wiring.md` §9, and it is worth propagating the fix back into `docs/01`–`docs/02`.
 
 ## Source
 

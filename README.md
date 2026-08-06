@@ -33,6 +33,22 @@ fully operational IoT system.
 | 4 | [Mobile WiFi Base Station](docs/04-mobile-wifi-base-station.md) | Beginner | An Android phone that collects sensor data over WiFi and connects to the internet |
 
 
+## The website
+
+The toolkit's public site lives in [`site/`](site/) — hero, the four modules and how they
+interact, a video summary, the [full wiring cheatsheet](site/src/pages/cheatsheet.ts), and a
+deep-dive page per module with wiring diagrams, a BOM with buy links, and a step-by-step build
+walkthrough.
+
+```bash
+bun site/build.ts --serve     # http://localhost:4321
+```
+
+It is plain static HTML with no framework and no third-party requests, and every wiring table,
+pin map and BOM row is generated from one typed source (`site/src/data.ts`) so the site cannot
+drift from the firmware the way the prose docs once did. See [`site/README.md`](site/README.md).
+
+
 ## Who is this for?
 
 - Farmers who want to use technology but do not want to depend on expensive providers
