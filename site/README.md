@@ -63,4 +63,17 @@ every `PinSet` names the `.ino` it was read out of. The one a farmer should wire
 ## Deploying
 
 `site/dist/` is a complete static site with relative links throughout, so it works from a domain
-root or a subdirectory. A `.nojekyll` file is emitted for GitHub Pages.
+root or a subdirectory. A `.nojekyll` file is emitted for GitHub Pages. There are no third-party
+requests of any kind, so nothing needs to be reachable but the host itself.
+
+**GitHub Pages** is wired up in `.github/workflows/pages.yml`. It runs on any push to `main` that
+touches `site/`, builds with `bun site/build.ts`, and uploads `site/dist/` as the Pages artifact.
+It builds rather than uploading the committed `dist/` so a forgotten rebuild can't put a stale
+page in front of a farmer; if the committed copy has drifted, the run says so in its job summary
+instead of failing.
+
+Pages must be switched on once before the first deploy succeeds — **Settings → Pages → Source:
+GitHub Actions**. Until then the deploy step fails rather than publishing, which is deliberate:
+where this is hosted is still an open decision (see `STATUS.md`). The published URL would be
+`https://sunrise-labs.github.io/farmers-iot-toolkit/`; the subdirectory is fine, because every
+link and asset reference in `dist/` is relative.
