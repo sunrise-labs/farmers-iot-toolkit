@@ -162,6 +162,29 @@ uint16_t modbusCRC(const uint8_t *buf, uint8_t len) {
  * slide costs nothing when there's no echo. The CRC is the real proof; the header
  * match just finds candidates fast.
  */
+// Bench diagnostics. "no valid modbus frame" is one bit of information, and it
+// hides the only distinction that matters when a probe goes quiet:
+//
+//   n == 0   nothing reached the ESP at all — the probe never transmitted, or
+//            the HW-0519's RXD never reaches D7. A wiring/power/probe fault.
+//   n  > 0   the probe IS replying and something is mangling it — bus integrity,
+//            grounding, or baud. A signal-quality fault, an entirely different hunt.
+//
+// Compiled out unless BENCH_MODE, so the field build is unchanged.
+#if BENCH_MODE
+static void rs485Dump(const char *why, const uint8_t *buf, uint8_t n) {
+  Serial.printf("  RS485 %-14s n=%u", why, n);
+  if (n) {
+    Serial.print("  rx:");
+    for (uint8_t i = 0; i < n; i++) Serial.printf(" %02X", buf[i]);
+  }
+  Serial.println();
+}
+#define RS485_DUMP(why, buf, n)  rs485Dump(why, buf, n)
+#else
+#define RS485_DUMP(why, buf, n)  ((void)0)
+#endif
+
 bool readRegisters(SoftwareSerial &port, uint16_t start, uint16_t count, uint16_t *out) {
   uint8_t req[8] = {
     SENSOR_ADDR, 0x03,
@@ -176,6 +199,7 @@ bool readRegisters(SoftwareSerial &port, uint16_t start, uint16_t count, uint16_
   while (port.available()) port.read();   // drop stale bytes
   port.write(req, 8);
   port.flush();
+  RS485_DUMP("tx", req, 8);               // confirm we send a well-formed request
 
   const uint8_t frameLen = 5 + count * 2;   // addr fn bytecount [data] crc crc
   uint8_t buf[64];
@@ -189,7 +213,10 @@ bool readRegisters(SoftwareSerial &port, uint16_t start, uint16_t count, uint16_
       if (n >= frameLen + 8) break;
     }
   }
-  if (n < frameLen) return false;
+  if (n < frameLen) {
+    RS485_DUMP(n ? "short" : "SILENT", buf, n);
+    return false;
+  }
 
   for (uint8_t i = 0; i + frameLen <= n; i++) {
     if (buf[i] != SENSOR_ADDR) continue;
@@ -201,6 +228,7 @@ bool readRegisters(SoftwareSerial &port, uint16_t start, uint16_t count, uint16_
       out[r] = (buf[i + 3 + r*2] << 8) | buf[i + 4 + r*2];
     return true;
   }
+  RS485_DUMP("bad-crc/frame", buf, n);   // bytes arrived but none of them parse
   return false;
 }
 
