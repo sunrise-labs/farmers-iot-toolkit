@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soil Moisture Sensor — Farmers IoT Toolkit</title>
+<meta name="description" content="A sealed probe buried at root depth measures how much water is actually in your soil, on a node small enough to carry its own battery and sit anywhere in the field.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Soil Moisture Sensor — Farmers IoT Toolkit">
+<meta property="og:description" content="A sealed probe buried at root depth measures how much water is actually in your soil, on a node small enough to carry its own battery and sit anywhere in the field.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../assets/styles.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+</head>
+<body class="page-module" style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">
+    <span class="brand__mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M3 20h18" stroke-linecap="round"/>
+        <path d="M12 20V9"/>
+        <path d="M12 9c0-3 2.6-5.4 5.6-5.4C17.6 7 15 9 12 9Z"/>
+        <path d="M12 12.5c0-2.4-2.1-4.3-4.6-4.3C7.4 11.4 9.5 12.5 12 12.5Z"/>
+      </svg>
+    </span>
+    <span class="brand__name">Farmers IoT Toolkit</span>
+  </a>
+  <nav class="topnav" aria-label="Main">
+    <a href="../index.html#modules">Modules</a>
+    <a href="../index.html#system">How it fits</a>
+    <a href="../index.html#video">Video</a>
+    <a href="../cheatsheet.html">Wiring cheatsheet</a>
+    <a class="topnav__ext" href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Source ↗</a>
+  </nav>
+  <button class="themetoggle" type="button" aria-label="Switch between light and dark" data-theme-toggle>
+    <span aria-hidden="true">◐</span>
+  </button>
+</header>
+
+<main id="main">
+
+<article class="mod">
+  <header class="mod__hero">
+    <div class="mod__rule" aria-hidden="true"></div>
+    <p class="mod__kicker"><span class="mod__n">3</span> Module 3 · Medium · 2–3 hours</p>
+    <h1 class="mod__h1">Soil Moisture Sensor</h1>
+    <p class="mod__plain">A sealed probe buried at root depth measures how much water is actually in your soil, on a node small enough to carry its own battery and sit anywhere in the field.</p>
+
+    <div class="mod__status">
+      <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
+    <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
+      <p>Bench-proven on its own node: the probe reads moisture, temperature and EC, the node sleeps between readings and POSTs to Node-RED on waking. Two of these are built and running.</p>
+    </div>
+
+    <dl class="mod__facts">
+      <div><dt>Parts</dt><dd>~$28<span class="tbc">+1 TBC</span></dd></div>
+      <div><dt>Build time</dt><dd>2–3 hours</dd></div>
+      <div><dt>Steps proven</dt><dd>6 of 6</dd></div>
+      <div><dt>Board</dt><dd>ESP8266</dd></div>
+    </dl>
+  </header>
+
+  <nav class="modnav" aria-label="Modules">
+    <a href="modules/solar-power-pack.html"
+      class="modnav__i"
+      style="--accent:#C77C1E;--accent-dark:#E8A94A"
+      >
+      <span class="modnav__n">1</span><span class="modnav__t">Power</span></a><a href="modules/water-tank-and-valve.html"
+      class="modnav__i"
+      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
+      >
+      <span class="modnav__n">2</span><span class="modnav__t">Water + valve</span></a><a href="modules/soil-moisture-sensor.html"
+      class="modnav__i is-current"
+      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
+      aria-current="page">
+      <span class="modnav__n">3</span><span class="modnav__t">Soil</span></a><a href="modules/mobile-wifi-base-station.html"
+      class="modnav__i"
+      style="--accent:#43587A;--accent-dark:#8AA0C8"
+      >
+      <span class="modnav__n">4</span><span class="modnav__t">Phone</span></a>
+  </nav>
+
+  <section class="mod__sec">
+    <h2>Why you would want this</h2>
+    <ul class="ticks"><li>Water only when the crop actually needs it — no guessing</li><li>Save water by not over-irrigating</li><li>Keep soil moisture consistent, which plants prefer to feast-and-famine</li><li>Spot fertiliser and salt build-up before it hurts yield — that's the EC reading, free</li></ul>
+  </section>
+
+  <section class="mod__sec mod__sec--choice">
+      <h2>Why this probe and not the $3 capacitive one</h2>
+      <p>Nearly every beginner tutorial uses a capacitive v1.2 board on an analog pin. The deciding argument is what you get back. A capacitive sensor hands you an arbitrary number with no physical meaning, and the only way to give it meaning is to calibrate against your own soil — then recalibrate when the exposed traces corrode, which they will, because you buried bare copper in wet dirt. <b>The number degrades and nothing tells you.</b> For a toolkit meant to be handed to someone else and left in a field, a sealed probe reporting real percent is worth the money — and it means your threshold is a number a person can reason about.</p>
+      <div class="table-wrap"><table class="compare">
+        <thead><tr><th scope="col"></th><th scope="col">Capacitive v1.2</th><th scope="col">THC-S over RS485 — this module</th></tr></thead>
+        <tbody><tr><th scope="row">What you get back</th><td>An arbitrary number, say “512”</td><td>Calibrated %RH, plus °C and EC</td></tr><tr><th scope="row">Meaning</th><td>None until you calibrate, per soil type</td><td>Real units out of the box</td></tr><tr><th scope="row">Buried for a season</th><td>Exposed traces corrode; readings drift</td><td>Sealed stainless probe, built for soil</td></tr><tr><th scope="row">Cable run to the field</th><td>Analog over long wire picks up noise</td><td>RS485 is a differential pair, designed for it</td></tr><tr><th scope="row">On an ESP8266</th><td>One ADC pin, 0–1 V, needs a divider</td><td>Two GPIO pins, no analog at all</td></tr><tr><th scope="row">Cost</th><td>Cheaper</td><td>More</td></tr></tbody></table></div>
+    </section>
+
+  <section class="mod__sec" id="diagram">
+    <h2>How it goes together</h2>
+    <figure class="figure figure--photo">
+    <a class="figure__zoom" href="../assets/img/wiring-diagram-module-3-soil.jpg" title="Open the full-size diagram">
+      <img src="../assets/img/wiring-diagram-module-3-soil.jpg" alt="Wiring diagram: four 18650 lithium cells wired in parallel give about 4 V, feeding an MT3608 boost module stepped up to 5 V. That 5 V powers an ESP8266 NodeMCU and an RS485-to-TTL module. The RS485 module connects to an RS485 soil moisture sensor buried in the ground beside an irrigation line." loading="lazy" decoding="async">
+    </a>
+    <figcaption>Its own pack, its own boost, its own radio — nothing here depends on Module 1, which is the point. The node can sit in the middle of a bed a hundred metres from the power box, and it sleeps between readings so four cells last a season.</figcaption>
+  </figure>
+  </section>
+
+  <section class="mod__sec" id="bom">
+    <h2>What you will need</h2>
+    <div class="table-wrap">
+    <table class="bom">
+      <caption class="sr-only">Bill of materials for Soil Moisture Sensor</caption>
+      <thead><tr><th scope="col">Part</th><th scope="col">What it does</th><th scope="col" class="num">Est.</th><th scope="col">Link</th></tr></thead>
+      <tbody><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005006889833004.html" rel="noopener nofollow">ESP8266 NodeMCU v3 (ESP-12E)</a>
+        
+        
+      </th>
+      <td>The small computer that runs the node</td>
+      <td class="num">$3</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006889833004.html" rel="noopener nofollow">Buy<span class="sr-only"> ESP8266 NodeMCU v3 (ESP-12E)</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005001524845572.html" rel="noopener nofollow">CWT THC-S soil probe</a>
+        
+        <p class="part__caution">Buy the RS485 variant. You do not need the pH/NPK versions — a cheap probe claiming NPK is inferring it from EC anyway.</p>
+      </th>
+      <td>Buried at root depth — moisture, temperature and EC</td>
+      <td class="num"><span class="tbc" title="We have not paid a confirmed price for this yet">TBC</span></td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005001524845572.html" rel="noopener nofollow">Buy<span class="sr-only"> CWT THC-S soil probe</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">MAX485 / HW-0519 RS485-to-TTL module</a>
+        
+        <p class="part__caution">The listing ships two different boards. The HW-0519 is auto-direction and needs no DE pin; the classic breakout has DE/RE and costs you a GPIO. Both work — but only the HW-0519 leaves you a spare pin for the valve relay.</p>
+      </th>
+      <td>Lets the ESP8266 speak RS485 to the probe</td>
+      <td class="num">$2</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">Buy<span class="sr-only"> MAX485 / HW-0519 RS485-to-TTL module</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        18650 lithium cells ×4
+        <span class="qty">×4</span>
+        <p class="part__caution">In parallel, every cell must be at the SAME voltage before you join them. Joining a full cell to a flat one dumps the difference through the link as a short.</p>
+      </th>
+      <td>The soil node's own pack — all four in parallel, ~4 V</td>
+      <td class="num">$10</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        Battery holder, 4-cell
+        
+        
+      </th>
+      <td>Holds the soil node's four cells in parallel</td>
+      <td class="num">$3</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005006361814667.html" rel="noopener nofollow">MT3608 boost converter</a>
+        
+        <p class="part__caution">Set it to 5.0 V with NOTHING on the output. The same part as Module 2 uses, set differently.</p>
+      </th>
+      <td>Steps the 1S pack's ~4 V up to the 5 V the ESP8266 and RS485 board need</td>
+      <td class="num">$2</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006361814667.html" rel="noopener nofollow">Buy<span class="sr-only"> MT3608 boost converter</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        Jumper wires
+        
+        
+      </th>
+      <td>Connects everything</td>
+      <td class="num">$1</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        USB cable
+        
+        
+      </th>
+      <td>Powers the ESP8266 and loads code onto it</td>
+      <td class="num">$2</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        Waterproof container
+        
+        
+      </th>
+      <td>Protects the electronics</td>
+      <td class="num">$5</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr></tbody>
+      <tfoot><tr>
+        <th scope="row" colspan="2">Approximate total</th>
+        <td class="num">~$28</td>
+        <td><span class="tbc">+1 TBC</span></td>
+      </tr></tfoot>
+    </table>
+  </div>
+  <p class="fineprint">Prices are what we paid or expect to pay, in USD, mostly on AliExpress —
+  they move, and shipping to a small island is its own line item. Links are not affiliate links
+  and we get nothing if you use them.</p>
+  </section>
+
+  <section class="mod__sec" id="wiring">
+    <h2>Wiring</h2>
+    <div class="bus">
+    <div class="bus__head">
+      <h4>Soil bus — THC-S</h4>
+      <dl class="spec">
+        <div><dt>Baud</dt><dd class="mono">4800</dd></div>
+        <div><dt>Frame</dt><dd class="mono">8N1</dd></div>
+        <div><dt>Slave</dt><dd class="mono">1</dd></div>
+      </dl>
+    </div>
+    <div class="table-wrap"><table class="wiring">
+      <thead><tr><th scope="col">Probe wire</th><th scope="col">From</th><th scope="col">Goes to</th><th scope="col">Note</th></tr></thead>
+      <tbody><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#8B5A2B" aria-hidden="true"></span>Brown</th>
+      <td class="mono">probe brown</td>
+      <td class="mono">boost OUT+ (5 V)</td>
+      <td class="note">The probe takes 4.5–30 V, so the node's own 5 V rail runs it directly.</td>
+    </tr><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#1A1815" aria-hidden="true"></span>Black</th>
+      <td class="mono">probe black</td>
+      <td class="mono">boost OUT− / common ground</td>
+      <td class="note"></td>
+    </tr><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#D8A521" aria-hidden="true"></span>Yellow</th>
+      <td class="mono">probe yellow</td>
+      <td class="mono">HW-0519 A</td>
+      <td class="note">A+ — yellow is A here and B on the water probe. This is the single easiest wiring mistake in the build.</td>
+    </tr><tr>
+      <th scope="row"><span class="swatch" style="--swatch:#2B6E7A" aria-hidden="true"></span>Blue</th>
+      <td class="mono">probe blue</td>
+      <td class="mono">HW-0519 B</td>
+      <td class="note">B−</td>
+    </tr></tbody>
+    </table></div>
+    <div class="pinset pinset--teach">
+      <div class="pinset__head">
+        <h5>Module 3 as this guide builds it</h5>
+        <span class="pinset__tag">wire this one</span>
+        <code class="pinset__src">firmware/soil-node-sleep/soil-node-sleep.ino</code>
+      </div>
+      <p class="pinset__note">The standalone deep-sleep soil node. It also needs D0 wired to RST as the wake wire — keep that link removable, because flashing needs it disconnected.</p>
+      <div class="table-wrap"><table class="wiring">
+        <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
+        <tbody><tr>
+          <th scope="row" class="mono">RXD / RO</th>
+          <td class="mono strong">D6</td>
+          <td class="mono dim">GPIO12</td>
+          <td class="note">in — data toward the ESP</td>
+        </tr><tr>
+          <th scope="row" class="mono">TXD / DI</th>
+          <td class="mono strong">D5</td>
+          <td class="mono dim">GPIO14</td>
+          <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">D0 → RST</th>
+          <td class="mono strong">D0</td>
+          <td class="mono dim">GPIO16</td>
+          <td class="note">deep-sleep wake — remove to flash</td>
+        </tr><tr>
+          <th scope="row" class="mono">VCC</th>
+          <td class="mono strong">3V3</td>
+          <td class="mono dim">—</td>
+          <td class="note">power</td>
+        </tr><tr>
+          <th scope="row" class="mono">GND</th>
+          <td class="mono strong">GND</td>
+          <td class="mono dim">—</td>
+          <td class="note">common ground star</td>
+        </tr></tbody>
+      </table></div>
+    </div><div class="pinset">
+      <div class="pinset__head">
+        <h5>Combined bench node (water + soil on one ESP8266)</h5>
+        
+        <code class="pinset__src">firmware/bench-both/bench-both.ino</code>
+      </div>
+      <p class="pinset__note">Kept as a bench tool: both probes on one board, water on D5/D6 and soil on D7/D1. Useful for proving two buses coexist. It is not how the deployed farm is wired — the soil probe lives on its own node so it can sleep between readings.</p>
+      <div class="table-wrap"><table class="wiring">
+        <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
+        <tbody><tr>
+          <th scope="row" class="mono">RXD</th>
+          <td class="mono strong">D7</td>
+          <td class="mono dim">GPIO13</td>
+          <td class="note">in — data toward the ESP</td>
+        </tr><tr>
+          <th scope="row" class="mono">TXD</th>
+          <td class="mono strong">D1</td>
+          <td class="mono dim">GPIO5</td>
+          <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">VCC</th>
+          <td class="mono strong">3V3</td>
+          <td class="mono dim">—</td>
+          <td class="note">power</td>
+        </tr><tr>
+          <th scope="row" class="mono">GND</th>
+          <td class="mono strong">GND</td>
+          <td class="mono dim">—</td>
+          <td class="note">common ground star</td>
+        </tr></tbody>
+      </table></div>
+    </div>
+    <div class="table-wrap"><table class="wiring">
+      <thead><tr><th scope="col">Register</th><th scope="col">Means</th><th scope="col">Scaling</th><th scope="col">Type</th></tr></thead>
+      <tbody><tr>
+      <th scope="row" class="mono">0x0000</th>
+      <td>Moisture</td>
+      <td class="mono">÷10 → %</td>
+      <td>unsigned</td>
+    </tr><tr>
+      <th scope="row" class="mono">0x0001</th>
+      <td>Temperature</td>
+      <td class="mono">÷10 → °C</td>
+      <td><b class="warnword">signed int16</b></td>
+    </tr><tr>
+      <th scope="row" class="mono">0x0002</th>
+      <td>EC</td>
+      <td class="mono">µS/cm as-is</td>
+      <td>unsigned</td>
+    </tr></tbody>
+    </table></div>
+  </div>
+        <h3>The node's own power</h3>
+        <p>Four 18650s in parallel is a single cell electrically — ~3.7&nbsp;V nominal, 4.2&nbsp;V
+        full, four times the capacity, and no balancing to do because parallel cells balance
+        themselves. The MT3608 lifts that to a steady 5&nbsp;V for the ESP8266, the RS485 board and
+        the probe, which is happy anywhere from 4.5 to 30&nbsp;V.</p>
+        <p>The reason this module carries its own pack rather than tapping Module 1 is placement: a
+        soil probe belongs in the middle of a bed, and a bed is rarely where the panel is. The node
+        sleeps between readings, so four cells carry it a long way.</p>
+  </section>
+
+  <section class="mod__sec" id="build">
+    <h2>Build it, step by step</h2>
+    <ol class="steps"><li class="step">
+      <div class="step__n" aria-hidden="true">01</div>
+      <div class="step__body">
+        <h3>Prove the sensor from a laptop first</h3>
+        
+        <p>Before the ESP8266 or the battery pack exist. One thing at a time is the whole trick to bringing hardware up — and this probe needs no converter of its own, so it is the easiest thing in the toolkit to prove.</p><p>Wire the probe straight to an FT232 USB-RS485 adapter and give it 5 V. In open air, moisture and EC read <b>0</b> and that is correct — air has no water in it. Squeeze the probe in a damp hand and moisture climbs within seconds.</p>
+        <pre class="code" data-lang="bash"><code>bun tools/poll-soil.ts        # live readings, every 1 s</code></pre>
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>Don't use <code>mbpoll</code> with the cheap FT232 adapter.</b> It reports <code>Invalid CRC</code> on every single frame while the sensor is perfectly fine — the adapter echoes your own transmitted bytes back and mbpoll reads and writes on one file descriptor, so it chokes on its own echo. This cost us an afternoon.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>The <i>type</i> of error tells you the baud rate. Wrong baud gives you <b>timeouts</b> — it didn't understand you, so it stayed quiet. Right baud gives you <b>CRC errors</b> — it answered and the bytes got mangled. So CRC errors mean you're on the right baud. Don't go hunting it.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">02</div>
+      <div class="step__body">
+        <h3>Build the 1S4P pack and set the boost to 5 V</h3>
+        
+        <p>Four 18650s all in parallel — every positive to every positive. That is one cell's voltage (~3.7 V nominal, 4.2 V full) with four times the capacity, and it needs no balancing because parallel cells balance themselves.</p><p>Feed the MT3608 from the pack and set it to a steady <b>5.0 V</b> with nothing on the output, then connect the ESP8266 and the RS485 board.</p>
+        
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>Match the cells before you join them.</b> In parallel every cell must sit at the same voltage first. Joining a full cell to a flat one dumps the difference through the link as a dead short — that is a fire, not a spark. Charge them individually to within ~0.05 V of each other.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>A 1S pack has no series joins and no BMS in this build, which is why it is a beginner-friendly pack — but it also means nothing stops you over-discharging it. Swap the cells out and charge them off the node.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">03</div>
+      <div class="step__body">
+        <h3>Wire the ESP8266</h3>
+        
+        <p>Four wires out of the probe, four between the RS485 module and the ESP8266, plus the deep-sleep wake link.</p>
+        
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>The A/B colours are the opposite of Module 2.</b> On the water probe blue is A and yellow is B. On this one <b>yellow is A and blue is B</b>. If you build this straight after the tank sensor you will get it wrong from muscle memory. Swapping them is harmless — if you get nothing back, swap and retry before suspecting anything else.</p>
+  </aside><aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>D0 must be linked to RST</b> for the node to wake itself from deep sleep — and that same link stops the board being flashed. Make it a removable jumper, not solder, or you will be pulling wire off a finished node the first time you change a setting.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">04</div>
+      <div class="step__body">
+        <h3>Load the code</h3>
+        
+        <p>The firmware is <code>firmware/soil-node-sleep/</code> — it wakes, reads, POSTs and goes back to sleep, which is what makes four cells last a season. Copy <code>config.example.h</code> to <code>config.h</code> and edit that, never the sketch.</p><p>Give each node its own name in <code>config.h</code>. Two nodes publishing under one name is not an error anyone will notice until the data is already wrong.</p>
+        <pre class="code" data-lang="bash"><code># remove the D0→RST link first, or the board will not accept a flash
+arduino-cli compile --upload \
+  --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/soil-node-sleep</code></pre>
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>Temperature is signed.</b> <code>0xFF9B</code> is −10.1 °C, not 65435. Parse it into an <code>int16_t</code> or your first frosty morning produces nonsense.</p>
+  </aside><aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>The manual has a typo.</b> Its register table says function code <code>0x30</code>. There is no such function code — it's <code>0x03</code>. If you get <code>modbus exception 0x01</code> (illegal function), that is what happened.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>The flash chip matters for deep sleep. A node that wakes as a zombie — powered, unresponsive, no serial — was traced to the flash chip, not the code. An XMC (0x20) part is bench-proven here.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">05</div>
+      <div class="step__body">
+        <h3>Choose your two thresholds</h3>
+        
+        <p>You need <b>two</b> numbers, not one: water below <code>DRY_THRESHOLD</code> (say 30%), stop above <code>WET_THRESHOLD</code> (say 45%). The decision itself lives in Node-RED on the phone, not in this node — this node only reports, and Module 2's valve does the acting.</p><p>To pick them, water your bed the way you normally would and watch what the probe reads when the soil is how you like it — that is roughly your wet threshold. Then watch over the following days and note where the plants start to look thirsty. That is roughly your dry one.</p>
+        
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p><b>Leave at least 10 percentage points between them.</b> With a single threshold the valve opens, the soil creeps past it, the valve shuts, the soil dips, the valve opens — on and off every few seconds all day. That chatter wears out a mechanical valve and empties your tank in dribs.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Sandy soil and clay hold water completely differently, and so do different crops. Use the probe in the actual bed you'll irrigate, not a test pot.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">06</div>
+      <div class="step__body">
+        <h3>Install in the field</h3>
+        
+        <p>Bury the probe at <b>root depth</b> — the depth the roots actually drink from, not just under the surface. Too shallow and you water on the strength of a dry crust while the roots sit soaked. Pack soil firmly around it: an air gap around the tines reads dry forever.</p><p><b>Don't put the probe next to a dripper.</b> You'll measure the dripper, not the bed, and it'll read wet long before the rest of the row has had a drink. Put it between emitters, where an average plant lives.</p>
+        
+        <aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Because this node carries its own pack, it can go where the crop is rather than where the power is. Two of them in different beds cost little more than one and tell you far more about your field.</p>
+  </aside>
+      </div>
+    </li></ol>
+  </section>
+
+  <section class="mod__sec" id="faults">
+    <h2>When it doesn't work</h2>
+    <p>Ordered roughly by how often it has actually been the answer.</p>
+    <div class="table-wrap"><table class="faults">
+    <thead><tr><th scope="col">Symptom</th><th scope="col">Almost always</th><th scope="col">What to do</th></tr></thead>
+    <tbody><tr>
+      <th scope="row">No reading at all</th>
+      <td class="cause">A and B swapped</td>
+      <td>Swap the yellow and blue wires — note these are opposite to Module 2.</td>
+    </tr><tr>
+      <th scope="row">No reading at all</th>
+      <td class="cause">Wrong baud</td>
+      <td>This probe is 4800. Module 2's is 9600. Don't copy the number across.</td>
+    </tr><tr>
+      <th scope="row">Invalid CRC on every frame with mbpoll</th>
+      <td class="cause">Adapter echo, not a fault</td>
+      <td>Use bun tools/poll-soil.ts. The sensor is fine.</td>
+    </tr><tr>
+      <th scope="row">modbus exception 0x01</th>
+      <td class="cause">Used 0x30 from the manual</td>
+      <td>The manual has a typo. The function code is 0x03.</td>
+    </tr><tr>
+      <th scope="row">Temperature reads ~65000</th>
+      <td class="cause">Parsed as unsigned</td>
+      <td>Cast to int16_t. 0xFF9B = −10.1 °C.</td>
+    </tr><tr>
+      <th scope="row">Moisture always 0 and the probe IS buried</th>
+      <td class="cause">Air gap around the tines</td>
+      <td>Pack the soil firmly against the probe.</td>
+    </tr><tr>
+      <th scope="row">Board won't accept a flash</th>
+      <td class="cause">D0 is still linked to RST</td>
+      <td>Remove the wake link, flash, put it back.</td>
+    </tr><tr>
+      <th scope="row">Node wakes powered but unresponsive</th>
+      <td class="cause">Flash chip, not the sketch</td>
+      <td>Check the chip ID. An XMC (0x20) part is bench-proven for deep sleep here.</td>
+    </tr><tr>
+      <th scope="row">Pack goes flat in weeks, not months</th>
+      <td class="cause">The node isn't actually sleeping</td>
+      <td>Confirm the D0→RST link is fitted and the sketch reaches deepSleep. An awake ESP8266 draws ~100× its sleeping current.</td>
+    </tr><tr>
+      <th scope="row">Two nodes' readings jump around each other</th>
+      <td class="cause">Both publishing under one node name</td>
+      <td>Give each node its own name in config.h.</td>
+    </tr></tbody>
+  </table></div>
+  </section>
+
+  <section class="mod__sec" id="connects">
+    <h2>How this fits with the others</h2>
+    <div class="related"><a class="related__i" href="water-tank-and-valve.html"
+        style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
+        <span class="related__n">2</span>
+        <span class="related__t">Water Tank Level &amp; Valve</span>
+        <span class="related__w">Its readings are what decide when that valve should open.</span></a><a class="related__i" href="mobile-wifi-base-station.html"
+        style="--accent:#43587A;--accent-dark:#8AA0C8">
+        <span class="related__n">4</span>
+        <span class="related__t">Mobile WiFi Base Station</span>
+        <span class="related__w">Receives soil readings and holds the irrigation decision.</span></a><a class="related__i" href="solar-power-pack.html"
+        style="--accent:#C77C1E;--accent-dark:#E8A94A">
+        <span class="related__n">1</span>
+        <span class="related__t">Solar Power Pack</span>
+        <span class="related__w">Optional — this node runs on its own cells so it can sit far from the power box.</span></a></div>
+  </section>
+
+  <section class="mod__sec mod__sec--source">
+    <h2>The source</h2>
+    <ul class="ticks">
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/docs/02-soil-moisture-drip-irrigation.md" rel="noopener">Full module document — docs/02-soil-moisture-drip-irrigation.md ↗</a></li>
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/tree/main/firmware/soil-node-sleep/" rel="noopener">Firmware — firmware/soil-node-sleep/ ↗</a></li>
+      <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal, including everything that went wrong ↗</a></li>
+      <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
+    </ul>
+    <p class="fineprint">Built and measured on our bench. Not the same as field-soaked.</p>
+  </section>
+</article>
+</main>
+
+<footer class="foot">
+  <div class="foot__grid">
+    <div class="foot__col">
+      <h2 class="foot__h">Farmers IoT Toolkit</h2>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.</p>
+      <p class="foot__lic">Open source — use, share, and adapt freely.</p>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">Modules</h3>
+      <ul>
+        <li><a href="../modules/solar-power-pack.html">1 · Power</a></li>
+        <li><a href="../modules/water-tank-and-valve.html">2 · Water + valve</a></li>
+        <li><a href="../modules/soil-moisture-sensor.html">3 · Soil</a></li>
+        <li><a href="../modules/mobile-wifi-base-station.html">4 · Phone</a></li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">Go deeper</h3>
+      <ul>
+        <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Firmware &amp; flows ↗</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal ↗</a></li>
+        <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/STATUS.md" rel="noopener">Live status ↗</a></li>
+      </ul>
+    </div>
+    <div class="foot__col">
+      <h3 class="foot__h">The project</h3>
+      <p>A discovery project funded by
+        <a href="https://float.ag" rel="noopener">Float</a>,
+        implemented by
+        <a href="https://sunriselabs.io" rel="noopener">Sunrise Labs</a>
+        in Mauke, Cook Islands.</p>
+      <p class="foot__note">Contributions welcome — a fifth module, a correction, a photo of
+      yours in the field. Open an issue.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Theme: follow the system unless the reader has said otherwise. No cookies, no
+// analytics, no third-party requests anywhere on this site.
+(function () {
+  var KEY = "fit-theme";
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (saved) document.documentElement.dataset.theme = saved;
+  var btn = document.querySelector("[data-theme-toggle]");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    var dark = document.documentElement.dataset.theme
+      ? document.documentElement.dataset.theme === "dark"
+      : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var next = dark ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem(KEY, next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>

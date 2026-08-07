@@ -22,8 +22,16 @@ files kept teaching the old order. Anyone rebuilding from the docs wired it wron
 dead buses.
 
 A website is a fifth place for that to rot. So the site isn't prose with tables typed into it —
-every pin table, bus parameter, BOM row and wiring SVG is **rendered from `src/data.ts`**. The
-diagram and the table beside it cannot disagree, because they are one input.
+every pin table, bus parameter and BOM row is **rendered from `src/data.ts`**, and so is every
+cross-link between modules. Change a pin in one place and the module page and the cheatsheet move
+together.
+
+The wiring **pictures** are a deliberate exception: they are photographs of the real build
+(`docs/wiring-diagram-module-*.jpg`), web-sized into `assets/img/`. We used to generate SVG
+schematics from `data.ts` and they were harder to follow than a photo of the actual boards — a
+farmer matching a picture to the parts in their hand is doing something a schematic can't help
+with. When the hardware changes, re-export the photo and re-run the `magick` line in `Deploying`
+below.
 
 `data.ts` also carries the thing the old docs were missing: a bus has **more than one correct
 pin assignment** (standalone module build vs our deployed node vs the deep-sleep variant), and
@@ -36,9 +44,10 @@ every `PinSet` names the `.ino` it was read out of. The one a farmer should wire
 |---|---|
 | `build.ts` | Renders every page into `dist/`, copies assets. `--serve` to preview. |
 | `src/data.ts` | **Single source of truth** — parts, prices, buses, pin sets, power, steps, faults. |
-| `src/components.ts` | HTML + SVG rendering helpers. Tables and diagrams share their input. |
+| `src/components.ts` | HTML rendering helpers — tables, callouts, BOM, figures. |
 | `src/layout.ts` | The page shell: head, nav, footer, theme toggle. |
-| `src/pages/` | `index`, `cheatsheet`, and `module` (which emits all four module pages). |
+| `src/pages/` | `index`, `cheatsheet`, `module` (emits all four module pages), `notfound`. |
+| `assets/img/` | The five wiring photographs, web-sized from `docs/*.jpg`. |
 | `styles.css` | The whole design system. Light and dark are both first-class. |
 | `assets/fonts/` | Self-hosted Fraunces / Instrument Sans / DM Mono (~230 KB). |
 | `tools/fetch-fonts.ts` | Re-downloads and re-subsets those fonts. Run once; output is committed. |
@@ -49,14 +58,23 @@ every `PinSet` names the `.ino` it was read out of. The one a farmer should wire
 - **Fonts are self-hosted on purpose.** A farmer on a metered 4G connection should make requests
   to exactly one host. There is no Google Fonts link, no analytics, no third-party request of any
   kind, and no cookie — the theme preference is `localStorage` and nothing else.
-- **The status badges must track `STATUS.md`.** The site says which steps are *design, not
-  report*, and that honesty is the point. If a module gets finished, update `statusLine` and the
-  `proven` flag on its steps in the same commit.
-- **The video is a slot.** `VIDEO.id` is `null`, so the section renders an honest placeholder.
-  Drop a YouTube ID in and it becomes a click-to-load facade — nothing loads from YouTube until
-  the reader presses play.
+- **The status badges must track `STATUS.md`.** Steps carry `proven: false` where our own build
+  hasn't reached them, and the page says so quietly at step level rather than disclaiming the
+  whole site. If a module gets finished, update `statusLine` and the `proven` flags in the same
+  commit.
+- **The video is a slot.** `VIDEO.id` is `null`, so the section renders the running order. Drop a
+  YouTube ID in and it becomes a click-to-load facade — nothing loads from YouTube until the
+  reader presses play. That facade is the only thing on the site that would ever make a
+  third-party request, and only after a deliberate click.
+- **`404.html` carries its own styles.** GitHub Pages serves that file's content at whatever URL
+  404'd without redirecting, so a relative `assets/…` link would resolve against the wrong
+  directory. It is therefore standalone — inline CSS, no webfont, no image. See
+  `src/pages/notfound.ts`.
 - **Prices marked `usd: null` render as `TBC`,** not as a guess. Two probe prices are genuinely
   unknown until the invoices are found.
+- **The module order is 1 Power · 2 Water+valve · 3 Soil · 4 Phone**, which is build order: the
+  pack powers the rest, and the valve lives on the water node because that is where the tank is.
+  The `docs/0N-*.md` filenames still carry the old numbering — `docPath` in `data.ts` maps them.
 - Module numerals are drawn as circles, never typeset. The characters ①–④ are not in any font the
   site ships and render as tofu boxes on most devices.
 
@@ -65,6 +83,16 @@ every `PinSet` names the `.ino` it was read out of. The one a farmer should wire
 `site/dist/` is a complete static site with relative links throughout, so it works from a domain
 root or a subdirectory. A `.nojekyll` file is emitted for GitHub Pages. There are no third-party
 requests of any kind, so nothing needs to be reachable but the host itself.
+
+Re-sizing a wiring photograph after the hardware changes:
+
+```bash
+magick docs/wiring-diagram-module-2-water.jpg -resize '1800x1800>' \
+  -strip -interlace Plane -quality 84 site/assets/img/wiring-diagram-module-2-water.jpg
+# the cheatsheet is the one reference-density image, so it gets more pixels:
+magick docs/wiring-cheatsheet-full.jpg -resize 'x2200>' \
+  -strip -interlace Plane -quality 86 site/assets/img/wiring-cheatsheet-full.jpg
+```
 
 **GitHub Pages** is wired up in `.github/workflows/pages.yml`. It runs on any push to `main` that
 touches `site/`, builds with `bun site/build.ts`, and uploads `site/dist/` as the Pages artifact.

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Water Tank Level Sensor — Farmers IoT Toolkit</title>
-<meta name="description" content="A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.">
+<title>Water Tank Level & Valve — Farmers IoT Toolkit</title>
+<meta name="description" content="A sealed probe on the tank floor feels the weight of the water above it, and a solenoid valve on the outlet lets the system open and shut the irrigation line.">
 <meta name="color-scheme" content="light dark">
-<meta property="og:title" content="Water Tank Level Sensor — Farmers IoT Toolkit">
-<meta property="og:description" content="A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.">
+<meta property="og:title" content="Water Tank Level & Valve — Farmers IoT Toolkit">
+<meta property="og:description" content="A sealed probe on the tank floor feels the weight of the water above it, and a solenoid valve on the outlet lets the system open and shut the irrigation line.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/styles.css">
@@ -45,47 +45,47 @@
 <article class="mod">
   <header class="mod__hero">
     <div class="mod__rule" aria-hidden="true"></div>
-    <p class="mod__kicker"><span class="mod__n">1</span> Module 1 · Beginner · 1–2 hours</p>
-    <h1 class="mod__h1">Water Tank Level Sensor</h1>
-    <p class="mod__plain">A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.</p>
+    <p class="mod__kicker"><span class="mod__n">2</span> Module 2 · Advanced · 3–5 hours</p>
+    <h1 class="mod__h1">Water Tank Level &amp; Valve</h1>
+    <p class="mod__plain">A sealed probe on the tank floor feels the weight of the water above it, and a solenoid valve on the outlet lets the system open and shut the irrigation line.</p>
 
     <div class="mod__status">
-      <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
-    <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
-      <p>Comms, register map and ruler calibration all confirmed; runs end-to-end to Node-RED. One open fault: the probe reads, then goes silent, then reads again on identical code — a wire, prime suspect the green/ground. Find it before you solder anything into a box.</p>
+      <span class="badge badge--partial" title="Measured where it is built; the rest is worked out and costed.">
+    <span class="badge__dot" aria-hidden="true"></span>In build</span>
+      <p>The level-sensing half is bench-proven end to end — comms, register map and ruler calibration all confirmed, reading through to Node-RED. The valve half is wired to the same node, and how to drive a 12 V solenoid off a pack that sags to 9.0 V is the one measurement still outstanding.</p>
     </div>
 
     <dl class="mod__facts">
-      <div><dt>Parts</dt><dd>~$18<span class="tbc">+1 TBC</span></dd></div>
-      <div><dt>Build time</dt><dd>1–2 hours</dd></div>
-      <div><dt>Steps proven</dt><dd>7 of 7</dd></div>
+      <div><dt>Parts</dt><dd>~$33<span class="tbc">+1 TBC</span></dd></div>
+      <div><dt>Build time</dt><dd>3–5 hours</dd></div>
+      <div><dt>Steps proven</dt><dd>8 of 9</dd></div>
       <div><dt>Board</dt><dd>ESP8266</dd></div>
     </dl>
   </header>
 
   <nav class="modnav" aria-label="Modules">
-    <a href="modules/water-tank-level-sensor.html"
-      class="modnav__i is-current"
-      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
-      aria-current="page">
-      <span class="modnav__n">1</span><span class="modnav__t">Water tank level</span></a><a href="modules/soil-moisture-drip-irrigation.html"
-      class="modnav__i"
-      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
-      >
-      <span class="modnav__n">2</span><span class="modnav__t">Soil + irrigation valve</span></a><a href="modules/iot-solar-powerbank.html"
+    <a href="modules/solar-power-pack.html"
       class="modnav__i"
       style="--accent:#C77C1E;--accent-dark:#E8A94A"
       >
-      <span class="modnav__n">3</span><span class="modnav__t">Solar power</span></a><a href="modules/mobile-wifi-base-station.html"
+      <span class="modnav__n">1</span><span class="modnav__t">Power</span></a><a href="modules/water-tank-and-valve.html"
+      class="modnav__i is-current"
+      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
+      aria-current="page">
+      <span class="modnav__n">2</span><span class="modnav__t">Water + valve</span></a><a href="modules/soil-moisture-sensor.html"
+      class="modnav__i"
+      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
+      >
+      <span class="modnav__n">3</span><span class="modnav__t">Soil</span></a><a href="modules/mobile-wifi-base-station.html"
       class="modnav__i"
       style="--accent:#43587A;--accent-dark:#8AA0C8"
       >
-      <span class="modnav__n">4</span><span class="modnav__t">Base station</span></a>
+      <span class="modnav__n">4</span><span class="modnav__t">Phone</span></a>
   </nav>
 
   <section class="mod__sec">
     <h2>Why you would want this</h2>
-    <ul class="ticks"><li>Know the tank is getting low <em>before</em> you run out</li><li>Keep a record of water use across days and weeks</li><li>Check from the house instead of walking to the tank and climbing up</li><li>Plan ahead for dry spells</li></ul>
+    <ul class="ticks"><li>Know the tank is getting low <em>before</em> you run out</li><li>Open and shut the irrigation line from anywhere, or on a schedule</li><li>Keep a record of water use across days and weeks</li><li>Never irrigate from an empty tank — the level and the valve are on the same node</li></ul>
   </section>
 
   <section class="mod__sec mod__sec--choice">
@@ -96,11 +96,21 @@
         <tbody><tr><th scope="row">How it measures</th><td>Times a sound echo off the surface</td><td>Feels the weight of water above it</td></tr><tr><th scope="row">Tank walls</th><td>Sound bounces off them — false readings</td><td>Doesn't care</td></tr><tr><th scope="row">Ripples, foam, debris</th><td>Scatter the echo</td><td>Doesn't care</td></tr><tr><th scope="row">Condensation on the face</th><td>Blinds it</td><td>Lives underwater anyway</td></tr><tr><th scope="row">Mounting</th><td>Needs clear line of sight straight down</td><td>Just drop it in</td></tr><tr><th scope="row">Cost</th><td>Cheaper</td><td>More</td></tr><tr><th scope="row">Power</th><td>Runs off the board</td><td>Needs 12–36 V — hence the boost converter</td></tr></tbody></table></div>
     </section>
 
+  <section class="mod__sec" id="diagram">
+    <h2>How it goes together</h2>
+    <figure class="figure figure--photo">
+    <a class="figure__zoom" href="../assets/img/wiring-diagram-module-2-water.jpg" title="Open the full-size diagram">
+      <img src="../assets/img/wiring-diagram-module-2-water.jpg" alt="Wiring diagram: 12 V comes in on a terminal block and splits two ways — into an MT3608 boost set to 18 V for the QDY30A hydrostatic water level probe, and into a Mini360 buck set to 5 V for the ESP8266 NodeMCU and an RS485-to-TTL module. The probe's four wires go to the boost and the RS485 board; the RS485 board goes to the ESP8266. A 5 V relay driven from the ESP switches a normally-closed 12 V solenoid valve on the tank outlet." loading="lazy" decoding="async">
+    </a>
+    <figcaption>One 12 V feed, two rails: 18 V for the probe and 5 V for the logic. The probe's red wire is the only thing that ever sees 18 V. The valve hangs off the relay's isolated switched contacts, so its current never touches the ESP8266.</figcaption>
+  </figure>
+  </section>
+
   <section class="mod__sec" id="bom">
     <h2>What you will need</h2>
     <div class="table-wrap">
     <table class="bom">
-      <caption class="sr-only">Bill of materials for Water Tank Level Sensor</caption>
+      <caption class="sr-only">Bill of materials for Water Tank Level &amp; Valve</caption>
       <thead><tr><th scope="col">Part</th><th scope="col">What it does</th><th scope="col" class="num">Est.</th><th scope="col">Link</th></tr></thead>
       <tbody><tr>
       <th scope="row">
@@ -122,22 +132,58 @@
       <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006415176688.html" rel="noopener nofollow">Buy<span class="sr-only"> QDY30A submersible pressure probe</span> ↗</a></td>
     </tr><tr>
       <th scope="row">
-        <a href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">MAX485 / HW-0519 RS485 module</a>
+        <a href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">MAX485 / HW-0519 RS485-to-TTL module</a>
         
-        <p class="part__caution">The listing ships two different boards. The HW-0519 is auto-direction and needs no DE pin; the classic breakout has DE/RE and costs you a GPIO. Both work — but only the HW-0519 lets both sensors share one ESP8266.</p>
+        <p class="part__caution">The listing ships two different boards. The HW-0519 is auto-direction and needs no DE pin; the classic breakout has DE/RE and costs you a GPIO. Both work — but only the HW-0519 leaves you a spare pin for the valve relay.</p>
       </th>
       <td>Lets the ESP8266 speak RS485 to the probe</td>
       <td class="num">$2</td>
-      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">Buy<span class="sr-only"> MAX485 / HW-0519 RS485 module</span> ↗</a></td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005003716689999.html" rel="noopener nofollow">Buy<span class="sr-only"> MAX485 / HW-0519 RS485-to-TTL module</span> ↗</a></td>
     </tr><tr>
       <th scope="row">
         <a href="https://www.aliexpress.com/item/1005006361814667.html" rel="noopener nofollow">MT3608 boost converter</a>
         
         <p class="part__caution">Set it to 18 V with NOTHING on the output, before the probe is ever connected.</p>
       </th>
-      <td>Lifts the pack to the 18 V the water probe needs</td>
+      <td>Steps 12 V up to the 18 V the water probe needs</td>
       <td class="num">$2</td>
       <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006361814667.html" rel="noopener nofollow">Buy<span class="sr-only"> MT3608 boost converter</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        Mini360 buck converter (MP2307)
+        
+        <p class="part__caution">Fine for a sensor node at a couple of hundred milliamps. Do NOT use one to charge a phone — it misbehaves above ~1.5 A in a hot box. That job wants the 3 A synchronous buck in Module 1.</p>
+      </th>
+      <td>Steps the pack's 12 V down to 5 V for the ESP8266 and RS485 board</td>
+      <td class="num">$2</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        1-channel 5 V relay module
+        
+        
+      </th>
+      <td>Lets the 3.3 V ESP8266 switch the 12 V valve</td>
+      <td class="num">$2</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005006146766362.html" rel="noopener nofollow">12 V solenoid valve, normally closed</a>
+        
+        <p class="part__caution">Normally-closed is the safety property this module rests on: no power = shut. Also check the minimum pressure differential — a pilot/servo valve needs ~0.2 bar and will not open on a low gravity tank no matter how good your wiring is.</p>
+      </th>
+      <td>Opens to let water out of the tank and into the irrigation line</td>
+      <td class="num">$8</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005006146766362.html" rel="noopener nofollow">Buy<span class="sr-only"> 12 V solenoid valve, normally closed</span> ↗</a></td>
+    </tr><tr>
+      <th scope="row">
+        <a href="https://www.aliexpress.com/item/1005001552094086.html" rel="noopener nofollow">1N5819 flyback diode</a>
+        
+        <p class="part__caution">Not optional. Without it the ESP8266 reboots — but only when the valve closes.</p>
+      </th>
+      <td>Absorbs the spike the valve coil throws when it shuts</td>
+      <td class="num">$1</td>
+      <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005001552094086.html" rel="noopener nofollow">Buy<span class="sr-only"> 1N5819 flyback diode</span> ↗</a></td>
     </tr><tr>
       <th scope="row">
         Jumper wires
@@ -149,21 +195,21 @@
       <td class="buy"><span class="nolink">—</span></td>
     </tr><tr>
       <th scope="row">
-        Breadboard
-        
-        
-      </th>
-      <td>Lets you build without soldering</td>
-      <td class="num">$3</td>
-      <td class="buy"><span class="nolink">—</span></td>
-    </tr><tr>
-      <th scope="row">
         USB cable
         
         
       </th>
       <td>Powers the ESP8266 and loads code onto it</td>
       <td class="num">$2</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        Hose fittings for the valve
+        
+        
+      </th>
+      <td>Joins the valve into your irrigation line</td>
+      <td class="num">$5</td>
       <td class="buy"><span class="nolink">—</span></td>
     </tr><tr>
       <th scope="row">
@@ -177,7 +223,7 @@
     </tr></tbody>
       <tfoot><tr>
         <th scope="row" colspan="2">Approximate total</th>
-        <td class="num">~$18</td>
+        <td class="num">~$33</td>
         <td><span class="tbc">+1 TBC</span></td>
       </tr></tfoot>
     </table>
@@ -189,80 +235,7 @@
 
   <section class="mod__sec" id="wiring">
     <h2>Wiring</h2>
-    <figure class="figure">
-  <svg viewBox="0 0 1010 354" role="img" aria-label="Water bus — QDY30A wiring: probe wires on the left, RS485 module to ESP8266 pins on the right" class="diagram diagram--bus" style="--accent:#2B6E7A">
-    <rect x="24" y="52" width="118" height="258" rx="9" class="node__box"/>
-    <text x="83" y="40" text-anchor="middle" class="bw__cap">probe</text>
-
-    <line x1="792" y1="46" x2="792" y2="310" class="bw__div"/>
-    <text x="866" y="40" text-anchor="end" class="bw__cap">HW-0519</text>
-
-    <rect x="928" y="52" width="58" height="258" rx="9" class="node__box"/>
-    <text x="957" y="40" text-anchor="middle" class="bw__cap">ESP</text>
-
-    
-      <g class="bw">
-        <line x1="146" y1="78" x2="404" y2="78" style="stroke:#C0392B"/>
-        <circle cx="146" cy="78" r="5" style="fill:#C0392B"/>
-        <circle cx="404" cy="78" r="5" style="fill:#C0392B"/>
-        <text x="83" y="82" text-anchor="middle" class="bw__l">Red</text>
-        <text x="416" y="82" class="bw__r mono">MT3608 OUT+ (18 V)</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="124" x2="404" y2="124" style="stroke:#4A7A3B"/>
-        <circle cx="146" cy="124" r="5" style="fill:#4A7A3B"/>
-        <circle cx="404" cy="124" r="5" style="fill:#4A7A3B"/>
-        <text x="83" y="128" text-anchor="middle" class="bw__l">Green</text>
-        <text x="416" y="128" class="bw__r mono">MT3608 OUT− + common ground</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="170" x2="404" y2="170" style="stroke:#2B6E7A"/>
-        <circle cx="146" cy="170" r="5" style="fill:#2B6E7A"/>
-        <circle cx="404" cy="170" r="5" style="fill:#2B6E7A"/>
-        <text x="83" y="174" text-anchor="middle" class="bw__l">Blue</text>
-        <text x="416" y="174" class="bw__r mono">HW-0519 #1 A</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="216" x2="404" y2="216" style="stroke:#D8A521"/>
-        <circle cx="146" cy="216" r="5" style="fill:#D8A521"/>
-        <circle cx="404" cy="216" r="5" style="fill:#D8A521"/>
-        <text x="83" y="220" text-anchor="middle" class="bw__l">Yellow</text>
-        <text x="416" y="220" class="bw__r mono">HW-0519 #1 B</text>
-      </g>
-    
-      <g class="bw">
-        <text x="866" y="82" text-anchor="end" class="bw__r mono">RXD / RO</text>
-        <line x1="874" y1="78" x2="928" y2="78" class="bw__pin"/>
-        <text x="940" y="82" class="bw__r mono strong">D5</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="128" text-anchor="end" class="bw__r mono">TXD / DI</text>
-        <line x1="874" y1="124" x2="928" y2="124" class="bw__pin"/>
-        <text x="940" y="128" class="bw__r mono strong">D6</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="174" text-anchor="end" class="bw__r mono">DE + RE</text>
-        <line x1="874" y1="170" x2="928" y2="170" class="bw__pin"/>
-        <text x="940" y="174" class="bw__r mono strong">D1</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="220" text-anchor="end" class="bw__r mono">VCC</text>
-        <line x1="874" y1="216" x2="928" y2="216" class="bw__pin"/>
-        <text x="940" y="220" class="bw__r mono strong">3V3</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="266" text-anchor="end" class="bw__r mono">GND</text>
-        <line x1="874" y1="262" x2="928" y2="262" class="bw__pin"/>
-        <text x="940" y="266" class="bw__r mono strong">GND</text>
-      </g>
-    <text x="404" y="340" text-anchor="middle" class="caption mono">9600 8N1 · slave 1</text>
-    <text x="890" y="340" text-anchor="middle" class="caption">Module 1 on its own</text>
-  </svg>
-  <figcaption>Drawn from the same pin data as the tables below, so the two cannot disagree. The
-  right-hand column is the pin set for <b>Module 1 on its own</b> — other builds use different pins,
-  and they are listed underneath.</figcaption>
-</figure>
-        <div class="bus">
+    <div class="bus">
     <div class="bus__head">
       <h4>Water bus — QDY30A</h4>
       <dl class="spec">
@@ -282,26 +255,26 @@
       <th scope="row"><span class="swatch" style="--swatch:#4A7A3B" aria-hidden="true"></span>Green</th>
       <td class="mono">probe green</td>
       <td class="mono">MT3608 OUT− + common ground</td>
-      <td class="note">Prime suspect for the open intermittent. One ground, not two.</td>
+      <td class="note">Prime suspect for an intermittent read. One ground, not two.</td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#2B6E7A" aria-hidden="true"></span>Blue</th>
       <td class="mono">probe blue</td>
-      <td class="mono">HW-0519 #1 A</td>
+      <td class="mono">HW-0519 A</td>
       <td class="note">A+ — note this is the OPPOSITE colour convention to the soil probe.</td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#D8A521" aria-hidden="true"></span>Yellow</th>
       <td class="mono">probe yellow</td>
-      <td class="mono">HW-0519 #1 B</td>
+      <td class="mono">HW-0519 B</td>
       <td class="note">B−</td>
     </tr></tbody>
     </table></div>
     <div class="pinset pinset--teach">
       <div class="pinset__head">
-        <h5>Module 1 on its own</h5>
+        <h5>Module 2 as this guide builds it</h5>
         <span class="pinset__tag">wire this one</span>
         <code class="pinset__src">firmware/water-level/water-level.ino</code>
       </div>
-      <p class="pinset__note">This is what you want if you are building the tank sensor by itself. On a classic DE/RE breakout, join DE and RE and drive them from D1; an auto-direction HW-0519 needs no DE pin at all.</p>
+      <p class="pinset__note">This is the assignment in the wiring picture above, and it leaves D2 free for the valve relay. On a classic DE/RE breakout, join DE and RE and drive them from D1; an auto-direction HW-0519 needs no DE pin at all.</p>
       <div class="table-wrap"><table class="wiring">
         <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
         <tbody><tr>
@@ -314,6 +287,11 @@
           <td class="mono strong">D6</td>
           <td class="mono dim">GPIO12</td>
           <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">relay IN</th>
+          <td class="mono strong">D2</td>
+          <td class="mono dim">GPIO4</td>
+          <td class="note">out — opens and shuts the valve</td>
         </tr><tr>
           <th scope="row" class="mono">DE + RE</th>
           <td class="mono strong">D1</td>
@@ -337,7 +315,7 @@
         
         <code class="pinset__src">firmware/farm-node/farm-node.ino</code>
       </div>
-      <p class="pinset__note">Swapped relative to the standalone build — the pins follow how the board was actually soldered on 2026-07-19, and the firmware follows the iron. NEVER run water-level.ino on this board: it drives D1 as DE, and D1 here is the water probe's TXD, so it would clamp the driver onto the bus and the probe could never reply.</p>
+      <p class="pinset__note">Swapped relative to the build above — the pins follow how the board was actually soldered on 2026-07-19, and the firmware follows the iron. NEVER run water-level.ino on this board: it drives D1 as DE, and D1 here is the water probe's TXD, so it would clamp the driver onto the bus and the probe could never reply.</p>
       <div class="table-wrap"><table class="wiring">
         <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
         <tbody><tr>
@@ -350,6 +328,11 @@
           <td class="mono strong">D1</td>
           <td class="mono dim">GPIO5</td>
           <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">relay IN</th>
+          <td class="mono strong">D2</td>
+          <td class="mono dim">GPIO4</td>
+          <td class="note">out — opens and shuts the valve</td>
         </tr><tr>
           <th scope="row" class="mono">VCC</th>
           <td class="mono strong">3V3</td>
@@ -373,24 +356,40 @@
     </tr></tbody>
     </table></div>
   </div>
-        <p class="fineprint">Both RS485 board variants work and the firmware handles both — but only
-        the auto-direction HW-0519 lets Module 1 and Module 2 later share one ESP8266, because the
-        classic DE/RE breakout spends an extra GPIO on direction and the budget is only five.</p>
+        <p class="fineprint">Both RS485 board variants work and the firmware handles both — but the
+        auto-direction HW-0519 is what leaves D2 free for the valve relay. A classic DE/RE breakout
+        spends an extra GPIO on direction, and the budget is only five.</p>
+        <h3>The valve side</h3>
+        <p>The valve never touches the logic side of the board. It hangs off the relay's switched
+        contacts, which are electrically isolated from the ESP8266 — that isolation is exactly why
+        12&nbsp;V cannot backfeed your laptop while you bench it. The only way to put valve current
+        onto USB is to wire the coil to the ESP's 5&nbsp;V pin. Don't.</p>
+        <div class="table-wrap"><table class="wiring">
+          <thead><tr><th scope="col">Relay pin</th><th scope="col">Goes to</th><th scope="col">Note</th></tr></thead>
+          <tbody>
+            <tr><th scope="row" class="mono">VCC</th><td class="mono strong">5 V</td><td class="note">From the Mini360 — or <code>VBUS</code> if you are on USB. Never <code>VIN</code>, which floats.</td></tr>
+            <tr><th scope="row" class="mono">GND</th><td class="mono strong">GND</td><td class="note">Common ground with the ESP.</td></tr>
+            <tr><th scope="row" class="mono">IN</th><td class="mono strong">D2 (GPIO4)</td><td class="note">The one safe pin left once the bus has taken D5 and D6.</td></tr>
+            <tr><th scope="row" class="mono">COM / NO</th><td class="mono strong">valve coil</td><td class="note">NO, so relay unpowered = valve unpowered = valve shut.</td></tr>
+          </tbody>
+        </table></div>
   </section>
 
   <section class="mod__sec" id="build">
     <h2>Build it, step by step</h2>
-    
     <ol class="steps"><li class="step">
       <div class="step__n" aria-hidden="true">01</div>
       <div class="step__body">
-        <h3>Set the boost converter to 18 V before the probe exists</h3>
+        <h3>Set both converters before anything else is connected</h3>
         
-        <p>This is the one step where you can actually destroy something. The MT3608's trimmer ships at a random setting.</p><p>Connect your battery to <b>IN+ / IN−</b> with nothing on the output. Put a multimeter across <b>OUT+ / OUT−</b>. Turn the screw until the meter reads a steady <b>18.0 V</b>, then power down. <i>Now</i> connect the probe.</p>
+        <p>This is the one step where you can actually destroy something. Both modules' trimmers ship at a random setting, and the boost feeds an 18 V rail.</p><p>Connect 12 V to <b>IN+ / IN−</b> with nothing on the output. Put a multimeter across <b>OUT+ / OUT−</b>. Turn the MT3608's screw until it reads a steady <b>18.0 V</b>, and the Mini360's until it reads <b>5.0 V</b>. Power down. <i>Now</i> connect the probe and the ESP8266.</p>
         
         <aside class="callout callout--warn">
     <span class="callout__label">Watch out</span>
     <p>The trimmer feels like it does nothing. It is a 25-turn part with no end stops, so it spins freely while the wiper sits parked. Pick a direction and turn ~30 full turns slowly, watching the meter, not the screw. It eventually climbs.</p>
+  </aside><aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p>Label the two converters the moment you set them. They look identical in a box, and putting 18 V where 5 V belongs destroys the ESP8266 and the RS485 board together.</p>
   </aside>
       </div>
     </li><li class="step">
@@ -398,14 +397,14 @@
       <div class="step__body">
         <h3>Wire it up</h3>
         
-        <p>Four wires out of the probe, four wires between the RS485 module and the ESP8266. The tables below are generated from the same pin data as the wiring cheatsheet, so they cannot drift apart.</p>
+        <p>Four wires out of the probe, four wires between the RS485 board and the ESP8266, and three to the relay. The tables below are generated from the same pin data as the wiring cheatsheet, so they cannot drift apart.</p>
         
         <aside class="callout callout--danger">
     <span class="callout__label">This will bite you</span>
     <p>The 18 V goes to the probe's red wire and <b>nowhere else</b>. The MAX485 and the ESP8266 are 3.3 V parts — 18 V destroys both. Trace the wire with your finger before switching on.</p>
   </aside><aside class="callout callout--warn">
     <span class="callout__label">Watch out</span>
-    <p><b>One ground, not two.</b> The probe's green wire, the boost OUT−, the MAX485 GND and the ESP GND must all be one rail. The probe runs on 18 V and the ESP on 3.3 V — two supplies, one shared return. Miss this and you get failures that look exactly like a broken sensor.</p>
+    <p><b>One ground, not two.</b> The probe's green wire, the boost OUT−, the buck OUT−, the MAX485 GND and the ESP GND must all be one rail. The probe runs on 18 V and the ESP on 3.3 V — two supplies, one shared return. Miss this and you get failures that look exactly like a broken sensor.</p>
   </aside><aside class="callout callout--note">
     <span class="callout__label">Worth knowing</span>
     <p>The TXD and RXD LEDs are a free logic analyser. TXD flashes when the ESP asks; RXD flashes when the probe answers. TXD only means the probe isn't replying — swap blue and yellow before suspecting anything else.</p>
@@ -422,7 +421,7 @@ arduino-cli compile --upload \
   --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/water-level</code></pre>
         <aside class="callout callout--warn">
     <span class="callout__label">Watch out</span>
-    <p><b>Note the baud rate.</b> This probe is 9600. The soil probe in Module 2 is 4800. Same wiring, different speed — don't carry the number across.</p>
+    <p><b>Note the baud rate.</b> This probe is 9600. The soil probe in Module 3 is 4800. Same wiring, different speed — don't carry the number across.</p>
   </aside><aside class="callout callout--note">
     <span class="callout__label">Worth knowing</span>
     <p>Reads are safe; blind writes are not. Reading a register cannot damage the probe. Writing one you haven't confirmed can land on its address or baud rate and cost you the ability to talk to it at all.</p>
@@ -449,20 +448,60 @@ arduino-cli compile --upload \
     <p>Don't try to calibrate better than ±25 mm. That is the manufacturer's spec (0.5% of 5 m) and it is far better than irrigation needs. We tried a bucket and a ruler and learned that a 90 mm bucket cannot measure an instrument whose own error bar is 25 mm.</p>
   </aside>
       </div>
-    </li><li class="step">
+    </li><li class="step step--unproven">
       <div class="step__n" aria-hidden="true">06</div>
       <div class="step__body">
-        <h3>Install on your tank</h3>
-        
-        <p>Lower the probe to the <b>bottom</b> and let it sit flat. Protect the ESP8266, MAX485 and boost converter inside the waterproof container. Measure your tank's water depth when full, once — that is what turns millimetres into “how full is my tank”.</p>
-        
-        <aside class="callout callout--warn">
-    <span class="callout__label">Watch out</span>
-    <p>Keep the loose end of the cable <b>dry and open to the air</b>. There is a tiny breather tube running through it, and the probe compares against outside air pressure through it. Seal it, kink it, or let it sit in water and your readings wander with the weather.</p>
+        <h3>Wire the relay and the valve</h3>
+        <p class="step__unproven">Design guidance — our own build hasn't reached this step yet.</p>
+        <p>The valve goes on the relay's <b>switched</b> side, never the logic side. Use the <b>NO</b> (normally open) contact so that relay unpowered = valve unpowered = valve shut.</p>
+        <pre class="code" data-lang="text"><code>  12V +  ────────────────► valve terminal 1
+  valve terminal 2 ──────► relay COM
+  relay NO ──────────────► 12V −
+
+  1N5819 across the valve's two terminals, stripe (cathode) to the + side</code></pre>
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>The diode is not optional.</b> A solenoid is a coil of wire; cutting its power throws a large reverse spike back down the wires — enough to weld relay contacts over time and enough to reset the ESP8266 next to it. The symptom of leaving it out is maddening: the ESP randomly reboots, but only when the valve closes.</p>
+  </aside><aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p><b>VBUS, not VIN.</b> If you power the relay module off the ESP8266 board while it is on USB, use <code>VBUS</code>. On the NodeMCU v3 <code>VIN</code> is the regulator's <i>input</i> and floats — it reads a plausible ~3.1 V open-circuit and collapses the moment anything draws from it. We lost an hour to this.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>The coil is non-polar; the diode and the supply are not. Pick either coil lead as “+”, run 12 V+ to it, and put the diode band on that same leg. Reversed, the diode forward-biases the instant the valve powers and shorts the pack.</p>
   </aside>
       </div>
     </li><li class="step">
       <div class="step__n" aria-hidden="true">07</div>
+      <div class="step__body">
+        <h3>Build the safety cutoff before you leave it alone</h3>
+        
+        <p>This is the step people skip and then regret. If a command is lost, or the link drops while the valve is open, <b>the valve stays open</b> — and a failed poll deliberately holds the last state, so an open valve plus a dead hotspot is an open valve forever. Nothing upstream can help, because nothing upstream can reach it.</p><p>So the node enforces its own <b>dead-man timer</b>, independent of any command: <code>VALVE_MAX_OPEN_S</code> shuts the valve after a maximum run time whatever the network says. It ships at <b>1800 s</b> and defaults to <i>on</i>, so a farmer opts out of the guard rather than into it. The server-side expiry mirrors it at 30 minutes.</p>
+        
+        <aside class="callout callout--danger">
+    <span class="callout__label">This will bite you</span>
+    <p>This is the only module in the toolkit that <b>acts</b> rather than just reads. Everything else fails by telling you nothing. This one fails by emptying a tank into a field.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>The timer that matters is the one running on the node, because it is the only one still running when the node is alone. A cloud-side expiry cannot help if the link is what broke.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">08</div>
+      <div class="step__body">
+        <h3>Install on your tank</h3>
+        
+        <p>Lower the probe to the <b>bottom</b> and let it sit flat. Fit the valve into the outlet line with the flow arrow pointing the way the water goes. Protect the ESP8266, RS485 board and both converters inside the waterproof container. Measure your tank's water depth when full, once — that is what turns millimetres into “how full is my tank”.</p>
+        
+        <aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p>Keep the loose end of the probe cable <b>dry and open to the air</b>. There is a tiny breather tube running through it, and the probe compares against outside air pressure through it. Seal it, kink it, or let it sit in water and your readings wander with the weather.</p>
+  </aside><aside class="callout callout--warn">
+    <span class="callout__label">Watch out</span>
+    <p>Check the valve's <b>minimum pressure differential</b> against the head you actually have. A pilot/servo valve typically needs ~0.2 bar — about two metres of head — and on a low gravity tank it will click and pass nothing. If your head is marginal, spec a direct-acting “0 bar” valve.</p>
+  </aside>
+      </div>
+    </li><li class="step">
+      <div class="step__n" aria-hidden="true">09</div>
       <div class="step__body">
         <h3>Point it at the base station</h3>
         
@@ -473,6 +512,9 @@ arduino-cli compile --upload \
         <aside class="callout callout--danger">
     <span class="callout__label">This will bite you</span>
     <p><b>Never hardcode the phone's IP.</b> Android randomises the hotspot subnet — ours came up on <code>10.215.63.55</code>, not the <code>192.168.43.1</code> every guide quotes — and it can reshuffle on any restart. A hardcoded IP goes stale <i>silently</i>: the node keeps reading perfectly and publishes into the void, and the only symptom is absence.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>The valve command comes back the same way. The node polls <code>GET /valve</code> once a second rather than running a server, because the phone can change the node's IP but the node always knows its gateway.</p>
   </aside>
       </div>
     </li></ol>
@@ -490,7 +532,7 @@ arduino-cli compile --upload \
     </tr><tr>
       <th scope="row">No reading, probe cold</th>
       <td class="cause">Not enough voltage</td>
-      <td>Meter red to green: it must read 18 V, not the raw battery.</td>
+      <td>Meter red to green: it must read 18 V, not the raw 12 V.</td>
     </tr><tr>
       <th scope="row">Boost converter reads 0 V</th>
       <td class="cause">Trimmer parked mid-range</td>
@@ -510,34 +552,54 @@ arduino-cli compile --upload \
     </tr><tr>
       <th scope="row">Readings fail randomly</th>
       <td class="cause">No common ground</td>
-      <td>Probe green, boost OUT−, MAX485 GND and ESP GND must be one rail.</td>
+      <td>Probe green, boost OUT−, buck OUT−, MAX485 GND and ESP GND must be one rail.</td>
     </tr><tr>
       <th scope="row">Drifts with the weather</th>
       <td class="cause">Breather tube blocked or wet</td>
       <td>Keep the loose cable end dry and open to air.</td>
     </tr><tr>
       <th scope="row">Reads, then silent, then reads</th>
-      <td class="cause">The open intermittent</td>
-      <td>A wire. Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering.</td>
+      <td class="cause">A wire, not the firmware</td>
+      <td>Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering anything into a box.</td>
+    </tr><tr>
+      <th scope="row">Relay clicks but the valve doesn't move</th>
+      <td class="cause">Not enough volts at the coil under load</td>
+      <td>Meter across the valve while the relay is on. A sagging pack meters fine at rest.</td>
+    </tr><tr>
+      <th scope="row">Relay doesn't click at all</th>
+      <td class="cause">Powered from VIN</td>
+      <td>Use VBUS. VIN floats when the board is on USB.</td>
+    </tr><tr>
+      <th scope="row">ESP reboots when the valve closes</th>
+      <td class="cause">Missing flyback diode</td>
+      <td>Fit the 1N5819 across the valve terminals, stripe to +.</td>
+    </tr><tr>
+      <th scope="row">Valve energised, nothing flows</th>
+      <td class="cause">Below the valve's minimum pressure differential</td>
+      <td>A pilot valve needs ~0.2 bar. Check the head above it; if marginal, spec a direct-acting “0 bar” valve.</td>
+    </tr><tr>
+      <th scope="row">Valve opens on a full battery, not a flat one</th>
+      <td class="cause">Solenoid under-volted</td>
+      <td>Measure the coil current and check the pack voltage under that load, not at rest.</td>
     </tr></tbody>
   </table></div>
   </section>
 
   <section class="mod__sec" id="connects">
     <h2>How this fits with the others</h2>
-    <div class="related"><a class="related__i" href="iot-solar-powerbank.html"
+    <div class="related"><a class="related__i" href="solar-power-pack.html"
         style="--accent:#C77C1E;--accent-dark:#E8A94A">
+        <span class="related__n">1</span>
+        <span class="related__t">Solar Power Pack</span>
+        <span class="related__w">Supplies the 12 V this whole module runs on.</span></a><a class="related__i" href="soil-moisture-sensor.html"
+        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
         <span class="related__n">3</span>
-        <span class="related__t">IoT Solar Powerbank</span>
-        <span class="related__w">Powers this node off-grid so the tank can be anywhere.</span></a><a class="related__i" href="mobile-wifi-base-station.html"
+        <span class="related__t">Soil Moisture Sensor</span>
+        <span class="related__w">Soil moisture is what decides when this valve should open.</span></a><a class="related__i" href="mobile-wifi-base-station.html"
         style="--accent:#43587A;--accent-dark:#8AA0C8">
         <span class="related__n">4</span>
         <span class="related__t">Mobile WiFi Base Station</span>
-        <span class="related__w">Receives the depth readings and puts them on your phone.</span></a><a class="related__i" href="soil-moisture-drip-irrigation.html"
-        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
-        <span class="related__n">2</span>
-        <span class="related__t">Soil Moisture → Drip Irrigation</span>
-        <span class="related__w">The best cross-check in the toolkit — don't irrigate from an empty tank.</span></a></div>
+        <span class="related__w">Receives the depth readings and sends the valve command back.</span></a></div>
   </section>
 
   <section class="mod__sec mod__sec--source">
@@ -548,7 +610,7 @@ arduino-cli compile --upload \
       <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal, including everything that went wrong ↗</a></li>
       <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
     </ul>
-    <p class="fineprint">Built and measured on our bench. Not the same as field-soaked.</p>
+    <p class="fineprint">Measured where it is built; the rest is worked out and costed.</p>
   </section>
 </article>
 </main>
@@ -557,16 +619,16 @@ arduino-cli compile --upload \
   <div class="foot__grid">
     <div class="foot__col">
       <h2 class="foot__h">Farmers IoT Toolkit</h2>
-      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.</p>
       <p class="foot__lic">Open source — use, share, and adapt freely.</p>
     </div>
     <div class="foot__col">
       <h3 class="foot__h">Modules</h3>
       <ul>
-        <li><a href="../modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
-        <li><a href="../modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
-        <li><a href="../modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
-        <li><a href="../modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+        <li><a href="../modules/solar-power-pack.html">1 · Power</a></li>
+        <li><a href="../modules/water-tank-and-valve.html">2 · Water + valve</a></li>
+        <li><a href="../modules/soil-moisture-sensor.html">3 · Soil</a></li>
+        <li><a href="../modules/mobile-wifi-base-station.html">4 · Phone</a></li>
       </ul>
     </div>
     <div class="foot__col">

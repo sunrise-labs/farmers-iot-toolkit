@@ -51,6 +51,7 @@
     on one page. Written to be read on a phone with a probe in your other hand, and to print onto
     two sheets you can tape inside the enclosure lid.</p>
     <nav class="sheet__toc" aria-label="On this page">
+      <a href="#whole">The whole system</a>
       <a href="#pins">Pin budget</a>
       <a href="#buses">The two buses</a>
       <a href="#colours">Wire colours</a>
@@ -62,8 +63,19 @@
     </nav>
   </header>
 
+  <section class="sheet__sec" id="whole">
+    <h2>1 · The whole system, in one picture</h2>
+    <p>Every module wired the way the farm actually runs. If you only print one thing, print this.</p>
+    <figure class="figure figure--photo figure--full">
+    <a class="figure__zoom" href="assets/img/wiring-cheatsheet-full.jpg" title="Open the full-size diagram">
+      <img src="assets/img/wiring-cheatsheet-full.jpg" alt="The complete toolkit wired as one system: a 20 W solar panel and CN3722 MPPT charger feeding a 3S2P 18650 pack behind a 3S 40 A BMS; a Mini360 buck and MT3608 boost feeding an ESP8266 with an RS485 module, a hydrostatic water level probe in a tank and a 5 V relay switching a 12 V solenoid valve on the outlet; an Android phone as the base station; and three independent soil nodes, each with four parallel 18650 cells, a boost module, an ESP8266, an RS485 module and a buried soil moisture sensor." loading="lazy" decoding="async">
+    </a>
+    <figcaption>Every module in one picture, wired the way the farm actually runs: one power pack, one water node with the valve on it, the phone as the base station, and as many independent soil nodes as you have beds. Tap the picture to open it full size.</figcaption>
+  </figure>
+  </section>
+
   <section class="sheet__sec" id="pins">
-    <h2>1 · The pin budget</h2>
+    <h2>2 · The pin budget</h2>
     <p>A NodeMCU 1.0 gives you five GPIOs that are both free and safe, and a combined node spends
     every one of them. There is no sixth. Plan around this before you design anything.</p>
     <div class="table-wrap"><table class="wiring pinbudget">
@@ -73,37 +85,37 @@
       <th scope="row" class="mono strong">D1</th>
       <td class="mono dim">GPIO5</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 2 soil TX · farm-node water TX · water-level.ino DE</td>
+      <td>water TX on farm-node · soil TX on the bench node · DE on water-level.ino</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D2</th>
       <td class="mono dim">GPIO4</td>
       <td><span class="ok">safe</span></td>
-      <td>valve relay IN</td>
+      <td>Module 2 valve relay IN</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D5</th>
       <td class="mono dim">GPIO14</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 1 water RX · deep-sleep soil TX</td>
+      <td>Module 2 water RX · Module 3 soil TX</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D6</th>
       <td class="mono dim">GPIO12</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 1 water TX · deep-sleep soil RX</td>
+      <td>Module 2 water TX · Module 3 soil RX</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D7</th>
       <td class="mono dim">GPIO13</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 2 soil RX · farm-node water RX</td>
+      <td>water RX on farm-node · soil RX on the bench node</td>
       <td class="note"></td>
     </tr><tr class="trap">
       <th scope="row" class="mono strong">D0</th>
       <td class="mono dim">GPIO16</td>
       <td><span class="no">trap</span></td>
-      <td>deep-sleep wake only</td>
+      <td>deep-sleep wake only (Module 3)</td>
       <td class="note">No interrupts at all — it physically cannot receive SoftwareSerial.</td>
     </tr><tr class="trap">
       <th scope="row" class="mono strong">D3</th>
@@ -127,95 +139,22 @@
   </table></div>
     <aside class="callout callout--note">
     <span class="callout__label">Worth knowing</span>
-    <p>This is why the toolkit standardises which pins each module claims. Wire Module 1 to D5/D6 and Module 2 to D7/D1 <em>whether or not</em> you build the other one — then if you later put both sensors on one board they simply coexist, with no rewiring and no thinking about it.</p>
+    <p>This is why the toolkit standardises which pins each module claims. Module 2 takes D5/D6 for the water bus and D2 for the valve relay; Module 3 takes D5/D6 on its own board. If you ever want both probes on one ESP8266, that is the bench build in <code>firmware/bench-both/</code>, which moves the soil bus to D7/D1 so the two never collide.</p>
   </aside>
     <aside class="callout callout--danger">
     <span class="callout__label">This will bite you</span>
-    <p><b>A bus has more than one correct pin assignment, and mixing them up gives you two dead buses.</b> Ian's deployed <code>farm-node</code> runs water on D7/D1 — swapped relative to the standalone Module 1 build — because the board was soldered that way on 2026-07-19 and the firmware was made to follow the iron. The flashed binary is always authoritative. Every pin table below therefore names the <code>.ino</code> it was read out of; wire the one marked <em>wire this one</em> unless you are rebuilding our node specifically.</p>
+    <p><b>A bus has more than one correct pin assignment, and mixing them up gives you two dead buses.</b> Ian's deployed <code>farm-node</code> runs water on D7/D1 — swapped relative to the standalone Module 2 build — because the board was soldered that way on 2026-07-19 and the firmware was made to follow the iron. The flashed binary is always authoritative. Every pin table below therefore names the <code>.ino</code> it was read out of; wire the one marked <em>wire this one</em> unless you are rebuilding our node specifically.</p>
   </aside>
   </section>
 
   <section class="sheet__sec" id="buses">
-    <h2>2 · The two RS485 buses</h2>
+    <h2>3 · The two RS485 buses</h2>
     <p>Two separate buses, one transceiver each — never one shared bus. Both probes ship as slave
     address 1 and run different bauds, so sharing would require writing address <em>and</em> baud
     registers on sensors we own exactly one of each. A second one-dollar transceiver deletes both
     problems and needs <b>zero register writes</b>.</p>
 
     <h3>Water bus — QDY30A</h3>
-    <figure class="figure">
-  <svg viewBox="0 0 1010 354" role="img" aria-label="Water bus — QDY30A wiring: probe wires on the left, RS485 module to ESP8266 pins on the right" class="diagram diagram--bus" style="--accent:#2B6E7A">
-    <rect x="24" y="52" width="118" height="258" rx="9" class="node__box"/>
-    <text x="83" y="40" text-anchor="middle" class="bw__cap">probe</text>
-
-    <line x1="792" y1="46" x2="792" y2="310" class="bw__div"/>
-    <text x="866" y="40" text-anchor="end" class="bw__cap">HW-0519</text>
-
-    <rect x="928" y="52" width="58" height="258" rx="9" class="node__box"/>
-    <text x="957" y="40" text-anchor="middle" class="bw__cap">ESP</text>
-
-    
-      <g class="bw">
-        <line x1="146" y1="78" x2="404" y2="78" style="stroke:#C0392B"/>
-        <circle cx="146" cy="78" r="5" style="fill:#C0392B"/>
-        <circle cx="404" cy="78" r="5" style="fill:#C0392B"/>
-        <text x="83" y="82" text-anchor="middle" class="bw__l">Red</text>
-        <text x="416" y="82" class="bw__r mono">MT3608 OUT+ (18 V)</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="124" x2="404" y2="124" style="stroke:#4A7A3B"/>
-        <circle cx="146" cy="124" r="5" style="fill:#4A7A3B"/>
-        <circle cx="404" cy="124" r="5" style="fill:#4A7A3B"/>
-        <text x="83" y="128" text-anchor="middle" class="bw__l">Green</text>
-        <text x="416" y="128" class="bw__r mono">MT3608 OUT− + common ground</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="170" x2="404" y2="170" style="stroke:#2B6E7A"/>
-        <circle cx="146" cy="170" r="5" style="fill:#2B6E7A"/>
-        <circle cx="404" cy="170" r="5" style="fill:#2B6E7A"/>
-        <text x="83" y="174" text-anchor="middle" class="bw__l">Blue</text>
-        <text x="416" y="174" class="bw__r mono">HW-0519 #1 A</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="216" x2="404" y2="216" style="stroke:#D8A521"/>
-        <circle cx="146" cy="216" r="5" style="fill:#D8A521"/>
-        <circle cx="404" cy="216" r="5" style="fill:#D8A521"/>
-        <text x="83" y="220" text-anchor="middle" class="bw__l">Yellow</text>
-        <text x="416" y="220" class="bw__r mono">HW-0519 #1 B</text>
-      </g>
-    
-      <g class="bw">
-        <text x="866" y="82" text-anchor="end" class="bw__r mono">RXD / RO</text>
-        <line x1="874" y1="78" x2="928" y2="78" class="bw__pin"/>
-        <text x="940" y="82" class="bw__r mono strong">D5</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="128" text-anchor="end" class="bw__r mono">TXD / DI</text>
-        <line x1="874" y1="124" x2="928" y2="124" class="bw__pin"/>
-        <text x="940" y="128" class="bw__r mono strong">D6</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="174" text-anchor="end" class="bw__r mono">DE + RE</text>
-        <line x1="874" y1="170" x2="928" y2="170" class="bw__pin"/>
-        <text x="940" y="174" class="bw__r mono strong">D1</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="220" text-anchor="end" class="bw__r mono">VCC</text>
-        <line x1="874" y1="216" x2="928" y2="216" class="bw__pin"/>
-        <text x="940" y="220" class="bw__r mono strong">3V3</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="266" text-anchor="end" class="bw__r mono">GND</text>
-        <line x1="874" y1="262" x2="928" y2="262" class="bw__pin"/>
-        <text x="940" y="266" class="bw__r mono strong">GND</text>
-      </g>
-    <text x="404" y="340" text-anchor="middle" class="caption mono">9600 8N1 · slave 1</text>
-    <text x="890" y="340" text-anchor="middle" class="caption">Module 1 on its own</text>
-  </svg>
-  <figcaption>Drawn from the same pin data as the tables below, so the two cannot disagree. The
-  right-hand column is the pin set for <b>Module 1 on its own</b> — other builds use different pins,
-  and they are listed underneath.</figcaption>
-</figure>
     <div class="bus">
     <div class="bus__head">
       <h4>Water bus — QDY30A</h4>
@@ -236,26 +175,26 @@
       <th scope="row"><span class="swatch" style="--swatch:#4A7A3B" aria-hidden="true"></span>Green</th>
       <td class="mono">probe green</td>
       <td class="mono">MT3608 OUT− + common ground</td>
-      <td class="note">Prime suspect for the open intermittent. One ground, not two.</td>
+      <td class="note">Prime suspect for an intermittent read. One ground, not two.</td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#2B6E7A" aria-hidden="true"></span>Blue</th>
       <td class="mono">probe blue</td>
-      <td class="mono">HW-0519 #1 A</td>
+      <td class="mono">HW-0519 A</td>
       <td class="note">A+ — note this is the OPPOSITE colour convention to the soil probe.</td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#D8A521" aria-hidden="true"></span>Yellow</th>
       <td class="mono">probe yellow</td>
-      <td class="mono">HW-0519 #1 B</td>
+      <td class="mono">HW-0519 B</td>
       <td class="note">B−</td>
     </tr></tbody>
     </table></div>
     <div class="pinset pinset--teach">
       <div class="pinset__head">
-        <h5>Module 1 on its own</h5>
+        <h5>Module 2 as this guide builds it</h5>
         <span class="pinset__tag">wire this one</span>
         <code class="pinset__src">firmware/water-level/water-level.ino</code>
       </div>
-      <p class="pinset__note">This is what you want if you are building the tank sensor by itself. On a classic DE/RE breakout, join DE and RE and drive them from D1; an auto-direction HW-0519 needs no DE pin at all.</p>
+      <p class="pinset__note">This is the assignment in the wiring picture above, and it leaves D2 free for the valve relay. On a classic DE/RE breakout, join DE and RE and drive them from D1; an auto-direction HW-0519 needs no DE pin at all.</p>
       <div class="table-wrap"><table class="wiring">
         <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
         <tbody><tr>
@@ -268,6 +207,11 @@
           <td class="mono strong">D6</td>
           <td class="mono dim">GPIO12</td>
           <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">relay IN</th>
+          <td class="mono strong">D2</td>
+          <td class="mono dim">GPIO4</td>
+          <td class="note">out — opens and shuts the valve</td>
         </tr><tr>
           <th scope="row" class="mono">DE + RE</th>
           <td class="mono strong">D1</td>
@@ -291,7 +235,7 @@
         
         <code class="pinset__src">firmware/farm-node/farm-node.ino</code>
       </div>
-      <p class="pinset__note">Swapped relative to the standalone build — the pins follow how the board was actually soldered on 2026-07-19, and the firmware follows the iron. NEVER run water-level.ino on this board: it drives D1 as DE, and D1 here is the water probe's TXD, so it would clamp the driver onto the bus and the probe could never reply.</p>
+      <p class="pinset__note">Swapped relative to the build above — the pins follow how the board was actually soldered on 2026-07-19, and the firmware follows the iron. NEVER run water-level.ino on this board: it drives D1 as DE, and D1 here is the water probe's TXD, so it would clamp the driver onto the bus and the probe could never reply.</p>
       <div class="table-wrap"><table class="wiring">
         <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
         <tbody><tr>
@@ -304,6 +248,11 @@
           <td class="mono strong">D1</td>
           <td class="mono dim">GPIO5</td>
           <td class="note">out — data toward the probe</td>
+        </tr><tr>
+          <th scope="row" class="mono">relay IN</th>
+          <td class="mono strong">D2</td>
+          <td class="mono dim">GPIO4</td>
+          <td class="note">out — opens and shuts the valve</td>
         </tr><tr>
           <th scope="row" class="mono">VCC</th>
           <td class="mono strong">3V3</td>
@@ -329,79 +278,6 @@
   </div>
 
     <h3>Soil bus — THC-S</h3>
-    <figure class="figure">
-  <svg viewBox="0 0 1010 354" role="img" aria-label="Soil bus — THC-S wiring: probe wires on the left, RS485 module to ESP8266 pins on the right" class="diagram diagram--bus" style="--accent:#4A7A3B">
-    <rect x="24" y="52" width="118" height="258" rx="9" class="node__box"/>
-    <text x="83" y="40" text-anchor="middle" class="bw__cap">probe</text>
-
-    <line x1="792" y1="46" x2="792" y2="310" class="bw__div"/>
-    <text x="866" y="40" text-anchor="end" class="bw__cap">HW-0519</text>
-
-    <rect x="928" y="52" width="58" height="258" rx="9" class="node__box"/>
-    <text x="957" y="40" text-anchor="middle" class="bw__cap">ESP</text>
-
-    
-      <g class="bw">
-        <line x1="146" y1="78" x2="404" y2="78" style="stroke:#8B5A2B"/>
-        <circle cx="146" cy="78" r="5" style="fill:#8B5A2B"/>
-        <circle cx="404" cy="78" r="5" style="fill:#8B5A2B"/>
-        <text x="83" y="82" text-anchor="middle" class="bw__l">Brown</text>
-        <text x="416" y="82" class="bw__r mono">pack + (4.5–30 V)</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="124" x2="404" y2="124" style="stroke:#1A1815"/>
-        <circle cx="146" cy="124" r="5" style="fill:#1A1815"/>
-        <circle cx="404" cy="124" r="5" style="fill:#1A1815"/>
-        <text x="83" y="128" text-anchor="middle" class="bw__l">Black</text>
-        <text x="416" y="128" class="bw__r mono">pack − / common ground</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="170" x2="404" y2="170" style="stroke:#D8A521"/>
-        <circle cx="146" cy="170" r="5" style="fill:#D8A521"/>
-        <circle cx="404" cy="170" r="5" style="fill:#D8A521"/>
-        <text x="83" y="174" text-anchor="middle" class="bw__l">Yellow</text>
-        <text x="416" y="174" class="bw__r mono">HW-0519 #2 A</text>
-      </g>
-      <g class="bw">
-        <line x1="146" y1="216" x2="404" y2="216" style="stroke:#2B6E7A"/>
-        <circle cx="146" cy="216" r="5" style="fill:#2B6E7A"/>
-        <circle cx="404" cy="216" r="5" style="fill:#2B6E7A"/>
-        <text x="83" y="220" text-anchor="middle" class="bw__l">Blue</text>
-        <text x="416" y="220" class="bw__r mono">HW-0519 #2 B</text>
-      </g>
-    
-      <g class="bw">
-        <text x="866" y="82" text-anchor="end" class="bw__r mono">RXD / RO</text>
-        <line x1="874" y1="78" x2="928" y2="78" class="bw__pin"/>
-        <text x="940" y="82" class="bw__r mono strong">D7</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="128" text-anchor="end" class="bw__r mono">TXD / DI</text>
-        <line x1="874" y1="124" x2="928" y2="124" class="bw__pin"/>
-        <text x="940" y="128" class="bw__r mono strong">D1</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="174" text-anchor="end" class="bw__r mono">DE + RE</text>
-        <line x1="874" y1="170" x2="928" y2="170" class="bw__pin"/>
-        <text x="940" y="174" class="bw__r mono strong">D2</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="220" text-anchor="end" class="bw__r mono">VCC</text>
-        <line x1="874" y1="216" x2="928" y2="216" class="bw__pin"/>
-        <text x="940" y="220" class="bw__r mono strong">3V3</text>
-      </g>
-      <g class="bw">
-        <text x="866" y="266" text-anchor="end" class="bw__r mono">GND</text>
-        <line x1="874" y1="262" x2="928" y2="262" class="bw__pin"/>
-        <text x="940" y="266" class="bw__r mono strong">GND</text>
-      </g>
-    <text x="404" y="340" text-anchor="middle" class="caption mono">4800 8N1 · slave 1</text>
-    <text x="890" y="340" text-anchor="middle" class="caption">Module 2 on its own</text>
-  </svg>
-  <figcaption>Drawn from the same pin data as the tables below, so the two cannot disagree. The
-  right-hand column is the pin set for <b>Module 2 on its own</b> — other builds use different pins,
-  and they are listed underneath.</figcaption>
-</figure>
     <div class="bus">
     <div class="bus__head">
       <h4>Soil bus — THC-S</h4>
@@ -416,49 +292,49 @@
       <tbody><tr>
       <th scope="row"><span class="swatch" style="--swatch:#8B5A2B" aria-hidden="true"></span>Brown</th>
       <td class="mono">probe brown</td>
-      <td class="mono">pack + (4.5–30 V)</td>
-      <td class="note">No converter needed — the pack feeds it directly at every state of charge.</td>
+      <td class="mono">boost OUT+ (5 V)</td>
+      <td class="note">The probe takes 4.5–30 V, so the node's own 5 V rail runs it directly.</td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#1A1815" aria-hidden="true"></span>Black</th>
       <td class="mono">probe black</td>
-      <td class="mono">pack − / common ground</td>
+      <td class="mono">boost OUT− / common ground</td>
       <td class="note"></td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#D8A521" aria-hidden="true"></span>Yellow</th>
       <td class="mono">probe yellow</td>
-      <td class="mono">HW-0519 #2 A</td>
+      <td class="mono">HW-0519 A</td>
       <td class="note">A+ — yellow is A here and B on the water probe. This is the single easiest wiring mistake in the build.</td>
     </tr><tr>
       <th scope="row"><span class="swatch" style="--swatch:#2B6E7A" aria-hidden="true"></span>Blue</th>
       <td class="mono">probe blue</td>
-      <td class="mono">HW-0519 #2 B</td>
+      <td class="mono">HW-0519 B</td>
       <td class="note">B−</td>
     </tr></tbody>
     </table></div>
     <div class="pinset pinset--teach">
       <div class="pinset__head">
-        <h5>Module 2 on its own</h5>
+        <h5>Module 3 as this guide builds it</h5>
         <span class="pinset__tag">wire this one</span>
-        <code class="pinset__src">docs/02 — firmware/soil-moisture/ is not written yet</code>
+        <code class="pinset__src">firmware/soil-node-sleep/soil-node-sleep.ino</code>
       </div>
-      <p class="pinset__note">D7/D1 deliberately, so that this module and Module 1 never collide. Wire it this way whether or not you build the tank sensor — then if you later put both probes on one ESP8266 they simply coexist, with no rewiring. On a classic DE/RE breakout, direction takes D2, which pushes the valve relay to D5.</p>
+      <p class="pinset__note">The standalone deep-sleep soil node. It also needs D0 wired to RST as the wake wire — keep that link removable, because flashing needs it disconnected.</p>
       <div class="table-wrap"><table class="wiring">
         <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
         <tbody><tr>
           <th scope="row" class="mono">RXD / RO</th>
-          <td class="mono strong">D7</td>
-          <td class="mono dim">GPIO13</td>
+          <td class="mono strong">D6</td>
+          <td class="mono dim">GPIO12</td>
           <td class="note">in — data toward the ESP</td>
         </tr><tr>
           <th scope="row" class="mono">TXD / DI</th>
-          <td class="mono strong">D1</td>
-          <td class="mono dim">GPIO5</td>
+          <td class="mono strong">D5</td>
+          <td class="mono dim">GPIO14</td>
           <td class="note">out — data toward the probe</td>
         </tr><tr>
-          <th scope="row" class="mono">DE + RE</th>
-          <td class="mono strong">D2</td>
-          <td class="mono dim">GPIO4</td>
-          <td class="note">classic breakout only — then the relay moves to D5</td>
+          <th scope="row" class="mono">D0 → RST</th>
+          <td class="mono strong">D0</td>
+          <td class="mono dim">GPIO16</td>
+          <td class="note">deep-sleep wake — remove to flash</td>
         </tr><tr>
           <th scope="row" class="mono">VCC</th>
           <td class="mono strong">3V3</td>
@@ -473,22 +349,22 @@
       </table></div>
     </div><div class="pinset">
       <div class="pinset__head">
-        <h5>Deep-sleep soil node (battery-swap variant)</h5>
+        <h5>Combined bench node (water + soil on one ESP8266)</h5>
         
-        <code class="pinset__src">firmware/soil-node-sleep/soil-node-sleep.ino</code>
+        <code class="pinset__src">firmware/bench-both/bench-both.ino</code>
       </div>
-      <p class="pinset__note">The standalone node that replaced soil-on-the-combined-board. It also needs D0 wired to RST as the deep-sleep wake wire — removable, because flashing needs it off.</p>
+      <p class="pinset__note">Kept as a bench tool: both probes on one board, water on D5/D6 and soil on D7/D1. Useful for proving two buses coexist. It is not how the deployed farm is wired — the soil probe lives on its own node so it can sleep between readings.</p>
       <div class="table-wrap"><table class="wiring">
         <thead><tr><th scope="col">RS485 pad</th><th scope="col">ESP pin</th><th scope="col">GPIO</th><th scope="col">Direction</th></tr></thead>
         <tbody><tr>
           <th scope="row" class="mono">RXD</th>
-          <td class="mono strong">D6</td>
-          <td class="mono dim">GPIO12</td>
+          <td class="mono strong">D7</td>
+          <td class="mono dim">GPIO13</td>
           <td class="note">in — data toward the ESP</td>
         </tr><tr>
           <th scope="row" class="mono">TXD</th>
-          <td class="mono strong">D5</td>
-          <td class="mono dim">GPIO14</td>
+          <td class="mono strong">D1</td>
+          <td class="mono dim">GPIO5</td>
           <td class="note">out — data toward the probe</td>
         </tr><tr>
           <th scope="row" class="mono">VCC</th>
@@ -535,7 +411,7 @@
   </section>
 
   <section class="sheet__sec" id="colours">
-    <h2>3 · Wire colours — the trap</h2>
+    <h2>4 · Wire colours — the trap</h2>
     <p>The two probes use the same two colours for A and B, and they mean opposite things. Different
     manufacturers, no standard. This is the single easiest wiring mistake in the whole build, and it
     is most likely to catch you on the day you build the second module from muscle memory.</p>
@@ -563,13 +439,17 @@
   </section>
 
   <section class="sheet__sec" id="ground">
-    <h2>4 · Grounding — what must be common, and what must not</h2>
-    <p><b>One ground for the sensing side.</b> These are all the same electrical node:</p>
-    <pre class="code" data-lang="text"><code>probe green (water) ── MT3608 OUT− ── MT3608 IN− ── RS485 #1 GND ── RS485 #2 GND
-      ── ESP GND ── probe black (soil) ── pack P−</code></pre>
+    <h2>5 · Grounding — what must be common, and what must not</h2>
+    <p><b>One ground per node, and everything on that node shares it.</b> On Module 2 these are all
+    the same electrical node:</p>
+    <pre class="code" data-lang="text"><code>probe green (water) ── MT3608 OUT− ── MT3608 IN− ── Mini360 OUT− ── Mini360 IN−
+      ── RS485 GND ── ESP GND ── pack P−</code></pre>
     <p>The water probe runs on the boosted 18&nbsp;V rail while the ESP runs on 3.3&nbsp;V — two
     supplies, one shared return. <b>Random intermittent failures with wiring that “looks right” are
-    usually this.</b></p>
+    usually this.</b> Module 3 has the same rule on a smaller chain: probe black, boost OUT−, boost
+    IN−, RS485 GND and ESP GND are one rail, referenced to its own 1S pack.</p>
+    <p>The two nodes do <em>not</em> share a ground with each other. They are separate boxes joined
+    only by WiFi, which is exactly why a soil probe can sit a hundred metres from the tank.</p>
 
     <p><b>Deliberately not common:</b> when you bench the valve from a separate 12&nbsp;V mains
     adapter, the solenoid draws through the relay's isolated switched contacts. Its current never
@@ -583,7 +463,7 @@
   </section>
 
   <section class="sheet__sec" id="power">
-    <h2>5 · Voltages, and what happens if you get them wrong</h2>
+    <h2>6 · Voltages, and what happens if you get them wrong</h2>
     <div class="table-wrap"><table class="wiring">
       <thead><tr><th scope="col">Rail</th><th scope="col">Value</th><th scope="col">Feeds</th><th scope="col">If it's wrong</th></tr></thead>
       <tbody>
@@ -601,12 +481,12 @@
     <caption>What each thing costs you per day, against a panel that collects 50–60 Wh/day clear and 6–15 Wh/day under heavy cloud</caption>
     <thead><tr><th scope="col">Device</th><th scope="col">Power awake</th><th scope="col">Awake how often</th><th scope="col" class="num">Wh/day</th></tr></thead>
     <tbody><tr class="">
-      <th scope="row">Sleeping sensor node</th>
+      <th scope="row">Sleeping soil node</th>
       <td class="mono">0.6 W awake</td>
       <td>~5%</td>
       <td class="num mono strong">~1.5</td>
     </tr><tr class="">
-      <th scope="row">Water probe</th>
+      <th scope="row">Water probe + node</th>
       <td class="mono">0.5 W</td>
       <td>~5%</td>
       <td class="num mono strong">~0.6</td>
@@ -630,7 +510,7 @@
   </section>
 
   <section class="sheet__sec" id="net">
-    <h2>6 · Network</h2>
+    <h2>7 · Network</h2>
     <div class="table-wrap"><table class="wiring">
     <thead><tr><th scope="col"></th><th scope="col">Method</th><th scope="col">Path</th><th scope="col">Payload</th></tr></thead>
     <tbody><tr>
@@ -642,7 +522,7 @@
       <td><span class="dirpill dirpill--up">uplink</span></td>
       <th scope="row" class="mono">POST</th>
       <td class="mono strong">/soil</td>
-      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}</td>
+      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, rssi, uptime_s}</td>
     </tr><tr>
       <td><span class="dirpill dirpill--down">downlink</span></td>
       <th scope="row" class="mono">GET (poll, 1 s)</th>
@@ -671,7 +551,7 @@
   </section>
 
   <section class="sheet__sec" id="order">
-    <h2>7 · Bring-up order</h2>
+    <h2>8 · Bring-up order</h2>
     <p>Not arbitrary. A panel has no off switch, and a boost converter set wrong destroys a probe.</p>
     <ol class="numbered">
       <li><b>Cover the panel.</b> Connect the battery through the BMS to the MPPT output, then uncover. Teardown is the reverse — cover and disconnect PV first, then the battery.</li>
@@ -699,152 +579,160 @@ curl -X POST http://&lt;phone-ip&gt;:1880/water -H 'Content-Type: application/js
   </section>
 
   <section class="sheet__sec" id="faults">
-    <h2>8 · Symptom → cause</h2>
+    <h2>9 · Symptom → cause</h2>
     <p>Every fault table in the toolkit, merged. If something is not working, start here.</p>
     <div class="table-wrap"><table class="faults">
     <thead><tr><th scope="col">Symptom</th><th scope="col">Almost always</th><th scope="col">What to do</th></tr></thead>
     <tbody><tr>
-      <th scope="row">No reading at all  ·  Water tank level</th>
-      <td class="cause">A and B swapped</td>
-      <td>Swap the blue and yellow wires. This is common — try it before anything else.</td>
-    </tr><tr>
-      <th scope="row">No reading, probe cold  ·  Water tank level</th>
-      <td class="cause">Not enough voltage</td>
-      <td>Meter red to green: it must read 18 V, not the raw battery.</td>
-    </tr><tr>
-      <th scope="row">Boost converter reads 0 V  ·  Water tank level</th>
-      <td class="cause">Trimmer parked mid-range</td>
-      <td>It is 25-turn with no end stops. Keep turning, watch the meter.</td>
-    </tr><tr>
-      <th scope="row">Readings 10× off  ·  Water tank level</th>
-      <td class="cause">Wrong scaling</td>
-      <td>1 count = 1 mm. Check you are not treating it as centimetres.</td>
-    </tr><tr>
-      <th scope="row">Reading is about 65000  ·  Water tank level</th>
-      <td class="cause">Read as unsigned</td>
-      <td>It is signed int16. Readings slightly below zero are real and legitimate.</td>
-    </tr><tr>
-      <th scope="row">Reading never changes  ·  Water tank level</th>
-      <td class="cause">Wrong register</td>
-      <td>It is 0x0004.</td>
-    </tr><tr>
-      <th scope="row">Readings fail randomly  ·  Water tank level</th>
-      <td class="cause">No common ground</td>
-      <td>Probe green, boost OUT−, MAX485 GND and ESP GND must be one rail.</td>
-    </tr><tr>
-      <th scope="row">Drifts with the weather  ·  Water tank level</th>
-      <td class="cause">Breather tube blocked or wet</td>
-      <td>Keep the loose cable end dry and open to air.</td>
-    </tr><tr>
-      <th scope="row">Reads, then silent, then reads  ·  Water tank level</th>
-      <td class="cause">The open intermittent</td>
-      <td>A wire. Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering.</td>
-    </tr><tr>
-      <th scope="row">No reading at all  ·  Soil + irrigation valve</th>
-      <td class="cause">A and B swapped</td>
-      <td>Swap the yellow and blue wires — note these are opposite to Module 1.</td>
-    </tr><tr>
-      <th scope="row">No reading at all  ·  Soil + irrigation valve</th>
-      <td class="cause">Wrong baud</td>
-      <td>This probe is 4800. Module 1's is 9600. Don't copy the number across.</td>
-    </tr><tr>
-      <th scope="row">Invalid CRC on every frame with mbpoll  ·  Soil + irrigation valve</th>
-      <td class="cause">Adapter echo, not a fault</td>
-      <td>Use bun tools/poll-soil.ts. The sensor is fine.</td>
-    </tr><tr>
-      <th scope="row">modbus exception 0x01  ·  Soil + irrigation valve</th>
-      <td class="cause">Used 0x30 from the manual</td>
-      <td>The manual has a typo. The function code is 0x03.</td>
-    </tr><tr>
-      <th scope="row">Temperature reads ~65000  ·  Soil + irrigation valve</th>
-      <td class="cause">Parsed as unsigned</td>
-      <td>Cast to int16_t. 0xFF9B = −10.1 °C.</td>
-    </tr><tr>
-      <th scope="row">Moisture always 0 and the probe IS buried  ·  Soil + irrigation valve</th>
-      <td class="cause">Air gap around the tines</td>
-      <td>Pack the soil firmly against the probe.</td>
-    </tr><tr>
-      <th scope="row">Relay clicks but the valve doesn't move  ·  Soil + irrigation valve</th>
-      <td class="cause">Not enough volts at the coil under load</td>
-      <td>Meter across the valve while the relay is on. A sagging pack meters fine at rest.</td>
-    </tr><tr>
-      <th scope="row">Relay doesn't click at all  ·  Soil + irrigation valve</th>
-      <td class="cause">Powered from VIN</td>
-      <td>Use VBUS. VIN floats when the board is on USB.</td>
-    </tr><tr>
-      <th scope="row">ESP reboots when the valve closes  ·  Soil + irrigation valve</th>
-      <td class="cause">Missing flyback diode</td>
-      <td>Fit the 1N5819 across the valve terminals, stripe to +.</td>
-    </tr><tr>
-      <th scope="row">Valve chatters on and off  ·  Soil + irrigation valve</th>
-      <td class="cause">Thresholds too close</td>
-      <td>Leave ≥10 points between dry and wet.</td>
-    </tr><tr>
-      <th scope="row">Valve never closes  ·  Soil + irrigation valve</th>
-      <td class="cause">Water isn't reaching the probe</td>
-      <td>Blocked dripper, empty tank, kinked line. Your max run time should have caught this — if it didn't, fix that first.</td>
-    </tr><tr>
-      <th scope="row">Valve opens on a full battery, not a flat one  ·  Soil + irrigation valve</th>
-      <td class="cause">Solenoid under-volted</td>
-      <td>See the open question on valve power.</td>
-    </tr><tr>
-      <th scope="row">Valve energised, nothing flows  ·  Soil + irrigation valve</th>
-      <td class="cause">Below the valve's minimum pressure differential</td>
-      <td>A pilot valve needs ~0.2 bar. Check the head above it; if marginal, spec a direct-acting “0 bar” valve.</td>
-    </tr><tr>
-      <th scope="row">No output voltage  ·  Solar power</th>
+      <th scope="row">No output voltage  ·  Power</th>
       <td class="cause">Fuse has blown</td>
       <td>Check and replace it — then find out why.</td>
     </tr><tr>
-      <th scope="row">Pack charges partway then stops, never reaches full  ·  Solar power</th>
+      <th scope="row">Pack charges partway then stops, never reaches full  ·  Power</th>
       <td class="cause">Panel Vmp too low once hot</td>
       <td>Subtract ~11% from the label Vmp and check it is ≳2 V above the pack's full-charge voltage.</td>
     </tr><tr>
-      <th scope="row">Charges fine in the morning, stops by midday  ·  Solar power</th>
+      <th scope="row">Charges fine in the morning, stops by midday  ·  Power</th>
       <td class="cause">Same cause — the panel heated up and Vmp fell</td>
       <td>Higher-Vmp panel, or fewer cells in series.</td>
     </tr><tr>
-      <th scope="row">Panel gives far less current than its rating  ·  Solar power</th>
+      <th scope="row">Panel gives far less current than its rating  ·  Power</th>
       <td class="cause">Facing the wrong way</td>
       <td>In the southern hemisphere the midday sun is in the NORTH. Check Voc and Isc disconnected to confirm the panel itself is healthy.</td>
     </tr><tr>
-      <th scope="row">BMS cuts power suddenly  ·  Solar power</th>
+      <th scope="row">BMS cuts power suddenly  ·  Power</th>
       <td class="cause">A cell is faulty or badly connected</td>
       <td>Check every connection, test each cell individually.</td>
     </tr><tr>
-      <th scope="row">Phone charges very slowly — looks like the panel is too small  ·  Solar power</th>
+      <th scope="row">Phone charges very slowly — looks like the panel is too small  ·  Power</th>
       <td class="cause">USB data pins not shorted</td>
       <td>Short D+ to D− at the socket. Confirm with a USB power meter that it now draws &gt;0.5 A. This failure impersonates a solar problem.</td>
     </tr><tr>
-      <th scope="row">Phone charges but never reaches full on a sunny day  ·  Solar power</th>
+      <th scope="row">Phone charges but never reaches full on a sunny day  ·  Power</th>
       <td class="cause">Voltage drop in a long thin USB cable at 2 A</td>
       <td>Shorter, thicker cable; set the buck to 5.15–5.2 V.</td>
     </tr><tr>
-      <th scope="row">Enclosure gets very hot inside  ·  Solar power</th>
+      <th scope="row">Enclosure gets very hot inside  ·  Power</th>
       <td class="cause">No ventilation</td>
       <td>Vent holes on the shaded side, meshed to keep bugs out.</td>
     </tr><tr>
-      <th scope="row">Node can't find the WiFi network  ·  Base station</th>
+      <th scope="row">No reading at all  ·  Water + valve</th>
+      <td class="cause">A and B swapped</td>
+      <td>Swap the blue and yellow wires. This is common — try it before anything else.</td>
+    </tr><tr>
+      <th scope="row">No reading, probe cold  ·  Water + valve</th>
+      <td class="cause">Not enough voltage</td>
+      <td>Meter red to green: it must read 18 V, not the raw 12 V.</td>
+    </tr><tr>
+      <th scope="row">Boost converter reads 0 V  ·  Water + valve</th>
+      <td class="cause">Trimmer parked mid-range</td>
+      <td>It is 25-turn with no end stops. Keep turning, watch the meter.</td>
+    </tr><tr>
+      <th scope="row">Readings 10× off  ·  Water + valve</th>
+      <td class="cause">Wrong scaling</td>
+      <td>1 count = 1 mm. Check you are not treating it as centimetres.</td>
+    </tr><tr>
+      <th scope="row">Reading is about 65000  ·  Water + valve</th>
+      <td class="cause">Read as unsigned</td>
+      <td>It is signed int16. Readings slightly below zero are real and legitimate.</td>
+    </tr><tr>
+      <th scope="row">Reading never changes  ·  Water + valve</th>
+      <td class="cause">Wrong register</td>
+      <td>It is 0x0004.</td>
+    </tr><tr>
+      <th scope="row">Readings fail randomly  ·  Water + valve</th>
+      <td class="cause">No common ground</td>
+      <td>Probe green, boost OUT−, buck OUT−, MAX485 GND and ESP GND must be one rail.</td>
+    </tr><tr>
+      <th scope="row">Drifts with the weather  ·  Water + valve</th>
+      <td class="cause">Breather tube blocked or wet</td>
+      <td>Keep the loose cable end dry and open to air.</td>
+    </tr><tr>
+      <th scope="row">Reads, then silent, then reads  ·  Water + valve</th>
+      <td class="cause">A wire, not the firmware</td>
+      <td>Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering anything into a box.</td>
+    </tr><tr>
+      <th scope="row">Relay clicks but the valve doesn't move  ·  Water + valve</th>
+      <td class="cause">Not enough volts at the coil under load</td>
+      <td>Meter across the valve while the relay is on. A sagging pack meters fine at rest.</td>
+    </tr><tr>
+      <th scope="row">Relay doesn't click at all  ·  Water + valve</th>
+      <td class="cause">Powered from VIN</td>
+      <td>Use VBUS. VIN floats when the board is on USB.</td>
+    </tr><tr>
+      <th scope="row">ESP reboots when the valve closes  ·  Water + valve</th>
+      <td class="cause">Missing flyback diode</td>
+      <td>Fit the 1N5819 across the valve terminals, stripe to +.</td>
+    </tr><tr>
+      <th scope="row">Valve energised, nothing flows  ·  Water + valve</th>
+      <td class="cause">Below the valve's minimum pressure differential</td>
+      <td>A pilot valve needs ~0.2 bar. Check the head above it; if marginal, spec a direct-acting “0 bar” valve.</td>
+    </tr><tr>
+      <th scope="row">Valve opens on a full battery, not a flat one  ·  Water + valve</th>
+      <td class="cause">Solenoid under-volted</td>
+      <td>Measure the coil current and check the pack voltage under that load, not at rest.</td>
+    </tr><tr>
+      <th scope="row">No reading at all  ·  Soil</th>
+      <td class="cause">A and B swapped</td>
+      <td>Swap the yellow and blue wires — note these are opposite to Module 2.</td>
+    </tr><tr>
+      <th scope="row">No reading at all  ·  Soil</th>
+      <td class="cause">Wrong baud</td>
+      <td>This probe is 4800. Module 2's is 9600. Don't copy the number across.</td>
+    </tr><tr>
+      <th scope="row">Invalid CRC on every frame with mbpoll  ·  Soil</th>
+      <td class="cause">Adapter echo, not a fault</td>
+      <td>Use bun tools/poll-soil.ts. The sensor is fine.</td>
+    </tr><tr>
+      <th scope="row">modbus exception 0x01  ·  Soil</th>
+      <td class="cause">Used 0x30 from the manual</td>
+      <td>The manual has a typo. The function code is 0x03.</td>
+    </tr><tr>
+      <th scope="row">Temperature reads ~65000  ·  Soil</th>
+      <td class="cause">Parsed as unsigned</td>
+      <td>Cast to int16_t. 0xFF9B = −10.1 °C.</td>
+    </tr><tr>
+      <th scope="row">Moisture always 0 and the probe IS buried  ·  Soil</th>
+      <td class="cause">Air gap around the tines</td>
+      <td>Pack the soil firmly against the probe.</td>
+    </tr><tr>
+      <th scope="row">Board won't accept a flash  ·  Soil</th>
+      <td class="cause">D0 is still linked to RST</td>
+      <td>Remove the wake link, flash, put it back.</td>
+    </tr><tr>
+      <th scope="row">Node wakes powered but unresponsive  ·  Soil</th>
+      <td class="cause">Flash chip, not the sketch</td>
+      <td>Check the chip ID. An XMC (0x20) part is bench-proven for deep sleep here.</td>
+    </tr><tr>
+      <th scope="row">Pack goes flat in weeks, not months  ·  Soil</th>
+      <td class="cause">The node isn't actually sleeping</td>
+      <td>Confirm the D0→RST link is fitted and the sketch reaches deepSleep. An awake ESP8266 draws ~100× its sleeping current.</td>
+    </tr><tr>
+      <th scope="row">Two nodes' readings jump around each other  ·  Soil</th>
+      <td class="cause">Both publishing under one node name</td>
+      <td>Give each node its own name in config.h.</td>
+    </tr><tr>
+      <th scope="row">Node can't find the WiFi network  ·  Phone</th>
       <td class="cause">Hotspot off, or name mismatch</td>
       <td>Check the hotspot is on and the SSID matches config.h exactly.</td>
     </tr><tr>
-      <th scope="row">Can't open Node-RED in the browser  ·  Base station</th>
+      <th scope="row">Can't open Node-RED in the browser  ·  Phone</th>
       <td class="cause">Node-RED isn't running</td>
       <td>Open Termux and start it again — and check the wake-lock.</td>
     </tr><tr>
-      <th scope="row">Dashboard shows no data  ·  Base station</th>
+      <th scope="row">Dashboard shows no data  ·  Phone</th>
       <td class="cause">Node posting to the wrong address</td>
       <td>Leave POST_HOST empty and let the node derive it from the gateway.</td>
     </tr><tr>
-      <th scope="row">Flow looks healthy but nothing is scheduled  ·  Base station</th>
+      <th scope="row">Flow looks healthy but nothing is scheduled  ·  Phone</th>
       <td class="cause">Android froze the timer</td>
       <td>Make it event-driven; hold a wake-lock; set Termux to Unrestricted.</td>
     </tr><tr>
-      <th scope="row">Phone battery drains fast  ·  Base station</th>
+      <th scope="row">Phone battery drains fast  ·  Phone</th>
       <td class="cause">Hotspot + Node-RED never sleep</td>
       <td>Keep it charged — and on solar, duty-cycle the charger, not the phone.</td>
     </tr><tr>
-      <th scope="row">Mobile data disappearing quickly  ·  Base station</th>
+      <th scope="row">Mobile data disappearing quickly  ·  Phone</th>
       <td class="cause">Sending too often</td>
       <td>Batch readings, or send summaries rather than every sample.</td>
     </tr></tbody>
@@ -866,16 +754,16 @@ curl -X POST http://&lt;phone-ip&gt;:1880/water -H 'Content-Type: application/js
   <div class="foot__grid">
     <div class="foot__col">
       <h2 class="foot__h">Farmers IoT Toolkit</h2>
-      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.</p>
       <p class="foot__lic">Open source — use, share, and adapt freely.</p>
     </div>
     <div class="foot__col">
       <h3 class="foot__h">Modules</h3>
       <ul>
-        <li><a href="modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
-        <li><a href="modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
-        <li><a href="modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
-        <li><a href="modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+        <li><a href="modules/solar-power-pack.html">1 · Power</a></li>
+        <li><a href="modules/water-tank-and-valve.html">2 · Water + valve</a></li>
+        <li><a href="modules/soil-moisture-sensor.html">3 · Soil</a></li>
+        <li><a href="modules/mobile-wifi-base-station.html">4 · Phone</a></li>
       </ul>
     </div>
     <div class="foot__col">

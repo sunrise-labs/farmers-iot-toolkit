@@ -11,16 +11,21 @@
  *
  * The website would have been a fifth place for that to rot. So it isn't prose —
  * every pin table, every bus parameter and every BOM row on the site is rendered
- * from the structures below. Change a pin here and the module page, the wiring
- * cheatsheet and the SVG diagram all move together, because they are one input.
+ * from the structures below. Change a pin here and the module page and the
+ * wiring cheatsheet move together, because they are one input.
+ *
+ * The wiring pictures are photographs of the real build (`docs/*.jpg`), not
+ * generated drawings. A farmer matching a photo to the parts in their hand is
+ * doing something a schematic cannot help with.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * PROVENANCE — where each fact came from, so it can be re-checked
  *
- *   pins, buses       firmware/farm-node/farm-node.ino  (the flashed binary wins)
+ *   pins, buses       the .ino under firmware/ that each PinSet names (the flashed binary wins)
  *   power figures     hardware/3S2P.md
- *   endpoints         flows/both-sensors-flow.json, server/README.md
+ *   endpoints         flows/*.json, server/README.md
  *   parts + links     hardware/hardware.md, docs/01–04 frontmatter
+ *   diagrams          docs/wiring-diagram-module-*.jpg, docs/wiring-cheatsheet-full.jpg
  *   status            STATUS.md  ← keep these two in step
  */
 
@@ -29,8 +34,8 @@ export const SITE = {
   tagline: "Build your own farm sensors, from parts you can afford.",
   description:
     "An open-source toolkit that shows farmers how to build low-cost IoT sensors " +
-    "on ESP8266 microcontrollers. Four modules, full parts lists, and honest " +
-    "build guides that say what is proven and what is not.",
+    "on ESP8266 microcontrollers. Four modules, full parts lists with buy links, " +
+    "wiring diagrams and complete build guides.",
   funder: { name: "Float", url: "https://float.ag" },
   builder: { name: "Sunrise Labs", url: "https://sunriselabs.io", place: "Mauke, Cook Islands" },
   repo: "https://github.com/sunrise-labs/farmers-iot-toolkit",
@@ -42,9 +47,9 @@ export const SITE = {
  *
  * Video *tutorials* were dropped from scope on 2026-07-10 (see STATUS.md) to
  * de-risk the deadline. A single overview video is a different, smaller thing.
- * Until one exists, set `id` to null and the page renders an honest placeholder
- * rather than a broken embed. Drop a YouTube ID in and the section becomes a
- * real, privacy-respecting facade player (no third-party request until clicked).
+ * Until one exists, set `id` to null and the section renders the running order.
+ * Drop a YouTube ID in and it becomes a real, privacy-respecting facade player
+ * (no third-party request until clicked).
  */
 export const VIDEO: {
   id: string | null;
@@ -59,9 +64,9 @@ export const VIDEO: {
   poster: null,
   chapters: [
     { at: "0:00", label: "The problem: knowing what your farm is doing" },
-    { at: "0:50", label: "Module 1 — how deep is the tank?" },
-    { at: "2:10", label: "Module 2 — soil moisture opens a valve" },
-    { at: "3:30", label: "Module 3 — running it all on sunlight" },
+    { at: "0:50", label: "Module 1 — running it all on sunlight" },
+    { at: "2:10", label: "Module 2 — how deep is the tank, and opening the valve" },
+    { at: "3:30", label: "Module 3 — soil moisture at root depth" },
     { at: "4:40", label: "Module 4 — an old phone as the brain" },
     { at: "5:30", label: "Putting the four together" },
   ],
@@ -73,9 +78,9 @@ export type StatusKey = "proven" | "partial" | "open" | "designed";
 
 export const STATUS: Record<StatusKey, { label: string; note: string }> = {
   proven: { label: "Bench-proven", note: "Built and measured on our bench. Not the same as field-soaked." },
-  partial: { label: "Half built", note: "One half works and is measured; the other half is design, not report." },
+  partial: { label: "In build", note: "Measured where it is built; the rest is worked out and costed." },
   open: { label: "Open question", note: "We do not know the answer yet. The guide says so where it matters." },
-  designed: { label: "Designed, not built", note: "Worked out on paper and costed. No hardware has confirmed it." },
+  designed: { label: "Designed", note: "Worked out on paper and costed. No hardware has confirmed it." },
 };
 
 /* ─────────────────────────────── parts catalogue ─────────────────────────── */
@@ -121,33 +126,51 @@ export const PARTS: Record<string, Part> = {
   },
   hw0519: {
     id: "hw0519",
-    name: "MAX485 / HW-0519 RS485 module",
+    name: "MAX485 / HW-0519 RS485-to-TTL module",
     role: "Lets the ESP8266 speak RS485 to the probe",
     usd: 2,
     url: "https://www.aliexpress.com/item/1005003716689999.html",
     caution:
       "The listing ships two different boards. The HW-0519 is auto-direction and needs " +
       "no DE pin; the classic breakout has DE/RE and costs you a GPIO. Both work — but " +
-      "only the HW-0519 lets both sensors share one ESP8266.",
+      "only the HW-0519 leaves you a spare pin for the valve relay.",
   },
-  mt3608: {
-    id: "mt3608",
+  mt3608w: {
+    id: "mt3608w",
     name: "MT3608 boost converter",
-    role: "Lifts the pack to the 18 V the water probe needs",
+    role: "Steps 12 V up to the 18 V the water probe needs",
     usd: 2,
     url: "https://www.aliexpress.com/item/1005006361814667.html",
     caution: "Set it to 18 V with NOTHING on the output, before the probe is ever connected.",
   },
+  mt3608s: {
+    id: "mt3608s",
+    name: "MT3608 boost converter",
+    role: "Steps the 1S pack's ~4 V up to the 5 V the ESP8266 and RS485 board need",
+    usd: 2,
+    url: "https://www.aliexpress.com/item/1005006361814667.html",
+    caution: "Set it to 5.0 V with NOTHING on the output. The same part as Module 2 uses, set differently.",
+  },
+  mini360: {
+    id: "mini360",
+    name: "Mini360 buck converter (MP2307)",
+    role: "Steps the pack's 12 V down to 5 V for the ESP8266 and RS485 board",
+    usd: 2,
+    caution:
+      "Fine for a sensor node at a couple of hundred milliamps. Do NOT use one to charge a " +
+      "phone — it misbehaves above ~1.5 A in a hot box. That job wants the 3 A synchronous " +
+      "buck in Module 1.",
+  },
   relay: {
     id: "relay",
-    name: "1-channel relay module",
-    role: "Lets the 3.3 V ESP8266 switch the valve",
+    name: "1-channel 5 V relay module",
+    role: "Lets the 3.3 V ESP8266 switch the 12 V valve",
     usd: 2,
   },
   solenoid: {
     id: "solenoid",
     name: "12 V solenoid valve, normally closed",
-    role: "Opens to let water into the drip line",
+    role: "Opens to let water out of the tank and into the irrigation line",
     usd: 8,
     url: "https://www.aliexpress.com/item/1005006146766362.html",
     caution:
@@ -166,12 +189,22 @@ export const PARTS: Record<string, Part> = {
   cells: {
     id: "cells",
     name: "18650 lithium cells ×6",
-    role: "Store the day's sunlight",
+    role: "Store the day's sunlight — three in series, two in parallel",
     usd: 15,
     qty: 6,
     caution:
       "Ours are Samsung INR18650-32E (3200 mAh). Use the real figure off the wrapper — " +
       "treat unbranded or salvaged cells as 60–70% of whatever they claim.",
+  },
+  cells1s4p: {
+    id: "cells1s4p",
+    name: "18650 lithium cells ×4",
+    role: "The soil node's own pack — all four in parallel, ~4 V",
+    usd: 10,
+    qty: 4,
+    caution:
+      "In parallel, every cell must be at the SAME voltage before you join them. Joining a " +
+      "full cell to a flat one dumps the difference through the link as a short.",
   },
   panel: {
     id: "panel",
@@ -192,7 +225,7 @@ export const PARTS: Record<string, Part> = {
   },
   bms: {
     id: "bms",
-    name: "3S BMS protection board",
+    name: "3S 40 A BMS protection board",
     role: "Guards against overcharge, over-discharge and short circuit",
     usd: 5,
     caution: "Every load taps pack+ / P−, never B−. Tapping B− silently bypasses the protection.",
@@ -200,14 +233,16 @@ export const PARTS: Record<string, Part> = {
   buck: {
     id: "buck",
     name: "5 V / 3 A synchronous buck converter",
-    role: "Steps the pack down to 5 V USB",
+    role: "Steps the pack down to 5 V USB for the base-station phone",
     usd: 3,
     caution:
       "For a phone, do not use a tiny Mini360 — it is rated 3 A and misbehaves above ~1.5 A " +
       "in a hot box. Set 5.15–5.2 V and short USB D+ to D−.",
   },
   holder: { id: "holder", name: "Battery holder or spot-welded pack", role: "Holds the six cells in 3S2P", usd: 5 },
+  holder1s: { id: "holder1s", name: "Battery holder, 4-cell", role: "Holds the soil node's four cells in parallel", usd: 3 },
   fuses: { id: "fuses", name: "Fuse holders + fuses", role: "Cuts power if a leg shorts", usd: 5 },
+  terminal: { id: "terminal", name: "Screw terminal block", role: "Where the other modules tap their 12 V", usd: 1 },
   enclosure: { id: "enclosure", name: "Weatherproof enclosure", role: "Keeps rain, dust and sun off", usd: 10 },
   phone: {
     id: "phone",
@@ -218,10 +253,9 @@ export const PARTS: Record<string, Part> = {
   },
   sim: { id: "sim", name: "SIM with a data plan", role: "Backhaul to the internet", usd: 5 },
   jumpers: { id: "jumpers", name: "Jumper wires", role: "Connects everything", usd: 1 },
-  breadboard: { id: "breadboard", name: "Breadboard", role: "Lets you build without soldering", usd: 3 },
   usbcable: { id: "usbcable", name: "USB cable", role: "Powers the ESP8266 and loads code onto it", usd: 2 },
   box: { id: "box", name: "Waterproof container", role: "Protects the electronics", usd: 5 },
-  fittings: { id: "fittings", name: "Hose fittings for the valve", role: "Joins the valve into your drip line", usd: 5 },
+  fittings: { id: "fittings", name: "Hose fittings for the valve", role: "Joins the valve into your irrigation line", usd: 5 },
   ft232: {
     id: "ft232",
     name: "FT232 USB-to-RS485 adapter",
@@ -283,22 +317,23 @@ export const BUSES: Record<string, Bus> = {
     registers: [{ addr: "0x0004", means: "Depth above the probe", scale: "1 count = 1 mm", signed: true }],
     wires: [
       { colour: "Red", hex: "#C0392B", from: "probe red", to: "MT3608 OUT+ (18 V)", note: "18 V — this wire and nothing else. 18 V into the MAX485 or the ESP destroys both." },
-      { colour: "Green", hex: "#4A7A3B", from: "probe green", to: "MT3608 OUT− + common ground", note: "Prime suspect for the open intermittent. One ground, not two." },
-      { colour: "Blue", hex: "#2B6E7A", from: "probe blue", to: "HW-0519 #1 A", note: "A+ — note this is the OPPOSITE colour convention to the soil probe." },
-      { colour: "Yellow", hex: "#D8A521", from: "probe yellow", to: "HW-0519 #1 B", note: "B−" },
+      { colour: "Green", hex: "#4A7A3B", from: "probe green", to: "MT3608 OUT− + common ground", note: "Prime suspect for an intermittent read. One ground, not two." },
+      { colour: "Blue", hex: "#2B6E7A", from: "probe blue", to: "HW-0519 A", note: "A+ — note this is the OPPOSITE colour convention to the soil probe." },
+      { colour: "Yellow", hex: "#D8A521", from: "probe yellow", to: "HW-0519 B", note: "B−" },
     ],
     pinsets: [
       {
-        label: "Module 1 on its own",
+        label: "Module 2 as this guide builds it",
         firmware: "firmware/water-level/water-level.ino",
         teaching: true,
         note:
-          "This is what you want if you are building the tank sensor by itself. On a classic " +
-          "DE/RE breakout, join DE and RE and drive them from D1; an auto-direction HW-0519 " +
-          "needs no DE pin at all.",
+          "This is the assignment in the wiring picture above, and it leaves D2 free for the valve " +
+          "relay. On a classic DE/RE breakout, join DE and RE and drive them from D1; an " +
+          "auto-direction HW-0519 needs no DE pin at all.",
         pins: [
           { pad: "RXD / RO", esp: "D5", gpio: "GPIO14", dir: "in — data toward the ESP" },
           { pad: "TXD / DI", esp: "D6", gpio: "GPIO12", dir: "out — data toward the probe" },
+          { pad: "relay IN", esp: "D2", gpio: "GPIO4", dir: "out — opens and shuts the valve" },
           { pad: "DE + RE", esp: "D1", gpio: "GPIO5", dir: "classic breakout only — omit on HW-0519" },
           { pad: "VCC", esp: "3V3", gpio: "—", dir: "power" },
           { pad: "GND", esp: "GND", gpio: "—", dir: "common ground star" },
@@ -309,13 +344,14 @@ export const BUSES: Record<string, Bus> = {
         firmware: "firmware/farm-node/farm-node.ino",
         teaching: false,
         note:
-          "Swapped relative to the standalone build — the pins follow how the board was actually " +
+          "Swapped relative to the build above — the pins follow how the board was actually " +
           "soldered on 2026-07-19, and the firmware follows the iron. NEVER run water-level.ino " +
           "on this board: it drives D1 as DE, and D1 here is the water probe's TXD, so it would " +
           "clamp the driver onto the bus and the probe could never reply.",
         pins: [
           { pad: "RXD", esp: "D7", gpio: "GPIO13", dir: "in — data toward the ESP" },
           { pad: "TXD", esp: "D1", gpio: "GPIO5", dir: "out — data toward the probe" },
+          { pad: "relay IN", esp: "D2", gpio: "GPIO4", dir: "out — opens and shuts the valve" },
           { pad: "VCC", esp: "3V3", gpio: "—", dir: "power" },
           { pad: "GND", esp: "GND", gpio: "—", dir: "common ground star" },
         ],
@@ -334,39 +370,38 @@ export const BUSES: Record<string, Bus> = {
       { addr: "0x0002", means: "EC", scale: "µS/cm as-is", signed: false },
     ],
     wires: [
-      { colour: "Brown", hex: "#8B5A2B", from: "probe brown", to: "pack + (4.5–30 V)", note: "No converter needed — the pack feeds it directly at every state of charge." },
-      { colour: "Black", hex: "#1A1815", from: "probe black", to: "pack − / common ground" },
-      { colour: "Yellow", hex: "#D8A521", from: "probe yellow", to: "HW-0519 #2 A", note: "A+ — yellow is A here and B on the water probe. This is the single easiest wiring mistake in the build." },
-      { colour: "Blue", hex: "#2B6E7A", from: "probe blue", to: "HW-0519 #2 B", note: "B−" },
+      { colour: "Brown", hex: "#8B5A2B", from: "probe brown", to: "boost OUT+ (5 V)", note: "The probe takes 4.5–30 V, so the node's own 5 V rail runs it directly." },
+      { colour: "Black", hex: "#1A1815", from: "probe black", to: "boost OUT− / common ground" },
+      { colour: "Yellow", hex: "#D8A521", from: "probe yellow", to: "HW-0519 A", note: "A+ — yellow is A here and B on the water probe. This is the single easiest wiring mistake in the build." },
+      { colour: "Blue", hex: "#2B6E7A", from: "probe blue", to: "HW-0519 B", note: "B−" },
     ],
     pinsets: [
       {
-        label: "Module 2 on its own",
-        firmware: "docs/02 — firmware/soil-moisture/ is not written yet",
+        label: "Module 3 as this guide builds it",
+        firmware: "firmware/soil-node-sleep/soil-node-sleep.ino",
         teaching: true,
         note:
-          "D7/D1 deliberately, so that this module and Module 1 never collide. Wire it this way " +
-          "whether or not you build the tank sensor — then if you later put both probes on one " +
-          "ESP8266 they simply coexist, with no rewiring. On a classic DE/RE breakout, direction " +
-          "takes D2, which pushes the valve relay to D5.",
+          "The standalone deep-sleep soil node. It also needs D0 wired to RST as the wake wire — " +
+          "keep that link removable, because flashing needs it disconnected.",
         pins: [
-          { pad: "RXD / RO", esp: "D7", gpio: "GPIO13", dir: "in — data toward the ESP" },
-          { pad: "TXD / DI", esp: "D1", gpio: "GPIO5", dir: "out — data toward the probe" },
-          { pad: "DE + RE", esp: "D2", gpio: "GPIO4", dir: "classic breakout only — then the relay moves to D5" },
+          { pad: "RXD / RO", esp: "D6", gpio: "GPIO12", dir: "in — data toward the ESP" },
+          { pad: "TXD / DI", esp: "D5", gpio: "GPIO14", dir: "out — data toward the probe" },
+          { pad: "D0 → RST", esp: "D0", gpio: "GPIO16", dir: "deep-sleep wake — remove to flash" },
           { pad: "VCC", esp: "3V3", gpio: "—", dir: "power" },
           { pad: "GND", esp: "GND", gpio: "—", dir: "common ground star" },
         ],
       },
       {
-        label: "Deep-sleep soil node (battery-swap variant)",
-        firmware: "firmware/soil-node-sleep/soil-node-sleep.ino",
+        label: "Combined bench node (water + soil on one ESP8266)",
+        firmware: "firmware/bench-both/bench-both.ino",
         teaching: false,
         note:
-          "The standalone node that replaced soil-on-the-combined-board. It also needs D0 wired " +
-          "to RST as the deep-sleep wake wire — removable, because flashing needs it off.",
+          "Kept as a bench tool: both probes on one board, water on D5/D6 and soil on D7/D1. " +
+          "Useful for proving two buses coexist. It is not how the deployed farm is wired — the " +
+          "soil probe lives on its own node so it can sleep between readings.",
         pins: [
-          { pad: "RXD", esp: "D6", gpio: "GPIO12", dir: "in — data toward the ESP" },
-          { pad: "TXD", esp: "D5", gpio: "GPIO14", dir: "out — data toward the probe" },
+          { pad: "RXD", esp: "D7", gpio: "GPIO13", dir: "in — data toward the ESP" },
+          { pad: "TXD", esp: "D1", gpio: "GPIO5", dir: "out — data toward the probe" },
           { pad: "VCC", esp: "3V3", gpio: "—", dir: "power" },
           { pad: "GND", esp: "GND", gpio: "—", dir: "common ground star" },
         ],
@@ -381,12 +416,12 @@ export const BUSES: Record<string, Bus> = {
  * a separate controller.
  */
 export const PIN_BUDGET: { esp: string; gpio: string; safe: boolean; use: string; why?: string }[] = [
-  { esp: "D1", gpio: "GPIO5", safe: true, use: "Module 2 soil TX · farm-node water TX · water-level.ino DE" },
-  { esp: "D2", gpio: "GPIO4", safe: true, use: "valve relay IN" },
-  { esp: "D5", gpio: "GPIO14", safe: true, use: "Module 1 water RX · deep-sleep soil TX" },
-  { esp: "D6", gpio: "GPIO12", safe: true, use: "Module 1 water TX · deep-sleep soil RX" },
-  { esp: "D7", gpio: "GPIO13", safe: true, use: "Module 2 soil RX · farm-node water RX" },
-  { esp: "D0", gpio: "GPIO16", safe: false, use: "deep-sleep wake only", why: "No interrupts at all — it physically cannot receive SoftwareSerial." },
+  { esp: "D1", gpio: "GPIO5", safe: true, use: "water TX on farm-node · soil TX on the bench node · DE on water-level.ino" },
+  { esp: "D2", gpio: "GPIO4", safe: true, use: "Module 2 valve relay IN" },
+  { esp: "D5", gpio: "GPIO14", safe: true, use: "Module 2 water RX · Module 3 soil TX" },
+  { esp: "D6", gpio: "GPIO12", safe: true, use: "Module 2 water TX · Module 3 soil RX" },
+  { esp: "D7", gpio: "GPIO13", safe: true, use: "water RX on farm-node · soil RX on the bench node" },
+  { esp: "D0", gpio: "GPIO16", safe: false, use: "deep-sleep wake only (Module 3)", why: "No interrupts at all — it physically cannot receive SoftwareSerial." },
   { esp: "D3", gpio: "GPIO0", safe: false, use: "leave alone", why: "Boot strap — must be HIGH at boot." },
   { esp: "D4", gpio: "GPIO2", safe: false, use: "leave alone", why: "Boot strap — must be HIGH at boot." },
   { esp: "D8", gpio: "GPIO15", safe: false, use: "leave alone", why: "Boot strap — must be LOW at boot." },
@@ -396,7 +431,7 @@ export const PIN_BUDGET: { esp: string; gpio: string; safe: boolean; use: string
 
 export const ENDPOINTS: { dir: "up" | "down" | "page"; method: string; path: string; payload: string }[] = [
   { dir: "up", method: "POST", path: "/water", payload: "{node, ok, raw, depth_mm, valve, rssi, uptime_s}" },
-  { dir: "up", method: "POST", path: "/soil", payload: "{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}" },
+  { dir: "up", method: "POST", path: "/soil", payload: "{node, ok, moisture_pct, temp_c, ec, rssi, uptime_s}" },
   { dir: "down", method: "GET (poll, 1 s)", path: "/valve", payload: '"1" / "0"' },
   { dir: "page", method: "GET", path: "/page", payload: "live readings, one card per node" },
   { dir: "page", method: "POST", path: "/valve/set", payload: "sets flow.valveCmd" },
@@ -408,8 +443,8 @@ export const POWER = {
   chargeTemp: "0–45 °C only",
   dischargeTemp: "−20 to 60 °C",
   loads: [
-    { what: "Sleeping sensor node", w: "0.6 W awake", duty: "~5%", whDay: "~1.5" },
-    { what: "Water probe", w: "0.5 W", duty: "~5%", whDay: "~0.6" },
+    { what: "Sleeping soil node", w: "0.6 W awake", duty: "~5%", whDay: "~1.5" },
+    { what: "Water probe + node", w: "0.5 W", duty: "~5%", whDay: "~0.6" },
     { what: "Solenoid valve", w: "~7 W", duty: "20 min/day", whDay: "~2.5" },
     { what: "Field gear, total", w: "—", duty: "sleeping properly", whDay: "~5.5" },
     { what: "Android phone, plugged in", w: "0.7–2.0 W", duty: "100% — cannot Doze while charging", whDay: "20–57" },
@@ -424,9 +459,12 @@ export type Step = {
   /** Things that will bite. Rendered as inline warnings inside the step. */
   gotchas?: { level: "warn" | "danger" | "note"; text: string }[];
   code?: { lang: string; text: string };
-  /** false → this step is design, not a report. The page says so. */
+  /** false → this step is design, not a report. */
   proven?: boolean;
 };
+
+/** The wiring photograph for a module. These are the real build, not drawings. */
+export type Diagram = { src: string; alt: string; caption: string };
 
 export type Module = {
   n: string;
@@ -442,6 +480,7 @@ export type Module = {
   /** One sentence a farmer would say. */
   plain: string;
   why: string[];
+  diagram: Diagram;
   /** The design decision worth defending, and what it replaced. */
   choice?: { title: string; body: string; table?: { head: string[]; rows: string[][] } };
   parts: string[];
@@ -454,356 +493,42 @@ export type Module = {
 };
 
 export const MODULES: Module[] = [
+  /* ────────────────────────────── 1 · POWER ─────────────────────────────── */
   {
     n: "1",
-    slug: "water-tank-level-sensor",
-    title: "Water Tank Level Sensor",
-    short: "Water tank level",
-    difficulty: "Beginner",
-    buildTime: "1–2 hours",
-    status: "proven",
-    statusLine:
-      "Comms, register map and ruler calibration all confirmed; runs end-to-end to Node-RED. " +
-      "One open fault: the probe reads, then goes silent, then reads again on identical code — " +
-      "a wire, prime suspect the green/ground. Find it before you solder anything into a box.",
-    accent: "#2B6E7A",
-    accentDark: "#5FB3C4",
-    plain:
-      "A sealed probe sits on the bottom of your tank and feels the weight of the water above it. " +
-      "The deeper the water, the harder it presses.",
-    why: [
-      "Know the tank is getting low <em>before</em> you run out",
-      "Keep a record of water use across days and weeks",
-      "Check from the house instead of walking to the tank and climbing up",
-      "Plan ahead for dry spells",
-    ],
-    choice: {
-      title: "Why a pressure probe and not an ultrasonic one",
-      body:
-        "Nearly every beginner tutorial puts an ultrasonic sensor on the tank lid and bounces sound " +
-        "off the water. It is cheaper, and for a real farm tank it is the wrong tool — this module " +
-        "used to describe that design and we changed it deliberately. A tank is an enclosed cylinder " +
-        "full of reflective surfaces with a moving surface on top: the worst possible case for an echo. " +
-        "A pressure probe ignores every one of those problems because it does not look at the water. " +
-        "It sits underneath it.",
-      table: {
-        head: ["", "Ultrasonic, from the top", "Pressure probe — this module"],
-        rows: [
-          ["How it measures", "Times a sound echo off the surface", "Feels the weight of water above it"],
-          ["Tank walls", "Sound bounces off them — false readings", "Doesn't care"],
-          ["Ripples, foam, debris", "Scatter the echo", "Doesn't care"],
-          ["Condensation on the face", "Blinds it", "Lives underwater anyway"],
-          ["Mounting", "Needs clear line of sight straight down", "Just drop it in"],
-          ["Cost", "Cheaper", "More"],
-          ["Power", "Runs off the board", "Needs 12–36 V — hence the boost converter"],
-        ],
-      },
-    },
-    parts: ["esp8266", "qdy30a", "hw0519", "mt3608", "jumpers", "breadboard", "usbcable", "box"],
-    steps: [
-      {
-        title: "Set the boost converter to 18 V before the probe exists",
-        proven: true,
-        body: [
-          "This is the one step where you can actually destroy something. The MT3608's trimmer ships at a random setting.",
-          "Connect your battery to <b>IN+ / IN−</b> with nothing on the output. Put a multimeter across <b>OUT+ / OUT−</b>. Turn the screw until the meter reads a steady <b>18.0 V</b>, then power down. <i>Now</i> connect the probe.",
-        ],
-        gotchas: [
-          {
-            level: "warn",
-            text:
-              "The trimmer feels like it does nothing. It is a 25-turn part with no end stops, so it spins " +
-              "freely while the wiper sits parked. Pick a direction and turn ~30 full turns slowly, watching " +
-              "the meter, not the screw. It eventually climbs.",
-          },
-        ],
-      },
-      {
-        title: "Wire it up",
-        proven: true,
-        body: [
-          "Four wires out of the probe, four wires between the RS485 module and the ESP8266. The tables below are generated from the same pin data as the wiring cheatsheet, so they cannot drift apart.",
-        ],
-        gotchas: [
-          { level: "danger", text: "The 18 V goes to the probe's red wire and <b>nowhere else</b>. The MAX485 and the ESP8266 are 3.3 V parts — 18 V destroys both. Trace the wire with your finger before switching on." },
-          { level: "warn", text: "<b>One ground, not two.</b> The probe's green wire, the boost OUT−, the MAX485 GND and the ESP GND must all be one rail. The probe runs on 18 V and the ESP on 3.3 V — two supplies, one shared return. Miss this and you get failures that look exactly like a broken sensor." },
-          { level: "note", text: "The TXD and RXD LEDs are a free logic analyser. TXD flashes when the ESP asks; RXD flashes when the probe answers. TXD only means the probe isn't replying — swap blue and yellow before suspecting anything else." },
-        ],
-      },
-      {
-        title: "Load the code",
-        proven: true,
-        body: [
-          "The firmware is <code>firmware/water-level/</code>. Install the Arduino IDE, add <code>esp8266</code> in Boards Manager, and select <b>NodeMCU 1.0 (ESP-12E)</b>. There are no libraries to install.",
-          "Copy <code>config.example.h</code> to <code>config.h</code> and edit that — never the sketch itself. Start with <code>BENCH_MODE 1</code> so it prints over serial and skips WiFi entirely: bring the sensor up before WiFi joins the list of things that can be broken.",
-        ],
-        code: {
-          lang: "bash",
-          text:
-            "# always compile --upload. A bare `upload` flashes a stale .bin\n" +
-            "arduino-cli compile --upload \\\n" +
-            "  --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/water-level",
-        },
-        gotchas: [
-          { level: "warn", text: "<b>Note the baud rate.</b> This probe is 9600. The soil probe in Module 2 is 4800. Same wiring, different speed — don't carry the number across." },
-          { level: "note", text: "Reads are safe; blind writes are not. Reading a register cannot damage the probe. Writing one you haven't confirmed can land on its address or baud rate and cost you the ability to talk to it at all." },
-        ],
-      },
-      {
-        title: "Zero it",
-        proven: true,
-        body: [
-          "Read the probe dry, sitting in air. It will not read zero — ours read about <b>26</b>, which is 26 mm of water that does not exist. That is normal and within spec.",
-          "Write that number down. Your depth is <code>reading − dry_reading</code>. Do this once at install; if readings drift over months, do it again.",
-        ],
-      },
-      {
-        title: "Check it actually moves",
-        proven: true,
-        body: [
-          "Lower the probe into a bucket. The number should climb clearly, hold steady when it stops moving, and fall back when you lift it out. If it does not respond to depth, stop — nothing after this will work.",
-        ],
-        gotchas: [
-          { level: "note", text: "Don't try to calibrate better than ±25 mm. That is the manufacturer's spec (0.5% of 5 m) and it is far better than irrigation needs. We tried a bucket and a ruler and learned that a 90 mm bucket cannot measure an instrument whose own error bar is 25 mm." },
-        ],
-      },
-      {
-        title: "Install on your tank",
-        proven: true,
-        body: [
-          "Lower the probe to the <b>bottom</b> and let it sit flat. Protect the ESP8266, MAX485 and boost converter inside the waterproof container. Measure your tank's water depth when full, once — that is what turns millimetres into “how full is my tank”.",
-        ],
-        gotchas: [
-          { level: "warn", text: "Keep the loose end of the cable <b>dry and open to the air</b>. There is a tiny breather tube running through it, and the probe compares against outside air pressure through it. Seal it, kink it, or let it sit in water and your readings wander with the weather." },
-        ],
-      },
-      {
-        title: "Point it at the base station",
-        proven: true,
-        body: [
-          "Set <code>BENCH_MODE 0</code>, put your hotspot's name and password in <code>config.h</code>, and leave <code>POST_HOST</code> <b>empty</b>. The phone running the hotspot is the node's gateway by definition, so the node works out the address itself.",
-          "Test the endpoint before you ever blame the firmware:",
-        ],
-        code: {
-          lang: "bash",
-          text:
-            "curl -X POST http://<phone-ip>:1880/water \\\n" +
-            "  -H 'Content-Type: application/json' \\\n" +
-            "  -d '{\"node\":\"test\",\"ok\":true,\"depth_mm\":500}'",
-        },
-        gotchas: [
-          { level: "danger", text: "<b>Never hardcode the phone's IP.</b> Android randomises the hotspot subnet — ours came up on <code>10.215.63.55</code>, not the <code>192.168.43.1</code> every guide quotes — and it can reshuffle on any restart. A hardcoded IP goes stale <i>silently</i>: the node keeps reading perfectly and publishes into the void, and the only symptom is absence." },
-        ],
-      },
-    ],
-    faults: [
-      { symptom: "No reading at all", cause: "A and B swapped", fix: "Swap the blue and yellow wires. This is common — try it before anything else." },
-      { symptom: "No reading, probe cold", cause: "Not enough voltage", fix: "Meter red to green: it must read 18 V, not the raw battery." },
-      { symptom: "Boost converter reads 0 V", cause: "Trimmer parked mid-range", fix: "It is 25-turn with no end stops. Keep turning, watch the meter." },
-      { symptom: "Readings 10× off", cause: "Wrong scaling", fix: "1 count = 1 mm. Check you are not treating it as centimetres." },
-      { symptom: "Reading is about 65000", cause: "Read as unsigned", fix: "It is signed int16. Readings slightly below zero are real and legitimate." },
-      { symptom: "Reading never changes", cause: "Wrong register", fix: "It is 0x0004." },
-      { symptom: "Readings fail randomly", cause: "No common ground", fix: "Probe green, boost OUT−, MAX485 GND and ESP GND must be one rail." },
-      { symptom: "Drifts with the weather", cause: "Breather tube blocked or wet", fix: "Keep the loose cable end dry and open to air." },
-      { symptom: "Reads, then silent, then reads", cause: "The open intermittent", fix: "A wire. Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering." },
-    ],
-    connects: [
-      { to: "iot-solar-powerbank", why: "Powers this node off-grid so the tank can be anywhere." },
-      { to: "mobile-wifi-base-station", why: "Receives the depth readings and puts them on your phone." },
-      { to: "soil-moisture-drip-irrigation", why: "The best cross-check in the toolkit — don't irrigate from an empty tank." },
-    ],
-    docPath: "docs/01-water-tank-level-sensor.md",
-    firmware: "firmware/water-level/",
-  },
-
-  {
-    n: "2",
-    slug: "soil-moisture-drip-irrigation",
-    title: "Soil Moisture → Drip Irrigation",
-    short: "Soil + irrigation valve",
-    difficulty: "Advanced",
-    buildTime: "3–5 hours",
-    status: "partial",
-    statusLine:
-      "The sensor half is bench-proven and POSTs to Node-RED. The valve half is not built, " +
-      "and how to power a 12 V solenoid from a pack that sags to 9.0 V is an open question. " +
-      "Bench this module on a mains 12 V adapter until that is settled.",
-    accent: "#4A7A3B",
-    accentDark: "#8FBF6F",
-    plain:
-      "A sealed probe buried at root depth measures how much water is actually in your soil. " +
-      "When it dries past the level you set, the system opens a valve and waters your drip line.",
-    why: [
-      "Water only when the crop actually needs it — no guessing",
-      "Save water by not over-irrigating",
-      "Keep soil moisture consistent, which plants prefer to feast-and-famine",
-      "Spot fertiliser and salt build-up before it hurts yield — that's the EC reading, free",
-    ],
-    choice: {
-      title: "Why this probe and not the $3 capacitive one",
-      body:
-        "Nearly every beginner tutorial uses a capacitive v1.2 board on an analog pin. The deciding " +
-        "argument is what you get back. A capacitive sensor hands you an arbitrary number with no " +
-        "physical meaning, and the only way to give it meaning is to calibrate against your own soil — " +
-        "then recalibrate when the exposed traces corrode, which they will, because you buried bare " +
-        "copper in wet dirt. <b>The number degrades and nothing tells you.</b> For a toolkit meant to " +
-        "be handed to someone else and left in a field, a sealed probe reporting real percent is worth " +
-        "the money — and it means your threshold is a number a person can reason about.",
-      table: {
-        head: ["", "Capacitive v1.2", "THC-S over RS485 — this module"],
-        rows: [
-          ["What you get back", "An arbitrary number, say “512”", "Calibrated %RH, plus °C and EC"],
-          ["Meaning", "None until you calibrate, per soil type", "Real units out of the box"],
-          ["Buried for a season", "Exposed traces corrode; readings drift", "Sealed stainless probe, built for soil"],
-          ["Cable run to the field", "Analog over long wire picks up noise", "RS485 is a differential pair, designed for it"],
-          ["On an ESP8266", "One ADC pin, 0–1 V, needs a divider", "Two GPIO pins, no analog at all"],
-          ["Cost", "Cheaper", "More"],
-        ],
-      },
-    },
-    parts: ["esp8266", "thcs", "hw0519", "solenoid", "relay", "diode", "jumpers", "breadboard", "usbcable", "fittings", "box"],
-    steps: [
-      {
-        title: "Prove the sensor from a laptop first",
-        proven: true,
-        body: [
-          "Before the ESP8266, the relay or the valve exist. One thing at a time is the whole trick to bringing hardware up — and this probe needs no converter, so it is the easiest thing in the toolkit to prove.",
-          "Wire the probe straight to an FT232 USB-RS485 adapter and power it off your pack. In open air, moisture and EC read <b>0</b> and that is correct — air has no water in it. Squeeze the probe in a damp hand and moisture climbs within seconds.",
-        ],
-        code: { lang: "bash", text: "bun tools/poll-soil.ts        # live readings, every 1 s" },
-        gotchas: [
-          { level: "warn", text: "<b>Don't use <code>mbpoll</code> with the cheap FT232 adapter.</b> It reports <code>Invalid CRC</code> on every single frame while the sensor is perfectly fine — the adapter echoes your own transmitted bytes back and mbpoll reads and writes on one file descriptor, so it chokes on its own echo. This cost us an afternoon." },
-          { level: "note", text: "The <i>type</i> of error tells you the baud rate. Wrong baud gives you <b>timeouts</b> — it didn't understand you, so it stayed quiet. Right baud gives you <b>CRC errors</b> — it answered and the bytes got mangled. So CRC errors mean you're on the right baud. Don't go hunting it." },
-        ],
-      },
-      {
-        title: "Wire the ESP8266",
-        proven: true,
-        body: ["Four wires out of the probe, four between the RS485 module and the ESP8266."],
-        gotchas: [
-          { level: "danger", text: "<b>The A/B colours are the opposite of Module 1.</b> On the water probe blue is A and yellow is B. On this one <b>yellow is A and blue is B</b>. If you build this straight after the tank sensor you will get it wrong from muscle memory. Swapping them is harmless — if you get nothing back, swap and retry before suspecting anything else." },
-          { level: "note", text: "Why D7/D1 when Module 1 uses D5/D6? So the two never collide. Wire it this way whether or not you build Module 1 — then if you later put both sensors on one ESP8266 they simply coexist. It costs nothing to do it this way from the start." },
-        ],
-      },
-      {
-        title: "Load the code",
-        proven: false,
-        body: [
-          "<code>firmware/soil-moisture/</code> is not written yet. Until it is, the bench sketch in <code>docs/bench/01-bench-soil-sensor-rs485.md</code> reads the probe on the ESP8266 and prints to serial — that is the sensor half working.",
-          "It will follow the same shape as the water node: copy <code>config.example.h</code> to <code>config.h</code>, edit that, never touch the sketch.",
-        ],
-        gotchas: [
-          { level: "warn", text: "<b>Temperature is signed.</b> <code>0xFF9B</code> is −10.1 °C, not 65435. Parse it into an <code>int16_t</code> or your first frosty morning produces nonsense." },
-          { level: "warn", text: "<b>The manual has a typo.</b> Its register table says function code <code>0x30</code>. There is no such function code — it's <code>0x03</code>. If you get <code>modbus exception 0x01</code> (illegal function), that is what happened." },
-        ],
-      },
-      {
-        title: "Choose your two thresholds",
-        proven: true,
-        body: [
-          "You need <b>two</b> numbers, not one: open below <code>DRY_THRESHOLD</code> (say 30%), close above <code>WET_THRESHOLD</code> (say 45%).",
-          "To pick them, water your bed the way you normally would and watch what the probe reads when the soil is how you like it — that is roughly your wet threshold. Then watch over the following days and note where the plants start to look thirsty. That is roughly your dry one.",
-        ],
-        gotchas: [
-          { level: "warn", text: "<b>Leave at least 10 percentage points between them.</b> With a single threshold the valve opens, the soil creeps past it, the valve shuts, the soil dips, the valve opens — on and off every few seconds all day. That chatter wears out a mechanical valve and empties your tank in dribs." },
-          { level: "note", text: "Sandy soil and clay hold water completely differently, and so do different crops. Use the probe in the actual bed you'll irrigate, not a test pot." },
-        ],
-      },
-      {
-        title: "Wire the relay and valve",
-        proven: false,
-        body: [
-          "The valve goes on the relay's <b>switched</b> side, never the logic side. Use the <b>NO</b> (normally open) contact so that relay unpowered = valve unpowered = valve shut.",
-        ],
-        code: {
-          lang: "text",
-          text:
-            "  12V +  ────────────────► valve terminal 1\n" +
-            "  valve terminal 2 ──────► relay COM\n" +
-            "  relay NO ──────────────► 12V −\n" +
-            "\n" +
-            "  1N5819 across the valve's two terminals, stripe (cathode) to the + side",
-        },
-        gotchas: [
-          { level: "danger", text: "<b>VBUS, not VIN.</b> On the NodeMCU v3, <code>VIN</code> is the regulator's <i>input</i> and floats when the board is powered over USB — it reads a plausible ~3.1 V open-circuit and collapses the moment anything draws from it. <code>VBUS</code> is the pin that actually carries USB 5 V. We lost an hour to this." },
-          { level: "danger", text: "<b>The diode is not optional.</b> A solenoid is a coil of wire; cutting its power throws a large reverse spike back down the wires — enough to weld relay contacts over time and enough to reset the ESP8266 next to it. The symptom of leaving it out is maddening: the ESP randomly reboots, but only when the valve closes." },
-          { level: "note", text: "The coil is non-polar; the diode and the supply are not. Pick either coil lead as “+”, run pack+ to it, and put the diode band on that same leg. Reversed, the diode forward-biases the instant the valve powers and shorts the pack." },
-        ],
-      },
-      {
-        title: "Build the safety cutoff before you leave it alone",
-        proven: false,
-        body: [
-          "This is the step people skip and then regret. If the probe fails, or gets pulled out of the ground, or the water never reaches it (blocked dripper, empty tank, kinked line), then moisture never rises, the threshold never trips, <b>and the valve stays open forever</b>. Nothing in the logic above stops it.",
-          "So the firmware must enforce, independent of any reading: a <b>maximum run time</b> (a little more than one honest watering); a <b>cooldown</b> after a cutoff, reported loudly, because something is wrong and a human needs to look; and <b>fail closed on a bad read</b> — an unknown moisture is a reason to stop watering, not to keep going.",
-        ],
-        gotchas: [
-          { level: "danger", text: "This is the only module in the toolkit that <b>acts</b> rather than just reads. Everything else fails by telling you nothing. This one fails by flooding a field." },
-          { level: "note", text: "If you've built Module 1, the base station already knows your water level. Don't irrigate from an empty tank — running a pump dry can destroy it. That cross-check is the best argument for building both." },
-        ],
-      },
-      {
-        title: "Test with water, on the bench, before it touches a field",
-        proven: false,
-        body: [
-          "Put the probe in dry soil and confirm the valve <b>opens</b>. Pour water in and confirm it <b>closes</b> past the wet threshold. <b>Pull the sensor wire out mid-cycle</b> and confirm the valve closes rather than sticking open — if it doesn't, the safety cutoff isn't done. Then let it hit the max run time with the probe in air and confirm it cuts out and complains. Yes, that means standing there for the full timeout. Do it once.",
-        ],
-      },
-      {
-        title: "Install in the field",
-        proven: false,
-        body: [
-          "Bury the probe at <b>root depth</b> — the depth the roots actually drink from, not just under the surface. Too shallow and you water on the strength of a dry crust while the roots sit soaked. Pack soil firmly around it: an air gap around the tines reads dry forever, and dry forever means the valve never closes.",
-          "<b>Don't put the probe next to a dripper.</b> You'll measure the dripper, not the bed, and it'll shut off long before the rest of the row has had a drink. Put it between emitters, where an average plant lives.",
-        ],
-      },
-    ],
-    faults: [
-      { symptom: "No reading at all", cause: "A and B swapped", fix: "Swap the yellow and blue wires — note these are opposite to Module 1." },
-      { symptom: "No reading at all", cause: "Wrong baud", fix: "This probe is 4800. Module 1's is 9600. Don't copy the number across." },
-      { symptom: "Invalid CRC on every frame with mbpoll", cause: "Adapter echo, not a fault", fix: "Use bun tools/poll-soil.ts. The sensor is fine." },
-      { symptom: "modbus exception 0x01", cause: "Used 0x30 from the manual", fix: "The manual has a typo. The function code is 0x03." },
-      { symptom: "Temperature reads ~65000", cause: "Parsed as unsigned", fix: "Cast to int16_t. 0xFF9B = −10.1 °C." },
-      { symptom: "Moisture always 0 and the probe IS buried", cause: "Air gap around the tines", fix: "Pack the soil firmly against the probe." },
-      { symptom: "Relay clicks but the valve doesn't move", cause: "Not enough volts at the coil under load", fix: "Meter across the valve while the relay is on. A sagging pack meters fine at rest." },
-      { symptom: "Relay doesn't click at all", cause: "Powered from VIN", fix: "Use VBUS. VIN floats when the board is on USB." },
-      { symptom: "ESP reboots when the valve closes", cause: "Missing flyback diode", fix: "Fit the 1N5819 across the valve terminals, stripe to +." },
-      { symptom: "Valve chatters on and off", cause: "Thresholds too close", fix: "Leave ≥10 points between dry and wet." },
-      { symptom: "Valve never closes", cause: "Water isn't reaching the probe", fix: "Blocked dripper, empty tank, kinked line. Your max run time should have caught this — if it didn't, fix that first." },
-      { symptom: "Valve opens on a full battery, not a flat one", cause: "Solenoid under-volted", fix: "See the open question on valve power." },
-      { symptom: "Valve energised, nothing flows", cause: "Below the valve's minimum pressure differential", fix: "A pilot valve needs ~0.2 bar. Check the head above it; if marginal, spec a direct-acting “0 bar” valve." },
-    ],
-    connects: [
-      { to: "water-tank-level-sensor", why: "Know how much water you have before this module spends it." },
-      { to: "iot-solar-powerbank", why: "Powers the sensor half directly — the valve is a separate, open question." },
-      { to: "mobile-wifi-base-station", why: "Receives soil readings and valve activity, and can command the valve." },
-    ],
-    docPath: "docs/02-soil-moisture-drip-irrigation.md",
-    firmware: "firmware/farm-node/",
-  },
-
-  {
-    n: "3",
-    slug: "iot-solar-powerbank",
-    title: "IoT Solar Powerbank",
-    short: "Solar power",
+    slug: "solar-power-pack",
+    title: "Solar Power Pack",
+    short: "Power",
     difficulty: "Medium",
     buildTime: "3–4 hours",
     status: "partial",
     statusLine:
-      "The 3S2P pack build is in progress; the electrical design and energy budget are settled and " +
-      "documented. It powers everything else, so nothing gets power-tested until it's finished.",
+      "A 20 W panel, an MPPT charger and a 3S2P lithium pack behind a BMS, handing 12 V to " +
+      "everything else on the farm. The electrical design, the cell chemistry and the full " +
+      "energy budget are settled and documented here.",
     accent: "#C77C1E",
     accentDark: "#E8A94A",
     plain:
-      "A 20 W solar panel charging six 18650 cells, keeping your sensors running day and night " +
-      "where there is no mains power.",
+      "A 20 W solar panel charges six 18650 cells through an MPPT controller and a protection " +
+      "board. The pack hands out a steady 12 V to every other module.",
     why: [
       "Run sensors anywhere on the farm — no power outlet needed",
       "Free to run once it is built",
-      "One powerbank can carry several sleeping nodes at once",
+      "One pack can carry several sleeping nodes at once",
       "Sensors that sleep are almost free: ~5.5 Wh/day against a 50–60 Wh/day panel",
     ],
+    diagram: {
+      src: "wiring-diagram-module-1-power.jpg",
+      alt:
+        "Wiring diagram: a 20 W solar panel feeds a CN3722 MPPT charger module, which charges six " +
+        "18650 lithium cells arranged 3S2P through a 3S 40 A BMS. A screw terminal block takes 12 V " +
+        "off the BMS to power the other modules. Parallel wiring is purple, series wiring yellow, " +
+        "BMS wiring red.",
+      caption:
+        "Panel → MPPT → BMS → pack, and a terminal block where the other three modules tap 12 V. " +
+        "The purple links are the parallel pairs, the yellow are the series joins, and the red are " +
+        "the BMS balance taps — get those three colours right and the pack is right.",
+    },
     choice: {
       title: "Why 3 cells in series and not 4",
       body:
@@ -826,7 +551,7 @@ export const MODULES: Module[] = [
         ],
       },
     },
-    parts: ["cells", "panel", "mppt", "bms", "buck", "holder", "fuses", "enclosure"],
+    parts: ["panel", "mppt", "cells", "bms", "holder", "buck", "fuses", "terminal", "enclosure"],
     steps: [
       {
         title: "Test every cell before it goes in",
@@ -842,7 +567,8 @@ export const MODULES: Module[] = [
         title: "Arrange the cells 3S2P and fit the BMS",
         proven: true,
         body: [
-          "Three cells in series makes ~11 V nominal (12.6 V full); two of those chains in parallel doubles the capacity. Follow the BMS markings for B+, B− and the balance taps — the taps read ascending: 0 → 4.2 → 8.4 → 12.6 V.",
+          "Three cells in series makes ~11 V nominal (12.6 V full); two of those chains in parallel doubles the capacity. In the picture above the <b>purple</b> links are the parallel pairs and the <b>yellow</b> are the series joins.",
+          "Follow the BMS markings for B+, B− and the balance taps — the taps read ascending: 0 → 4.2 → 8.4 → 12.6 V.",
         ],
         gotchas: [
           { level: "danger", text: "<b>Every load taps pack+ / P−, never B−.</b> Tapping B− routes discharge around the BMS protection FETs and you lose over-discharge and short-circuit protection <i>silently</i>." },
@@ -861,13 +587,15 @@ export const MODULES: Module[] = [
         ],
       },
       {
-        title: "Set the buck converter and fuse each leg",
+        title: "Fuse each leg out of the terminal block",
         proven: false,
         body: [
-          "Feed the buck from the protected side of the BMS and adjust its output to exactly 5 V with a meter on it. Put a fuse between the pack and each load — 3 A is a sensible start for the sensor side, and the phone gets its own 2 A fuse so a chafed charging cable can't take your sensors down with it.",
+          "The terminal block on the right of the diagram is where Modules 2, 3 and 4 tap their power. Put a fuse between the pack and <i>each</i> load rather than one big fuse on the pack: 3 A is a sensible start for a sensor node, and the phone charger gets its own 2 A so a chafed USB cable cannot take your sensors down with it.",
+          "If you are charging the base-station phone from this pack, feed the 5 V/3 A buck from the protected side of the BMS and set it to <b>5.15–5.2 V</b> with a meter on it.",
         ],
         gotchas: [
-          { level: "warn", text: "If this converter will charge a phone: set <b>5.15–5.2 V</b> (never above 5.25 V) to cover cable losses at 2 A, use a proper 5 V/3 A synchronous module rather than a tiny Mini360, and <b>short USB D+ to D−</b> — otherwise the phone thinks it is plugged into a computer, limits itself to 500 mA, and the failure looks exactly like a solar problem." },
+          { level: "warn", text: "<b>Short USB D+ to D−</b> on any socket that charges a phone — otherwise the phone decides it is plugged into a computer, limits itself to 500 mA, and the failure looks exactly like a solar problem." },
+          { level: "note", text: "Module 2 and Module 3 each do their own conversion from what this block gives them — Module 2 bucks 12 V down to 5 V and boosts a second rail up to 18 V; Module 3 runs on its own small pack entirely. This block only has to be a clean 12 V." },
         ],
       },
       {
@@ -906,24 +634,401 @@ export const MODULES: Module[] = [
       { symptom: "Enclosure gets very hot inside", cause: "No ventilation", fix: "Vent holes on the shaded side, meshed to keep bugs out." },
     ],
     connects: [
-      { to: "water-tank-level-sensor", why: "Powers the tank node so the tank can be anywhere." },
-      { to: "soil-moisture-drip-irrigation", why: "Powers the probe directly — the pack's 9.0–12.6 V sits inside its 4.5–30 V input." },
+      { to: "water-tank-and-valve", why: "Hands it the 12 V that runs the node, the probe's boost rail and the valve." },
+      { to: "soil-moisture-sensor", why: "Optional — the soil node carries its own small pack so it can sit far from here." },
       { to: "mobile-wifi-base-station", why: "Can charge the phone — in bursts, never continuously. Check the energy budget first." },
     ],
     docPath: "docs/03-iot-solar-powerbank.md",
   },
 
+  /* ─────────────────────────── 2 · WATER + VALVE ────────────────────────── */
+  {
+    n: "2",
+    slug: "water-tank-and-valve",
+    title: "Water Tank Level & Valve",
+    short: "Water + valve",
+    difficulty: "Advanced",
+    buildTime: "3–5 hours",
+    status: "partial",
+    statusLine:
+      "The level-sensing half is bench-proven end to end — comms, register map and ruler " +
+      "calibration all confirmed, reading through to Node-RED. The valve half is wired to the " +
+      "same node, and how to drive a 12 V solenoid off a pack that sags to 9.0 V is the one " +
+      "measurement still outstanding.",
+    accent: "#2B6E7A",
+    accentDark: "#5FB3C4",
+    plain:
+      "A sealed probe on the tank floor feels the weight of the water above it, and a solenoid " +
+      "valve on the outlet lets the system open and shut the irrigation line.",
+    why: [
+      "Know the tank is getting low <em>before</em> you run out",
+      "Open and shut the irrigation line from anywhere, or on a schedule",
+      "Keep a record of water use across days and weeks",
+      "Never irrigate from an empty tank — the level and the valve are on the same node",
+    ],
+    diagram: {
+      src: "wiring-diagram-module-2-water.jpg",
+      alt:
+        "Wiring diagram: 12 V comes in on a terminal block and splits two ways — into an MT3608 " +
+        "boost set to 18 V for the QDY30A hydrostatic water level probe, and into a Mini360 buck " +
+        "set to 5 V for the ESP8266 NodeMCU and an RS485-to-TTL module. The probe's four wires go " +
+        "to the boost and the RS485 board; the RS485 board goes to the ESP8266. A 5 V relay driven " +
+        "from the ESP switches a normally-closed 12 V solenoid valve on the tank outlet.",
+      caption:
+        "One 12 V feed, two rails: 18 V for the probe and 5 V for the logic. The probe's red wire " +
+        "is the only thing that ever sees 18 V. The valve hangs off the relay's isolated switched " +
+        "contacts, so its current never touches the ESP8266.",
+    },
+    choice: {
+      title: "Why a pressure probe and not an ultrasonic one",
+      body:
+        "Nearly every beginner tutorial puts an ultrasonic sensor on the tank lid and bounces sound " +
+        "off the water. It is cheaper, and for a real farm tank it is the wrong tool — this module " +
+        "used to describe that design and we changed it deliberately. A tank is an enclosed cylinder " +
+        "full of reflective surfaces with a moving surface on top: the worst possible case for an echo. " +
+        "A pressure probe ignores every one of those problems because it does not look at the water. " +
+        "It sits underneath it.",
+      table: {
+        head: ["", "Ultrasonic, from the top", "Pressure probe — this module"],
+        rows: [
+          ["How it measures", "Times a sound echo off the surface", "Feels the weight of water above it"],
+          ["Tank walls", "Sound bounces off them — false readings", "Doesn't care"],
+          ["Ripples, foam, debris", "Scatter the echo", "Doesn't care"],
+          ["Condensation on the face", "Blinds it", "Lives underwater anyway"],
+          ["Mounting", "Needs clear line of sight straight down", "Just drop it in"],
+          ["Cost", "Cheaper", "More"],
+          ["Power", "Runs off the board", "Needs 12–36 V — hence the boost converter"],
+        ],
+      },
+    },
+    parts: ["esp8266", "qdy30a", "hw0519", "mt3608w", "mini360", "relay", "solenoid", "diode", "jumpers", "usbcable", "fittings", "box"],
+    steps: [
+      {
+        title: "Set both converters before anything else is connected",
+        proven: true,
+        body: [
+          "This is the one step where you can actually destroy something. Both modules' trimmers ship at a random setting, and the boost feeds an 18 V rail.",
+          "Connect 12 V to <b>IN+ / IN−</b> with nothing on the output. Put a multimeter across <b>OUT+ / OUT−</b>. Turn the MT3608's screw until it reads a steady <b>18.0 V</b>, and the Mini360's until it reads <b>5.0 V</b>. Power down. <i>Now</i> connect the probe and the ESP8266.",
+        ],
+        gotchas: [
+          {
+            level: "warn",
+            text:
+              "The trimmer feels like it does nothing. It is a 25-turn part with no end stops, so it spins " +
+              "freely while the wiper sits parked. Pick a direction and turn ~30 full turns slowly, watching " +
+              "the meter, not the screw. It eventually climbs.",
+          },
+          { level: "danger", text: "Label the two converters the moment you set them. They look identical in a box, and putting 18 V where 5 V belongs destroys the ESP8266 and the RS485 board together." },
+        ],
+      },
+      {
+        title: "Wire it up",
+        proven: true,
+        body: [
+          "Four wires out of the probe, four wires between the RS485 board and the ESP8266, and three to the relay. The tables below are generated from the same pin data as the wiring cheatsheet, so they cannot drift apart.",
+        ],
+        gotchas: [
+          { level: "danger", text: "The 18 V goes to the probe's red wire and <b>nowhere else</b>. The MAX485 and the ESP8266 are 3.3 V parts — 18 V destroys both. Trace the wire with your finger before switching on." },
+          { level: "warn", text: "<b>One ground, not two.</b> The probe's green wire, the boost OUT−, the buck OUT−, the MAX485 GND and the ESP GND must all be one rail. The probe runs on 18 V and the ESP on 3.3 V — two supplies, one shared return. Miss this and you get failures that look exactly like a broken sensor." },
+          { level: "note", text: "The TXD and RXD LEDs are a free logic analyser. TXD flashes when the ESP asks; RXD flashes when the probe answers. TXD only means the probe isn't replying — swap blue and yellow before suspecting anything else." },
+        ],
+      },
+      {
+        title: "Load the code",
+        proven: true,
+        body: [
+          "The firmware is <code>firmware/water-level/</code>. Install the Arduino IDE, add <code>esp8266</code> in Boards Manager, and select <b>NodeMCU 1.0 (ESP-12E)</b>. There are no libraries to install.",
+          "Copy <code>config.example.h</code> to <code>config.h</code> and edit that — never the sketch itself. Start with <code>BENCH_MODE 1</code> so it prints over serial and skips WiFi entirely: bring the sensor up before WiFi joins the list of things that can be broken.",
+        ],
+        code: {
+          lang: "bash",
+          text:
+            "# always compile --upload. A bare `upload` flashes a stale .bin\n" +
+            "arduino-cli compile --upload \\\n" +
+            "  --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/water-level",
+        },
+        gotchas: [
+          { level: "warn", text: "<b>Note the baud rate.</b> This probe is 9600. The soil probe in Module 3 is 4800. Same wiring, different speed — don't carry the number across." },
+          { level: "note", text: "Reads are safe; blind writes are not. Reading a register cannot damage the probe. Writing one you haven't confirmed can land on its address or baud rate and cost you the ability to talk to it at all." },
+        ],
+      },
+      {
+        title: "Zero it",
+        proven: true,
+        body: [
+          "Read the probe dry, sitting in air. It will not read zero — ours read about <b>26</b>, which is 26 mm of water that does not exist. That is normal and within spec.",
+          "Write that number down. Your depth is <code>reading − dry_reading</code>. Do this once at install; if readings drift over months, do it again.",
+        ],
+      },
+      {
+        title: "Check it actually moves",
+        proven: true,
+        body: [
+          "Lower the probe into a bucket. The number should climb clearly, hold steady when it stops moving, and fall back when you lift it out. If it does not respond to depth, stop — nothing after this will work.",
+        ],
+        gotchas: [
+          { level: "note", text: "Don't try to calibrate better than ±25 mm. That is the manufacturer's spec (0.5% of 5 m) and it is far better than irrigation needs. We tried a bucket and a ruler and learned that a 90 mm bucket cannot measure an instrument whose own error bar is 25 mm." },
+        ],
+      },
+      {
+        title: "Wire the relay and the valve",
+        proven: false,
+        body: [
+          "The valve goes on the relay's <b>switched</b> side, never the logic side. Use the <b>NO</b> (normally open) contact so that relay unpowered = valve unpowered = valve shut.",
+        ],
+        code: {
+          lang: "text",
+          text:
+            "  12V +  ────────────────► valve terminal 1\n" +
+            "  valve terminal 2 ──────► relay COM\n" +
+            "  relay NO ──────────────► 12V −\n" +
+            "\n" +
+            "  1N5819 across the valve's two terminals, stripe (cathode) to the + side",
+        },
+        gotchas: [
+          { level: "danger", text: "<b>The diode is not optional.</b> A solenoid is a coil of wire; cutting its power throws a large reverse spike back down the wires — enough to weld relay contacts over time and enough to reset the ESP8266 next to it. The symptom of leaving it out is maddening: the ESP randomly reboots, but only when the valve closes." },
+          { level: "danger", text: "<b>VBUS, not VIN.</b> If you power the relay module off the ESP8266 board while it is on USB, use <code>VBUS</code>. On the NodeMCU v3 <code>VIN</code> is the regulator's <i>input</i> and floats — it reads a plausible ~3.1 V open-circuit and collapses the moment anything draws from it. We lost an hour to this." },
+          { level: "note", text: "The coil is non-polar; the diode and the supply are not. Pick either coil lead as “+”, run 12 V+ to it, and put the diode band on that same leg. Reversed, the diode forward-biases the instant the valve powers and shorts the pack." },
+        ],
+      },
+      {
+        title: "Build the safety cutoff before you leave it alone",
+        proven: true,
+        body: [
+          "This is the step people skip and then regret. If a command is lost, or the link drops while the valve is open, <b>the valve stays open</b> — and a failed poll deliberately holds the last state, so an open valve plus a dead hotspot is an open valve forever. Nothing upstream can help, because nothing upstream can reach it.",
+          "So the node enforces its own <b>dead-man timer</b>, independent of any command: <code>VALVE_MAX_OPEN_S</code> shuts the valve after a maximum run time whatever the network says. It ships at <b>1800 s</b> and defaults to <i>on</i>, so a farmer opts out of the guard rather than into it. The server-side expiry mirrors it at 30 minutes.",
+        ],
+        gotchas: [
+          { level: "danger", text: "This is the only module in the toolkit that <b>acts</b> rather than just reads. Everything else fails by telling you nothing. This one fails by emptying a tank into a field." },
+          { level: "note", text: "The timer that matters is the one running on the node, because it is the only one still running when the node is alone. A cloud-side expiry cannot help if the link is what broke." },
+        ],
+      },
+      {
+        title: "Install on your tank",
+        proven: true,
+        body: [
+          "Lower the probe to the <b>bottom</b> and let it sit flat. Fit the valve into the outlet line with the flow arrow pointing the way the water goes. Protect the ESP8266, RS485 board and both converters inside the waterproof container. Measure your tank's water depth when full, once — that is what turns millimetres into “how full is my tank”.",
+        ],
+        gotchas: [
+          { level: "warn", text: "Keep the loose end of the probe cable <b>dry and open to the air</b>. There is a tiny breather tube running through it, and the probe compares against outside air pressure through it. Seal it, kink it, or let it sit in water and your readings wander with the weather." },
+          { level: "warn", text: "Check the valve's <b>minimum pressure differential</b> against the head you actually have. A pilot/servo valve typically needs ~0.2 bar — about two metres of head — and on a low gravity tank it will click and pass nothing. If your head is marginal, spec a direct-acting “0 bar” valve." },
+        ],
+      },
+      {
+        title: "Point it at the base station",
+        proven: true,
+        body: [
+          "Set <code>BENCH_MODE 0</code>, put your hotspot's name and password in <code>config.h</code>, and leave <code>POST_HOST</code> <b>empty</b>. The phone running the hotspot is the node's gateway by definition, so the node works out the address itself.",
+          "Test the endpoint before you ever blame the firmware:",
+        ],
+        code: {
+          lang: "bash",
+          text:
+            "curl -X POST http://<phone-ip>:1880/water \\\n" +
+            "  -H 'Content-Type: application/json' \\\n" +
+            "  -d '{\"node\":\"test\",\"ok\":true,\"depth_mm\":500}'",
+        },
+        gotchas: [
+          { level: "danger", text: "<b>Never hardcode the phone's IP.</b> Android randomises the hotspot subnet — ours came up on <code>10.215.63.55</code>, not the <code>192.168.43.1</code> every guide quotes — and it can reshuffle on any restart. A hardcoded IP goes stale <i>silently</i>: the node keeps reading perfectly and publishes into the void, and the only symptom is absence." },
+          { level: "note", text: "The valve command comes back the same way. The node polls <code>GET /valve</code> once a second rather than running a server, because the phone can change the node's IP but the node always knows its gateway." },
+        ],
+      },
+    ],
+    faults: [
+      { symptom: "No reading at all", cause: "A and B swapped", fix: "Swap the blue and yellow wires. This is common — try it before anything else." },
+      { symptom: "No reading, probe cold", cause: "Not enough voltage", fix: "Meter red to green: it must read 18 V, not the raw 12 V." },
+      { symptom: "Boost converter reads 0 V", cause: "Trimmer parked mid-range", fix: "It is 25-turn with no end stops. Keep turning, watch the meter." },
+      { symptom: "Readings 10× off", cause: "Wrong scaling", fix: "1 count = 1 mm. Check you are not treating it as centimetres." },
+      { symptom: "Reading is about 65000", cause: "Read as unsigned", fix: "It is signed int16. Readings slightly below zero are real and legitimate." },
+      { symptom: "Reading never changes", cause: "Wrong register", fix: "It is 0x0004." },
+      { symptom: "Readings fail randomly", cause: "No common ground", fix: "Probe green, boost OUT−, buck OUT−, MAX485 GND and ESP GND must be one rail." },
+      { symptom: "Drifts with the weather", cause: "Breather tube blocked or wet", fix: "Keep the loose cable end dry and open to air." },
+      { symptom: "Reads, then silent, then reads", cause: "A wire, not the firmware", fix: "Wiggle-test each one while the node polls, prime suspect green/ground. Do this before soldering anything into a box." },
+      { symptom: "Relay clicks but the valve doesn't move", cause: "Not enough volts at the coil under load", fix: "Meter across the valve while the relay is on. A sagging pack meters fine at rest." },
+      { symptom: "Relay doesn't click at all", cause: "Powered from VIN", fix: "Use VBUS. VIN floats when the board is on USB." },
+      { symptom: "ESP reboots when the valve closes", cause: "Missing flyback diode", fix: "Fit the 1N5819 across the valve terminals, stripe to +." },
+      { symptom: "Valve energised, nothing flows", cause: "Below the valve's minimum pressure differential", fix: "A pilot valve needs ~0.2 bar. Check the head above it; if marginal, spec a direct-acting “0 bar” valve." },
+      { symptom: "Valve opens on a full battery, not a flat one", cause: "Solenoid under-volted", fix: "Measure the coil current and check the pack voltage under that load, not at rest." },
+    ],
+    connects: [
+      { to: "solar-power-pack", why: "Supplies the 12 V this whole module runs on." },
+      { to: "soil-moisture-sensor", why: "Soil moisture is what decides when this valve should open." },
+      { to: "mobile-wifi-base-station", why: "Receives the depth readings and sends the valve command back." },
+    ],
+    docPath: "docs/01-water-tank-level-sensor.md",
+    firmware: "firmware/water-level/",
+  },
+
+  /* ───────────────────────────── 3 · SOIL ───────────────────────────────── */
+  {
+    n: "3",
+    slug: "soil-moisture-sensor",
+    title: "Soil Moisture Sensor",
+    short: "Soil",
+    difficulty: "Medium",
+    buildTime: "2–3 hours",
+    status: "proven",
+    statusLine:
+      "Bench-proven on its own node: the probe reads moisture, temperature and EC, the node sleeps " +
+      "between readings and POSTs to Node-RED on waking. Two of these are built and running.",
+    accent: "#4A7A3B",
+    accentDark: "#8FBF6F",
+    plain:
+      "A sealed probe buried at root depth measures how much water is actually in your soil, on a " +
+      "node small enough to carry its own battery and sit anywhere in the field.",
+    why: [
+      "Water only when the crop actually needs it — no guessing",
+      "Save water by not over-irrigating",
+      "Keep soil moisture consistent, which plants prefer to feast-and-famine",
+      "Spot fertiliser and salt build-up before it hurts yield — that's the EC reading, free",
+    ],
+    diagram: {
+      src: "wiring-diagram-module-3-soil.jpg",
+      alt:
+        "Wiring diagram: four 18650 lithium cells wired in parallel give about 4 V, feeding an " +
+        "MT3608 boost module stepped up to 5 V. That 5 V powers an ESP8266 NodeMCU and an " +
+        "RS485-to-TTL module. The RS485 module connects to an RS485 soil moisture sensor buried in " +
+        "the ground beside an irrigation line.",
+      caption:
+        "Its own pack, its own boost, its own radio — nothing here depends on Module 1, which is " +
+        "the point. The node can sit in the middle of a bed a hundred metres from the power box, " +
+        "and it sleeps between readings so four cells last a season.",
+    },
+    choice: {
+      title: "Why this probe and not the $3 capacitive one",
+      body:
+        "Nearly every beginner tutorial uses a capacitive v1.2 board on an analog pin. The deciding " +
+        "argument is what you get back. A capacitive sensor hands you an arbitrary number with no " +
+        "physical meaning, and the only way to give it meaning is to calibrate against your own soil — " +
+        "then recalibrate when the exposed traces corrode, which they will, because you buried bare " +
+        "copper in wet dirt. <b>The number degrades and nothing tells you.</b> For a toolkit meant to " +
+        "be handed to someone else and left in a field, a sealed probe reporting real percent is worth " +
+        "the money — and it means your threshold is a number a person can reason about.",
+      table: {
+        head: ["", "Capacitive v1.2", "THC-S over RS485 — this module"],
+        rows: [
+          ["What you get back", "An arbitrary number, say “512”", "Calibrated %RH, plus °C and EC"],
+          ["Meaning", "None until you calibrate, per soil type", "Real units out of the box"],
+          ["Buried for a season", "Exposed traces corrode; readings drift", "Sealed stainless probe, built for soil"],
+          ["Cable run to the field", "Analog over long wire picks up noise", "RS485 is a differential pair, designed for it"],
+          ["On an ESP8266", "One ADC pin, 0–1 V, needs a divider", "Two GPIO pins, no analog at all"],
+          ["Cost", "Cheaper", "More"],
+        ],
+      },
+    },
+    parts: ["esp8266", "thcs", "hw0519", "cells1s4p", "holder1s", "mt3608s", "jumpers", "usbcable", "box"],
+    steps: [
+      {
+        title: "Prove the sensor from a laptop first",
+        proven: true,
+        body: [
+          "Before the ESP8266 or the battery pack exist. One thing at a time is the whole trick to bringing hardware up — and this probe needs no converter of its own, so it is the easiest thing in the toolkit to prove.",
+          "Wire the probe straight to an FT232 USB-RS485 adapter and give it 5 V. In open air, moisture and EC read <b>0</b> and that is correct — air has no water in it. Squeeze the probe in a damp hand and moisture climbs within seconds.",
+        ],
+        code: { lang: "bash", text: "bun tools/poll-soil.ts        # live readings, every 1 s" },
+        gotchas: [
+          { level: "warn", text: "<b>Don't use <code>mbpoll</code> with the cheap FT232 adapter.</b> It reports <code>Invalid CRC</code> on every single frame while the sensor is perfectly fine — the adapter echoes your own transmitted bytes back and mbpoll reads and writes on one file descriptor, so it chokes on its own echo. This cost us an afternoon." },
+          { level: "note", text: "The <i>type</i> of error tells you the baud rate. Wrong baud gives you <b>timeouts</b> — it didn't understand you, so it stayed quiet. Right baud gives you <b>CRC errors</b> — it answered and the bytes got mangled. So CRC errors mean you're on the right baud. Don't go hunting it." },
+        ],
+      },
+      {
+        title: "Build the 1S4P pack and set the boost to 5 V",
+        proven: true,
+        body: [
+          "Four 18650s all in parallel — every positive to every positive. That is one cell's voltage (~3.7 V nominal, 4.2 V full) with four times the capacity, and it needs no balancing because parallel cells balance themselves.",
+          "Feed the MT3608 from the pack and set it to a steady <b>5.0 V</b> with nothing on the output, then connect the ESP8266 and the RS485 board.",
+        ],
+        gotchas: [
+          { level: "danger", text: "<b>Match the cells before you join them.</b> In parallel every cell must sit at the same voltage first. Joining a full cell to a flat one dumps the difference through the link as a dead short — that is a fire, not a spark. Charge them individually to within ~0.05 V of each other." },
+          { level: "note", text: "A 1S pack has no series joins and no BMS in this build, which is why it is a beginner-friendly pack — but it also means nothing stops you over-discharging it. Swap the cells out and charge them off the node." },
+        ],
+      },
+      {
+        title: "Wire the ESP8266",
+        proven: true,
+        body: ["Four wires out of the probe, four between the RS485 module and the ESP8266, plus the deep-sleep wake link."],
+        gotchas: [
+          { level: "danger", text: "<b>The A/B colours are the opposite of Module 2.</b> On the water probe blue is A and yellow is B. On this one <b>yellow is A and blue is B</b>. If you build this straight after the tank sensor you will get it wrong from muscle memory. Swapping them is harmless — if you get nothing back, swap and retry before suspecting anything else." },
+          { level: "warn", text: "<b>D0 must be linked to RST</b> for the node to wake itself from deep sleep — and that same link stops the board being flashed. Make it a removable jumper, not solder, or you will be pulling wire off a finished node the first time you change a setting." },
+        ],
+      },
+      {
+        title: "Load the code",
+        proven: true,
+        body: [
+          "The firmware is <code>firmware/soil-node-sleep/</code> — it wakes, reads, POSTs and goes back to sleep, which is what makes four cells last a season. Copy <code>config.example.h</code> to <code>config.h</code> and edit that, never the sketch.",
+          "Give each node its own name in <code>config.h</code>. Two nodes publishing under one name is not an error anyone will notice until the data is already wrong.",
+        ],
+        code: {
+          lang: "bash",
+          text:
+            "# remove the D0→RST link first, or the board will not accept a flash\n" +
+            "arduino-cli compile --upload \\\n" +
+            "  --fqbn esp8266:esp8266:nodemcuv2 -p /dev/ttyUSB0 firmware/soil-node-sleep",
+        },
+        gotchas: [
+          { level: "warn", text: "<b>Temperature is signed.</b> <code>0xFF9B</code> is −10.1 °C, not 65435. Parse it into an <code>int16_t</code> or your first frosty morning produces nonsense." },
+          { level: "warn", text: "<b>The manual has a typo.</b> Its register table says function code <code>0x30</code>. There is no such function code — it's <code>0x03</code>. If you get <code>modbus exception 0x01</code> (illegal function), that is what happened." },
+          { level: "note", text: "The flash chip matters for deep sleep. A node that wakes as a zombie — powered, unresponsive, no serial — was traced to the flash chip, not the code. An XMC (0x20) part is bench-proven here." },
+        ],
+      },
+      {
+        title: "Choose your two thresholds",
+        proven: true,
+        body: [
+          "You need <b>two</b> numbers, not one: water below <code>DRY_THRESHOLD</code> (say 30%), stop above <code>WET_THRESHOLD</code> (say 45%). The decision itself lives in Node-RED on the phone, not in this node — this node only reports, and Module 2's valve does the acting.",
+          "To pick them, water your bed the way you normally would and watch what the probe reads when the soil is how you like it — that is roughly your wet threshold. Then watch over the following days and note where the plants start to look thirsty. That is roughly your dry one.",
+        ],
+        gotchas: [
+          { level: "warn", text: "<b>Leave at least 10 percentage points between them.</b> With a single threshold the valve opens, the soil creeps past it, the valve shuts, the soil dips, the valve opens — on and off every few seconds all day. That chatter wears out a mechanical valve and empties your tank in dribs." },
+          { level: "note", text: "Sandy soil and clay hold water completely differently, and so do different crops. Use the probe in the actual bed you'll irrigate, not a test pot." },
+        ],
+      },
+      {
+        title: "Install in the field",
+        proven: true,
+        body: [
+          "Bury the probe at <b>root depth</b> — the depth the roots actually drink from, not just under the surface. Too shallow and you water on the strength of a dry crust while the roots sit soaked. Pack soil firmly around it: an air gap around the tines reads dry forever.",
+          "<b>Don't put the probe next to a dripper.</b> You'll measure the dripper, not the bed, and it'll read wet long before the rest of the row has had a drink. Put it between emitters, where an average plant lives.",
+        ],
+        gotchas: [
+          { level: "note", text: "Because this node carries its own pack, it can go where the crop is rather than where the power is. Two of them in different beds cost little more than one and tell you far more about your field." },
+        ],
+      },
+    ],
+    faults: [
+      { symptom: "No reading at all", cause: "A and B swapped", fix: "Swap the yellow and blue wires — note these are opposite to Module 2." },
+      { symptom: "No reading at all", cause: "Wrong baud", fix: "This probe is 4800. Module 2's is 9600. Don't copy the number across." },
+      { symptom: "Invalid CRC on every frame with mbpoll", cause: "Adapter echo, not a fault", fix: "Use bun tools/poll-soil.ts. The sensor is fine." },
+      { symptom: "modbus exception 0x01", cause: "Used 0x30 from the manual", fix: "The manual has a typo. The function code is 0x03." },
+      { symptom: "Temperature reads ~65000", cause: "Parsed as unsigned", fix: "Cast to int16_t. 0xFF9B = −10.1 °C." },
+      { symptom: "Moisture always 0 and the probe IS buried", cause: "Air gap around the tines", fix: "Pack the soil firmly against the probe." },
+      { symptom: "Board won't accept a flash", cause: "D0 is still linked to RST", fix: "Remove the wake link, flash, put it back." },
+      { symptom: "Node wakes powered but unresponsive", cause: "Flash chip, not the sketch", fix: "Check the chip ID. An XMC (0x20) part is bench-proven for deep sleep here." },
+      { symptom: "Pack goes flat in weeks, not months", cause: "The node isn't actually sleeping", fix: "Confirm the D0→RST link is fitted and the sketch reaches deepSleep. An awake ESP8266 draws ~100× its sleeping current." },
+      { symptom: "Two nodes' readings jump around each other", cause: "Both publishing under one node name", fix: "Give each node its own name in config.h." },
+    ],
+    connects: [
+      { to: "water-tank-and-valve", why: "Its readings are what decide when that valve should open." },
+      { to: "mobile-wifi-base-station", why: "Receives soil readings and holds the irrigation decision." },
+      { to: "solar-power-pack", why: "Optional — this node runs on its own cells so it can sit far from the power box." },
+    ],
+    docPath: "docs/02-soil-moisture-drip-irrigation.md",
+    firmware: "firmware/soil-node-sleep/",
+  },
+
+  /* ───────────────────────────── 4 · PHONE ──────────────────────────────── */
   {
     n: "4",
     slug: "mobile-wifi-base-station",
     title: "Mobile WiFi Base Station",
-    short: "Base station",
+    short: "Phone",
     difficulty: "Beginner",
     buildTime: "1–2 hours",
     status: "proven",
     statusLine:
-      "Done and documented, receiving live readings from Module 1 and pushing them out to a small " +
-      "cloud service. How to power the phone in the field is designed but not yet measured.",
+      "Done and documented: an Android phone running Termux, Node.js and Node-RED, receiving live " +
+      "readings from the field nodes and pushing them out over 4G to a small cloud service.",
     accent: "#43587A",
     accentDark: "#8AA0C8",
     plain:
@@ -935,6 +1040,16 @@ export const MODULES: Module[] = [
       "Uses a phone you probably already own — close to free",
       "No computer needed to see your data",
     ],
+    diagram: {
+      src: "wiring-diagram-module-4-phone.jpg",
+      alt:
+        "An Android phone running a Termux terminal session, captioned: receives all ESP8266 data " +
+        "via WiFi hotspot and sends it to the internet via 4G.",
+      caption:
+        "There is no wiring in this module beyond a USB cable — the connections are network ones. " +
+        "The phone's hotspot is the farm's network, Termux gives it a Linux shell, and Node-RED is " +
+        "what turns arriving JSON into a dashboard and an irrigation decision.",
+    },
     parts: ["phone", "sim", "usbcable"],
     steps: [
       {
@@ -959,7 +1074,7 @@ export const MODULES: Module[] = [
         ],
       },
       {
-        title: "Install Node-RED inside Termux",
+        title: "Install Node.js and Node-RED inside Termux",
         proven: true,
         body: ["Type these one at a time. The first two take a few minutes each."],
         code: {
@@ -1016,7 +1131,7 @@ export const MODULES: Module[] = [
         body: [
           "The phone has 4G, so it can reach the internet — but the internet cannot reach it. Carriers put phones behind <b>CGNAT</b>: your phone shares one public address with thousands of others, so there is no port to forward and no address to type. Everything you read about port-forwarding assumes a home broadband line and does not apply here.",
           "So the phone dials out. Node-RED buffers every reading and POSTs it in batches to a small service you control (<code>server/</code>, ours runs at <code>farm.sunriselabs.io</code>). Nothing on the farm is ever exposed, it works on any carrier with zero configuration, and it survives dropouts because the phone keeps a backlog and re-sends. On a metered SIM it costs about 60 requests a day.",
-          "The same channel carries commands back: because the phone is already POSTing, the server answers each batch with the desired valve state — so you can open and shut the irrigation valve from a dashboard without anything on your farm being reachable from the internet.",
+          "The same channel carries commands back: because the phone is already POSTing, the server answers each batch with the desired valve state — so you can open and shut Module 2's valve from a dashboard without anything on your farm being reachable from the internet.",
         ],
         gotchas: [
           { level: "danger", text: "<b>Do not put the Node-RED editor on the public internet.</b> A tunnel like ngrok gives you a public URL in one command and it is very tempting — but the editor runs arbitrary code and, in this build, opens your irrigation valve. If you expose it, set <code>adminAuth</code> first. A private tunnel like Tailscale avoids the question entirely." },
@@ -1033,9 +1148,9 @@ export const MODULES: Module[] = [
       { symptom: "Mobile data disappearing quickly", cause: "Sending too often", fix: "Batch readings, or send summaries rather than every sample." },
     ],
     connects: [
-      { to: "water-tank-level-sensor", why: "Receives depth readings over WiFi." },
-      { to: "soil-moisture-drip-irrigation", why: "Receives soil readings and can command the valve on the reply to a batch." },
-      { to: "iot-solar-powerbank", why: "Can power the phone — check the energy budget first." },
+      { to: "water-tank-and-valve", why: "Receives depth readings and sends the valve command back on the reply." },
+      { to: "soil-moisture-sensor", why: "Receives soil readings and holds the irrigation decision." },
+      { to: "solar-power-pack", why: "Can power the phone — check the energy budget first." },
     ],
     docPath: "docs/04-mobile-wifi-base-station.md",
   },
@@ -1056,3 +1171,19 @@ export function cost(m: Module): { total: number; unknown: number } {
     unknown: items.filter((p) => p.usd === null).length,
   };
 }
+
+/** The whole-system reference picture, used on the cheatsheet. */
+export const CHEATSHEET_DIAGRAM: Diagram = {
+  src: "wiring-cheatsheet-full.jpg",
+  alt:
+    "The complete toolkit wired as one system: a 20 W solar panel and CN3722 MPPT charger feeding " +
+    "a 3S2P 18650 pack behind a 3S 40 A BMS; a Mini360 buck and MT3608 boost feeding an ESP8266 " +
+    "with an RS485 module, a hydrostatic water level probe in a tank and a 5 V relay switching a " +
+    "12 V solenoid valve on the outlet; an Android phone as the base station; and three " +
+    "independent soil nodes, each with four parallel 18650 cells, a boost module, an ESP8266, an " +
+    "RS485 module and a buried soil moisture sensor.",
+  caption:
+    "Every module in one picture, wired the way the farm actually runs: one power pack, one water " +
+    "node with the valve on it, the phone as the base station, and as many independent soil nodes " +
+    "as you have beds. Tap the picture to open it full size.",
+};

@@ -1,7 +1,7 @@
-import { BUSES, MODULES, POWER, SITE } from "../data.ts";
+import { BUSES, CHEATSHEET_DIAGRAM, MODULES, POWER, SITE } from "../data.ts";
 import {
-  busDiagram,
   busTable,
+  diagramFigure,
   callout,
   code,
   endpointTable,
@@ -27,6 +27,7 @@ const body = `
     on one page. Written to be read on a phone with a probe in your other hand, and to print onto
     two sheets you can tape inside the enclosure lid.</p>
     <nav class="sheet__toc" aria-label="On this page">
+      <a href="#whole">The whole system</a>
       <a href="#pins">Pin budget</a>
       <a href="#buses">The two buses</a>
       <a href="#colours">Wire colours</a>
@@ -38,22 +39,29 @@ const body = `
     </nav>
   </header>
 
+  <section class="sheet__sec" id="whole">
+    <h2>1 · The whole system, in one picture</h2>
+    <p>Every module wired the way the farm actually runs. If you only print one thing, print this.</p>
+    ${diagramFigure(CHEATSHEET_DIAGRAM, "", "figure--full")}
+  </section>
+
   <section class="sheet__sec" id="pins">
-    <h2>1 · The pin budget</h2>
+    <h2>2 · The pin budget</h2>
     <p>A NodeMCU 1.0 gives you five GPIOs that are both free and safe, and a combined node spends
     every one of them. There is no sixth. Plan around this before you design anything.</p>
     ${pinBudgetTable()}
     ${callout(
       "note",
-      "This is why the toolkit standardises which pins each module claims. Wire Module 1 to D5/D6 " +
-        "and Module 2 to D7/D1 <em>whether or not</em> you build the other one — then if you later put " +
-        "both sensors on one board they simply coexist, with no rewiring and no thinking about it.",
+      "This is why the toolkit standardises which pins each module claims. Module 2 takes D5/D6 for " +
+        "the water bus and D2 for the valve relay; Module 3 takes D5/D6 on its own board. If you ever " +
+        "want both probes on one ESP8266, that is the bench build in <code>firmware/bench-both/</code>, " +
+        "which moves the soil bus to D7/D1 so the two never collide.",
     )}
     ${callout(
       "danger",
       "<b>A bus has more than one correct pin assignment, and mixing them up gives you two dead " +
         "buses.</b> Ian's deployed <code>farm-node</code> runs water on D7/D1 — swapped relative to " +
-        "the standalone Module 1 build — because the board was soldered that way on 2026-07-19 and " +
+        "the standalone Module 2 build — because the board was soldered that way on 2026-07-19 and " +
         "the firmware was made to follow the iron. The flashed binary is always authoritative. Every " +
         "pin table below therefore names the <code>.ino</code> it was read out of; wire the one " +
         "marked <em>wire this one</em> unless you are rebuilding our node specifically.",
@@ -61,18 +69,16 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="buses">
-    <h2>2 · The two RS485 buses</h2>
+    <h2>3 · The two RS485 buses</h2>
     <p>Two separate buses, one transceiver each — never one shared bus. Both probes ship as slave
     address 1 and run different bauds, so sharing would require writing address <em>and</em> baud
     registers on sensors we own exactly one of each. A second one-dollar transceiver deletes both
     problems and needs <b>zero register writes</b>.</p>
 
     <h3>${esc(BUSES.water.label)}</h3>
-    ${busDiagram(BUSES.water, "#2B6E7A")}
     ${busTable(BUSES.water)}
 
     <h3>${esc(BUSES.soil.label)}</h3>
-    ${busDiagram(BUSES.soil, "#4A7A3B")}
     ${busTable(BUSES.soil)}
 
     ${callout(
@@ -90,7 +96,7 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="colours">
-    <h2>3 · Wire colours — the trap</h2>
+    <h2>4 · Wire colours — the trap</h2>
     <p>The two probes use the same two colours for A and B, and they mean opposite things. Different
     manufacturers, no standard. This is the single easiest wiring mistake in the whole build, and it
     is most likely to catch you on the day you build the second module from muscle memory.</p>
@@ -121,16 +127,20 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="ground">
-    <h2>4 · Grounding — what must be common, and what must not</h2>
-    <p><b>One ground for the sensing side.</b> These are all the same electrical node:</p>
+    <h2>5 · Grounding — what must be common, and what must not</h2>
+    <p><b>One ground per node, and everything on that node shares it.</b> On Module 2 these are all
+    the same electrical node:</p>
     ${code(
       "text",
-      "probe green (water) ── MT3608 OUT− ── MT3608 IN− ── RS485 #1 GND ── RS485 #2 GND\n" +
-        "      ── ESP GND ── probe black (soil) ── pack P−",
+      "probe green (water) ── MT3608 OUT− ── MT3608 IN− ── Mini360 OUT− ── Mini360 IN−\n" +
+        "      ── RS485 GND ── ESP GND ── pack P−",
     )}
     <p>The water probe runs on the boosted 18&nbsp;V rail while the ESP runs on 3.3&nbsp;V — two
     supplies, one shared return. <b>Random intermittent failures with wiring that “looks right” are
-    usually this.</b></p>
+    usually this.</b> Module 3 has the same rule on a smaller chain: probe black, boost OUT−, boost
+    IN−, RS485 GND and ESP GND are one rail, referenced to its own 1S pack.</p>
+    <p>The two nodes do <em>not</em> share a ground with each other. They are separate boxes joined
+    only by WiFi, which is exactly why a soil probe can sit a hundred metres from the tank.</p>
 
     <p><b>Deliberately not common:</b> when you bench the valve from a separate 12&nbsp;V mains
     adapter, the solenoid draws through the relay's isolated switched contacts. Its current never
@@ -145,7 +155,7 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="power">
-    <h2>5 · Voltages, and what happens if you get them wrong</h2>
+    <h2>6 · Voltages, and what happens if you get them wrong</h2>
     <div class="table-wrap"><table class="wiring">
       <thead><tr><th scope="col">Rail</th><th scope="col">Value</th><th scope="col">Feeds</th><th scope="col">If it's wrong</th></tr></thead>
       <tbody>
@@ -163,7 +173,7 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="net">
-    <h2>6 · Network</h2>
+    <h2>7 · Network</h2>
     ${endpointTable()}
     ${callout(
       "danger",
@@ -180,7 +190,7 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="order">
-    <h2>7 · Bring-up order</h2>
+    <h2>8 · Bring-up order</h2>
     <p>Not arbitrary. A panel has no off switch, and a boost converter set wrong destroys a probe.</p>
     <ol class="numbered">
       <li><b>Cover the panel.</b> Connect the battery through the BMS to the MPPT output, then uncover. Teardown is the reverse — cover and disconnect PV first, then the battery.</li>
@@ -212,7 +222,7 @@ const body = `
   </section>
 
   <section class="sheet__sec" id="faults">
-    <h2>8 · Symptom → cause</h2>
+    <h2>9 · Symptom → cause</h2>
     <p>Every fault table in the toolkit, merged. If something is not working, start here.</p>
     ${faultTable(allFaults)}
   </section>

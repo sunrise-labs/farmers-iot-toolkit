@@ -2,12 +2,14 @@
  * Rendering helpers. Everything here takes data from `data.ts` and returns HTML
  * strings — no template engine, no dependencies.
  *
- * The wiring tables and the wiring SVGs are rendered from the SAME `Bus` object,
- * which is the point: a diagram cannot disagree with the table beside it.
+ * The wiring PICTURES are photographs of the real build, not drawings generated
+ * from this data. We used to generate SVG schematics here; they were harder to
+ * follow than a photo of the actual boards, so they are gone. The tables below
+ * remain generated, and they remain the authority on pins and registers.
  */
 
-import type { Bus, Module, Part, Step } from "./data.ts";
-import { BUSES, ENDPOINTS, MODULES, PARTS, PIN_BUDGET, POWER, STATUS, bom, cost, teachingPins } from "./data.ts";
+import type { Bus, Diagram, Module, Part, Step } from "./data.ts";
+import { BUSES, ENDPOINTS, MODULES, PARTS, PIN_BUDGET, POWER, STATUS, bom, cost } from "./data.ts";
 
 /* ─────────────────────────────────── atoms ───────────────────────────────── */
 
@@ -219,7 +221,7 @@ export function stepList(steps: Step[]): string {
     .map((s, i) => {
       const unproven =
         s.proven === false
-          ? `<p class="step__unproven">This step is the design, not a report — no hardware has confirmed it yet.</p>`
+          ? `<p class="step__unproven">Design guidance — our own build hasn't reached this step yet.</p>`
           : "";
       return `<li class="step${s.proven === false ? " step--unproven" : ""}">
       <div class="step__n" aria-hidden="true">${String(i + 1).padStart(2, "0")}</div>
@@ -235,176 +237,26 @@ export function stepList(steps: Step[]): string {
     .join("")}</ol>`;
 }
 
-/* ──────────────────────────────── SVG diagrams ───────────────────────────── */
+/* ──────────────────────────────── figures ────────────────────────────────── */
+
+/* ──────────────────────────────── wiring photos ──────────────────────────── */
 
 /**
- * The whole-system diagram: how the four modules interact.
+ * A wiring photograph.
  *
- * Deliberately drawn as three zones (field / shed / anywhere) because the
- * interesting property of this system is which arrows cross which boundary —
- * nothing on the farm is reachable from the internet, so every arrow leaving
- * the farm points outward.
+ * Linked to itself so a tap opens the full-size file — these get read on a phone
+ * with a probe in the other hand, and the detail that matters is which pin a wire
+ * lands on. `loading="lazy"` because the picture is never the first thing on a
+ * page, and width/height are set so the layout does not jump while it arrives.
  */
-export function systemDiagram(): string {
-  // Module badges are drawn, not typeset: the circled numerals U+2460.. are not
-  // present in the display face and render as tofu boxes on most devices.
-  const box = (
-    x: number, y: number, w: number, h: number,
-    n: string, title: string, sub: string, accent: string,
-  ) => `
-    <g class="node" transform="translate(${x} ${y})">
-      <rect width="${w}" height="${h}" rx="10" class="node__box" style="--accent:${accent}"/>
-      ${n ? `<circle cx="26" cy="25" r="11" class="node__badge" style="--accent:${accent}"/>
-      <text class="node__n" x="26" y="29.5" text-anchor="middle">${n}</text>` : ""}
-      <text class="node__t" x="${n ? 46 : 14}" y="${n ? 30 : 34}">${esc(title)}</text>
-      <text class="node__s" x="14" y="${n ? 58 : 56}">${esc(sub)}</text>
-    </g>`;
-
-  return `<figure class="figure figure--system">
-  <svg viewBox="0 0 1120 600" role="img" aria-labelledby="sysdiag-t sysdiag-d" class="diagram">
-    <title id="sysdiag-t">How the four modules fit together</title>
-    <desc id="sysdiag-d">The solar powerbank feeds the sensor node and, once built, the base-station
-      phone. The node reads the water and soil probes over two separate RS485 buses and posts
-      readings over WiFi to Node-RED on the phone. The phone pushes batches out over 4G to a small
-      cloud service; nothing on the farm accepts an inbound connection. The valve command travels
-      back as the reply to a batch.</desc>
-
-    <defs>
-      <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0 0 L10 5 L0 10 z" class="arrowhead"/>
-      </marker>
-      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-        <path d="M20 0 L0 0 0 20" fill="none" class="gridline"/>
-      </pattern>
-    </defs>
-
-    <rect width="1120" height="600" fill="url(#grid)" opacity="0.5"/>
-
-    <g class="zone">
-      <rect x="16" y="60" width="484" height="510" rx="14"/>
-      <text x="34" y="88">The field</text>
-    </g>
-    <g class="zone">
-      <rect x="560" y="60" width="270" height="510" rx="14"/>
-      <text x="578" y="88">The shed</text>
-    </g>
-    <g class="zone zone--out">
-      <rect x="872" y="60" width="232" height="510" rx="14"/>
-      <text x="890" y="88">Anywhere</text>
-    </g>
-
-    <line x1="852" y1="60" x2="852" y2="570" class="boundary"/>
-    <text x="852" y="46" class="boundary__label" text-anchor="middle">no inbound connection exists</text>
-
-    ${box(44, 108, 196, 88, "3", "Solar powerbank", "20 W → 3S2P · ~70 Wh", "#C77C1E")}
-    ${box(44, 254, 196, 88, "1", "Water probe", "QDY30A · 9600 8N1", "#2B6E7A")}
-    ${box(44, 392, 196, 88, "2", "Soil probe", "THC-S · 4800 8N1", "#4A7A3B")}
-    ${box(296, 254, 180, 100, "", "ESP8266 node", "2 buses · 1 radio", "#8A8175")}
-    ${box(296, 412, 180, 78, "2", "Relay → valve", "NC = fails shut", "#4A7A3B")}
-    ${box(588, 254, 212, 100, "4", "Android phone", "hotspot · Node-RED :1880", "#43587A")}
-    ${box(896, 254, 190, 88, "", "farm-ingest", "SQLite · read-only", "#43587A")}
-
-    <g class="wire wire--power">
-      <path d="M142 196 V254" marker-end="url(#arw)"/>
-      <path d="M142 342 V392" marker-end="url(#arw)"/>
-      <path d="M240 152 H386 V254" marker-end="url(#arw)"/>
-      <path d="M240 126 H694 V254" marker-end="url(#arw)" stroke-dasharray="6 5" opacity=".65"/>
-      <text x="256" y="144" class="wlabel">power</text>
-      <text x="440" y="118" class="wlabel wlabel--soft">planned — read the energy budget first</text>
-    </g>
-
-    <g class="wire wire--data">
-      <path d="M240 298 H296" marker-end="url(#arw)"/>
-      <path d="M240 436 H268 V330 H296" marker-end="url(#arw)"/>
-      <path d="M386 354 V412" marker-end="url(#arw)"/>
-      <text x="246" y="288" class="wlabel">RS485</text>
-      <text x="394" y="388" class="wlabel">D2</text>
-    </g>
-
-    <g class="wire wire--radio">
-      <path d="M476 286 H588" marker-end="url(#arw)"/>
-      <path d="M588 322 H476" marker-end="url(#arw)"/>
-      <text x="532" y="274" class="wlabel" text-anchor="middle">POST</text>
-      <text x="532" y="344" class="wlabel" text-anchor="middle">GET /valve</text>
-      <text x="532" y="228" class="wlabel wlabel--soft" text-anchor="middle">WiFi</text>
-    </g>
-
-    <g class="wire wire--radio">
-      <path d="M800 286 H896" marker-end="url(#arw)"/>
-      <path d="M896 322 H800" marker-end="url(#arw)"/>
-      <text x="848" y="274" class="wlabel" text-anchor="middle">batches</text>
-      <text x="848" y="344" class="wlabel" text-anchor="middle">valve state</text>
-      <text x="848" y="228" class="wlabel wlabel--soft" text-anchor="middle">4G, outbound only</text>
-    </g>
-
-    <text x="560" y="546" class="caption" text-anchor="middle">
-      A failed read still posts, with ok:false — a silent node is indistinguishable from a flat battery.
-    </text>
-  </svg>
-  <figcaption>
-    Each module works alone. Together they make one system — and the shape of it is set by two
-    constraints: the ESP8266 has exactly five safe GPIOs, and the phone is behind carrier CGNAT,
-    so every arrow that leaves the farm points <em>outward</em>. Uplinks carry
-    <code>/water</code> and <code>/soil</code>; the valve state rides back on the reply to a batch.
-  </figcaption>
-</figure>`;
-}
-
-/** Per-module wiring diagram, rendered from the same Bus object as the tables. */
-export function busDiagram(bus: Bus, accent: string): string {
-  const set = teachingPins(bus);
-  const rowY = (i: number) => 78 + i * 46;
-
-  const wires = bus.wires
-    .map((w, i) => {
-      const y = rowY(i);
-      return `
-      <g class="bw">
-        <line x1="146" y1="${y}" x2="404" y2="${y}" style="stroke:${w.hex}"/>
-        <circle cx="146" cy="${y}" r="5" style="fill:${w.hex}"/>
-        <circle cx="404" cy="${y}" r="5" style="fill:${w.hex}"/>
-        <text x="83" y="${y + 4}" text-anchor="middle" class="bw__l">${esc(w.colour)}</text>
-        <text x="416" y="${y + 4}" class="bw__r mono">${esc(w.to)}</text>
-      </g>`;
-    })
-    .join("");
-
-  const pins = set.pins
-    .map((p, i) => {
-      const y = rowY(i);
-      return `
-      <g class="bw">
-        <text x="866" y="${y + 4}" text-anchor="end" class="bw__r mono">${esc(p.pad)}</text>
-        <line x1="874" y1="${y}" x2="928" y2="${y}" class="bw__pin"/>
-        <text x="940" y="${y + 4}" class="bw__r mono strong">${esc(p.esp)}</text>
-      </g>`;
-    })
-    .join("");
-
-  const rows = Math.max(bus.wires.length, set.pins.length);
-  const h = 78 + rows * 46 + 46;
-  const boxH = h - 96;
-
-  return `<figure class="figure">
-  <svg viewBox="0 0 1010 ${h}" role="img" aria-label="${esc(bus.label)} wiring: probe wires on the left, RS485 module to ESP8266 pins on the right" class="diagram diagram--bus" style="--accent:${accent}">
-    <rect x="24" y="52" width="118" height="${boxH}" rx="9" class="node__box"/>
-    <text x="83" y="40" text-anchor="middle" class="bw__cap">probe</text>
-
-    <line x1="792" y1="46" x2="792" y2="${52 + boxH}" class="bw__div"/>
-    <text x="866" y="40" text-anchor="end" class="bw__cap">HW-0519</text>
-
-    <rect x="928" y="52" width="58" height="${boxH}" rx="9" class="node__box"/>
-    <text x="957" y="40" text-anchor="middle" class="bw__cap">ESP</text>
-
-    ${wires}
-    ${pins}
-    <text x="404" y="${h - 14}" text-anchor="middle" class="caption mono">${bus.baud} ${esc(bus.frame)} · slave ${bus.slave}</text>
-    <text x="890" y="${h - 14}" text-anchor="middle" class="caption">${esc(set.label)}</text>
-  </svg>
-  <figcaption>Drawn from the same pin data as the tables below, so the two cannot disagree. The
-  right-hand column is the pin set for <b>${esc(set.label)}</b> — other builds use different pins,
-  and they are listed underneath.</figcaption>
-</figure>`;
+export function diagramFigure(d: Diagram, base = "", cls = ""): string {
+  const src = `${base}assets/img/${d.src}`;
+  return `<figure class="figure figure--photo${cls ? ` ${cls}` : ""}">
+    <a class="figure__zoom" href="${src}" title="Open the full-size diagram">
+      <img src="${src}" alt="${esc(d.alt)}" loading="lazy" decoding="async">
+    </a>
+    <figcaption>${d.caption}</figcaption>
+  </figure>`;
 }
 
 /* ─────────────────────────────── module cards ────────────────────────────── */

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>IoT Solar Powerbank — Farmers IoT Toolkit</title>
-<meta name="description" content="A 20 W solar panel charging six 18650 cells, keeping your sensors running day and night where there is no mains power.">
+<title>Solar Power Pack — Farmers IoT Toolkit</title>
+<meta name="description" content="A 20 W solar panel charges six 18650 cells through an MPPT controller and a protection board. The pack hands out a steady 12 V to every other module.">
 <meta name="color-scheme" content="light dark">
-<meta property="og:title" content="IoT Solar Powerbank — Farmers IoT Toolkit">
-<meta property="og:description" content="A 20 W solar panel charging six 18650 cells, keeping your sensors running day and night where there is no mains power.">
+<meta property="og:title" content="Solar Power Pack — Farmers IoT Toolkit">
+<meta property="og:description" content="A 20 W solar panel charges six 18650 cells through an MPPT controller and a protection board. The pack hands out a steady 12 V to every other module.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="../assets/fonts/fonts.css">
 <link rel="stylesheet" href="../assets/styles.css">
@@ -45,18 +45,18 @@
 <article class="mod">
   <header class="mod__hero">
     <div class="mod__rule" aria-hidden="true"></div>
-    <p class="mod__kicker"><span class="mod__n">3</span> Module 3 · Medium · 3–4 hours</p>
-    <h1 class="mod__h1">IoT Solar Powerbank</h1>
-    <p class="mod__plain">A 20 W solar panel charging six 18650 cells, keeping your sensors running day and night where there is no mains power.</p>
+    <p class="mod__kicker"><span class="mod__n">1</span> Module 1 · Medium · 3–4 hours</p>
+    <h1 class="mod__h1">Solar Power Pack</h1>
+    <p class="mod__plain">A 20 W solar panel charges six 18650 cells through an MPPT controller and a protection board. The pack hands out a steady 12 V to every other module.</p>
 
     <div class="mod__status">
-      <span class="badge badge--partial" title="One half works and is measured; the other half is design, not report.">
-    <span class="badge__dot" aria-hidden="true"></span>Half built</span>
-      <p>The 3S2P pack build is in progress; the electrical design and energy budget are settled and documented. It powers everything else, so nothing gets power-tested until it's finished.</p>
+      <span class="badge badge--partial" title="Measured where it is built; the rest is worked out and costed.">
+    <span class="badge__dot" aria-hidden="true"></span>In build</span>
+      <p>A 20 W panel, an MPPT charger and a 3S2P lithium pack behind a BMS, handing 12 V to everything else on the farm. The electrical design, the cell chemistry and the full energy budget are settled and documented here.</p>
     </div>
 
     <dl class="mod__facts">
-      <div><dt>Parts</dt><dd>~$73</dd></div>
+      <div><dt>Parts</dt><dd>~$74</dd></div>
       <div><dt>Build time</dt><dd>3–4 hours</dd></div>
       <div><dt>Steps proven</dt><dd>3 of 6</dd></div>
       <div><dt>Board</dt><dd>none — power only</dd></div>
@@ -64,28 +64,28 @@
   </header>
 
   <nav class="modnav" aria-label="Modules">
-    <a href="modules/water-tank-level-sensor.html"
-      class="modnav__i"
-      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
-      >
-      <span class="modnav__n">1</span><span class="modnav__t">Water tank level</span></a><a href="modules/soil-moisture-drip-irrigation.html"
-      class="modnav__i"
-      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
-      >
-      <span class="modnav__n">2</span><span class="modnav__t">Soil + irrigation valve</span></a><a href="modules/iot-solar-powerbank.html"
+    <a href="modules/solar-power-pack.html"
       class="modnav__i is-current"
       style="--accent:#C77C1E;--accent-dark:#E8A94A"
       aria-current="page">
-      <span class="modnav__n">3</span><span class="modnav__t">Solar power</span></a><a href="modules/mobile-wifi-base-station.html"
+      <span class="modnav__n">1</span><span class="modnav__t">Power</span></a><a href="modules/water-tank-and-valve.html"
+      class="modnav__i"
+      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
+      >
+      <span class="modnav__n">2</span><span class="modnav__t">Water + valve</span></a><a href="modules/soil-moisture-sensor.html"
+      class="modnav__i"
+      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
+      >
+      <span class="modnav__n">3</span><span class="modnav__t">Soil</span></a><a href="modules/mobile-wifi-base-station.html"
       class="modnav__i"
       style="--accent:#43587A;--accent-dark:#8AA0C8"
       >
-      <span class="modnav__n">4</span><span class="modnav__t">Base station</span></a>
+      <span class="modnav__n">4</span><span class="modnav__t">Phone</span></a>
   </nav>
 
   <section class="mod__sec">
     <h2>Why you would want this</h2>
-    <ul class="ticks"><li>Run sensors anywhere on the farm — no power outlet needed</li><li>Free to run once it is built</li><li>One powerbank can carry several sleeping nodes at once</li><li>Sensors that sleep are almost free: ~5.5 Wh/day against a 50–60 Wh/day panel</li></ul>
+    <ul class="ticks"><li>Run sensors anywhere on the farm — no power outlet needed</li><li>Free to run once it is built</li><li>One pack can carry several sleeping nodes at once</li><li>Sensors that sleep are almost free: ~5.5 Wh/day against a 50–60 Wh/day panel</li></ul>
   </section>
 
   <section class="mod__sec mod__sec--choice">
@@ -96,22 +96,23 @@
         <tbody><tr><th scope="row">3S — this guide</th><td>12.6 V</td><td>~14.6 V</td><td>✅ works, ~1.9 V to spare</td></tr><tr><th scope="row">4S — the old, wrong version</th><td>16.8 V</td><td>~18.8 V</td><td>❌ short by 2.3 V</td></tr></tbody></table></div>
     </section>
 
+  <section class="mod__sec" id="diagram">
+    <h2>How it goes together</h2>
+    <figure class="figure figure--photo">
+    <a class="figure__zoom" href="../assets/img/wiring-diagram-module-1-power.jpg" title="Open the full-size diagram">
+      <img src="../assets/img/wiring-diagram-module-1-power.jpg" alt="Wiring diagram: a 20 W solar panel feeds a CN3722 MPPT charger module, which charges six 18650 lithium cells arranged 3S2P through a 3S 40 A BMS. A screw terminal block takes 12 V off the BMS to power the other modules. Parallel wiring is purple, series wiring yellow, BMS wiring red." loading="lazy" decoding="async">
+    </a>
+    <figcaption>Panel → MPPT → BMS → pack, and a terminal block where the other three modules tap 12 V. The purple links are the parallel pairs, the yellow are the series joins, and the red are the BMS balance taps — get those three colours right and the pack is right.</figcaption>
+  </figure>
+  </section>
+
   <section class="mod__sec" id="bom">
     <h2>What you will need</h2>
     <div class="table-wrap">
     <table class="bom">
-      <caption class="sr-only">Bill of materials for IoT Solar Powerbank</caption>
+      <caption class="sr-only">Bill of materials for Solar Power Pack</caption>
       <thead><tr><th scope="col">Part</th><th scope="col">What it does</th><th scope="col" class="num">Est.</th><th scope="col">Link</th></tr></thead>
       <tbody><tr>
-      <th scope="row">
-        18650 lithium cells ×6
-        <span class="qty">×6</span>
-        <p class="part__caution">Ours are Samsung INR18650-32E (3200 mAh). Use the real figure off the wrapper — treat unbranded or salvaged cells as 60–70% of whatever they claim.</p>
-      </th>
-      <td>Store the day's sunlight</td>
-      <td class="num">$15</td>
-      <td class="buy"><span class="nolink">—</span></td>
-    </tr><tr>
       <th scope="row">
         <a href="https://www.marine-deals.com.au/rv-solar-panels-chargers/voltify-mono-perc-solar-panel-20w-375x350x17mm/p/177917/c/1686" rel="noopener nofollow">20 W solar panel, Vmp 18.6 V</a>
         
@@ -131,21 +132,21 @@
       <td class="buy"><a class="buylink" href="https://www.aliexpress.com/item/1005009883114947.html" rel="noopener nofollow">Buy<span class="sr-only"> CN3722 MPPT solar charger</span> ↗</a></td>
     </tr><tr>
       <th scope="row">
-        3S BMS protection board
+        18650 lithium cells ×6
+        <span class="qty">×6</span>
+        <p class="part__caution">Ours are Samsung INR18650-32E (3200 mAh). Use the real figure off the wrapper — treat unbranded or salvaged cells as 60–70% of whatever they claim.</p>
+      </th>
+      <td>Store the day's sunlight — three in series, two in parallel</td>
+      <td class="num">$15</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        3S 40 A BMS protection board
         
         <p class="part__caution">Every load taps pack+ / P−, never B−. Tapping B− silently bypasses the protection.</p>
       </th>
       <td>Guards against overcharge, over-discharge and short circuit</td>
       <td class="num">$5</td>
-      <td class="buy"><span class="nolink">—</span></td>
-    </tr><tr>
-      <th scope="row">
-        5 V / 3 A synchronous buck converter
-        
-        <p class="part__caution">For a phone, do not use a tiny Mini360 — it is rated 3 A and misbehaves above ~1.5 A in a hot box. Set 5.15–5.2 V and short USB D+ to D−.</p>
-      </th>
-      <td>Steps the pack down to 5 V USB</td>
-      <td class="num">$3</td>
       <td class="buy"><span class="nolink">—</span></td>
     </tr><tr>
       <th scope="row">
@@ -158,12 +159,30 @@
       <td class="buy"><span class="nolink">—</span></td>
     </tr><tr>
       <th scope="row">
+        5 V / 3 A synchronous buck converter
+        
+        <p class="part__caution">For a phone, do not use a tiny Mini360 — it is rated 3 A and misbehaves above ~1.5 A in a hot box. Set 5.15–5.2 V and short USB D+ to D−.</p>
+      </th>
+      <td>Steps the pack down to 5 V USB for the base-station phone</td>
+      <td class="num">$3</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
         Fuse holders + fuses
         
         
       </th>
       <td>Cuts power if a leg shorts</td>
       <td class="num">$5</td>
+      <td class="buy"><span class="nolink">—</span></td>
+    </tr><tr>
+      <th scope="row">
+        Screw terminal block
+        
+        
+      </th>
+      <td>Where the other modules tap their 12 V</td>
+      <td class="num">$1</td>
       <td class="buy"><span class="nolink">—</span></td>
     </tr><tr>
       <th scope="row">
@@ -177,7 +196,7 @@
     </tr></tbody>
       <tfoot><tr>
         <th scope="row" colspan="2">Approximate total</th>
-        <td class="num">~$73</td>
+        <td class="num">~$74</td>
         <td></td>
       </tr></tfoot>
     </table>
@@ -189,26 +208,15 @@
 
   <section class="mod__sec" id="wiring">
     <h2>Wiring</h2>
-    <h3>The power tree</h3>
-        <p>Everything hangs off one chain, and the order is not negotiable. Note where the loads tap:
-        <b>pack+ / P−</b>, on the protected side of the BMS — never B−.</p>
-        <pre class="code code--tree"><code>  ☀ 20 W panel · Vmp 18.6 V @ 25 °C → ≈16.5 V hot
-        │
-        ▼
-  CN3722 MPPT charger        CV pot → 12.6 V · MPPT pot → the HOT Vmp, not the label
-        │
-        ▼
-  3S BMS  (B+ B− P−)         balance taps ascending: 0 → 4.2 → 8.4 → 12.6 V
-        │                    ⚠ every load taps pack+ / P−, never B−
-        ▼
-  3S2P pack · 6 × INR18650-32E
-  6.4 Ah · ~70 Wh · 53 mΩ     12.6 V full · 10.95 V nominal · ~9.0 V near empty
-        │                    charge 0–45 °C only · discharge −20 to 60 °C
-        │
-        ├─[fuse 3 A]─► MT3608 boost ──► 18 V ──► water probe
-        ├─[fuse]─────► relay COM/NO ──► solenoid coil
-        └─[fuse 2 A]─► 5 V buck ─┬──► ESP8266 VBUS + RS485 VCC
-                                 └──► USB socket, D+ ⎯ D− shorted ──► phone</code></pre>
+    <p>Everything hangs off one chain: panel → MPPT → BMS → pack → terminal block. The
+        order is not negotiable, and neither is where the loads tap — <b>pack+ / P−</b>, on the
+        protected side of the BMS, never B−. Tapping B− routes discharge around the protection FETs
+        and you lose over-discharge and short-circuit protection silently.</p>
+        <p>Set the charger's CV pot to <b>12.6 V</b> and its MPPT pot to the panel's
+        <i>hot</i> Vmp (≈16.5 V hot), not the 18.6 V @ 25 °C on the label. The
+        pack sits at 12.6 V full and ~9.0 V near empty, with an
+        ESR of 53 mΩ — so voltage sag under load is telling you the state of
+        charge, not that something is dragging the rail down.</p>
         <h3>The energy budget</h3>
         <p>This is the number that decides whether the system runs forever or dies in a week.
         Compare two figures in watt-hours per day: what the panel collects, and what your devices
@@ -217,12 +225,12 @@
     <caption>What each thing costs you per day, against a panel that collects 50–60 Wh/day clear and 6–15 Wh/day under heavy cloud</caption>
     <thead><tr><th scope="col">Device</th><th scope="col">Power awake</th><th scope="col">Awake how often</th><th scope="col" class="num">Wh/day</th></tr></thead>
     <tbody><tr class="">
-      <th scope="row">Sleeping sensor node</th>
+      <th scope="row">Sleeping soil node</th>
       <td class="mono">0.6 W awake</td>
       <td>~5%</td>
       <td class="num mono strong">~1.5</td>
     </tr><tr class="">
-      <th scope="row">Water probe</th>
+      <th scope="row">Water probe + node</th>
       <td class="mono">0.5 W</td>
       <td>~5%</td>
       <td class="num mono strong">~0.6</td>
@@ -245,14 +253,12 @@
   </table></div>
         <p class="fineprint">Our ~70&nbsp;Wh pack gives 56&nbsp;Wh drained to 80% depth, but that is an
         <em>emergency</em> depth. Cycling that deep daily in tropical heat wears the cells out in a
-        year or two, so plan against <b>~38 Wh everyday</b>.</p>
+        year or two, so plan against <b>~38 Wh everyday</b>. Charging is rated
+        0–45 °C only; discharging −20 to 60 °C.</p>
   </section>
 
   <section class="mod__sec" id="build">
     <h2>Build it, step by step</h2>
-    <p class="mod__honesty">Some steps below are marked as <b>design, not report</b>. Those are
-      worked out and costed, but no hardware has confirmed them yet. We would rather tell you which
-      is which than have you find out with a multimeter in your hand.</p>
     <ol class="steps"><li class="step">
       <div class="step__n" aria-hidden="true">01</div>
       <div class="step__body">
@@ -270,7 +276,7 @@
       <div class="step__body">
         <h3>Arrange the cells 3S2P and fit the BMS</h3>
         
-        <p>Three cells in series makes ~11 V nominal (12.6 V full); two of those chains in parallel doubles the capacity. Follow the BMS markings for B+, B− and the balance taps — the taps read ascending: 0 → 4.2 → 8.4 → 12.6 V.</p>
+        <p>Three cells in series makes ~11 V nominal (12.6 V full); two of those chains in parallel doubles the capacity. In the picture above the <b>purple</b> links are the parallel pairs and the <b>yellow</b> are the series joins.</p><p>Follow the BMS markings for B+, B− and the balance taps — the taps read ascending: 0 → 4.2 → 8.4 → 12.6 V.</p>
         
         <aside class="callout callout--danger">
     <span class="callout__label">This will bite you</span>
@@ -284,7 +290,7 @@
       <div class="step__n" aria-hidden="true">03</div>
       <div class="step__body">
         <h3>Connect the MPPT charger and panel</h3>
-        <p class="step__unproven">This step is the design, not a report — no hardware has confirmed it yet.</p>
+        <p class="step__unproven">Design guidance — our own build hasn't reached this step yet.</p>
         <p>Panel to the controller's PV input, pack to its battery terminals. Set the CV pot to <b>12.6 V</b> and the MPPT pot to the panel's <i>hot</i> Vmp (~16.5 V), not the 18.6 V on the label.</p>
         
         <aside class="callout callout--warn">
@@ -298,13 +304,16 @@
     </li><li class="step step--unproven">
       <div class="step__n" aria-hidden="true">04</div>
       <div class="step__body">
-        <h3>Set the buck converter and fuse each leg</h3>
-        <p class="step__unproven">This step is the design, not a report — no hardware has confirmed it yet.</p>
-        <p>Feed the buck from the protected side of the BMS and adjust its output to exactly 5 V with a meter on it. Put a fuse between the pack and each load — 3 A is a sensible start for the sensor side, and the phone gets its own 2 A fuse so a chafed charging cable can't take your sensors down with it.</p>
+        <h3>Fuse each leg out of the terminal block</h3>
+        <p class="step__unproven">Design guidance — our own build hasn't reached this step yet.</p>
+        <p>The terminal block on the right of the diagram is where Modules 2, 3 and 4 tap their power. Put a fuse between the pack and <i>each</i> load rather than one big fuse on the pack: 3 A is a sensible start for a sensor node, and the phone charger gets its own 2 A so a chafed USB cable cannot take your sensors down with it.</p><p>If you are charging the base-station phone from this pack, feed the 5 V/3 A buck from the protected side of the BMS and set it to <b>5.15–5.2 V</b> with a meter on it.</p>
         
         <aside class="callout callout--warn">
     <span class="callout__label">Watch out</span>
-    <p>If this converter will charge a phone: set <b>5.15–5.2 V</b> (never above 5.25 V) to cover cable losses at 2 A, use a proper 5 V/3 A synchronous module rather than a tiny Mini360, and <b>short USB D+ to D−</b> — otherwise the phone thinks it is plugged into a computer, limits itself to 500 mA, and the failure looks exactly like a solar problem.</p>
+    <p><b>Short USB D+ to D−</b> on any socket that charges a phone — otherwise the phone decides it is plugged into a computer, limits itself to 500 mA, and the failure looks exactly like a solar problem.</p>
+  </aside><aside class="callout callout--note">
+    <span class="callout__label">Worth knowing</span>
+    <p>Module 2 and Module 3 each do their own conversion from what this block gives them — Module 2 bucks 12 V down to 5 V and boosts a second rail up to 18 V; Module 3 runs on its own small pack entirely. This block only has to be a clean 12 V.</p>
   </aside>
       </div>
     </li><li class="step">
@@ -323,7 +332,7 @@
       <div class="step__n" aria-hidden="true">06</div>
       <div class="step__body">
         <h3>Charge the phone in bursts, not continuously</h3>
-        <p class="step__unproven">This step is the design, not a report — no hardware has confirmed it yet.</p>
+        <p class="step__unproven">Design guidance — our own build hasn't reached this step yet.</p>
         <p>If you're running Module 4 off this pack, do not leave the phone plugged in. A plugged-in phone can never enter Android's Doze (it only engages when <i>unplugged</i>), so it runs at its awake floor forever — 20–57 Wh/day out of a panel that collects 50–60 Wh on a <i>good</i> day.</p><p>The trick: <b>the phone's own battery is a second battery pack.</b> A 5100 mAh handset holds ~19.4 Wh against the pack's ~38 Wh everyday-usable. Charge it from daytime surplus and let it coast overnight, exactly as it would in your pocket. A $3 pack-voltage relay does the whole job with no code: ON at ~12.3 V, OFF at ~11.6 V.</p>
         
         <aside class="callout callout--danger">
@@ -383,15 +392,15 @@
 
   <section class="mod__sec" id="connects">
     <h2>How this fits with the others</h2>
-    <div class="related"><a class="related__i" href="water-tank-level-sensor.html"
+    <div class="related"><a class="related__i" href="water-tank-and-valve.html"
         style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
-        <span class="related__n">1</span>
-        <span class="related__t">Water Tank Level Sensor</span>
-        <span class="related__w">Powers the tank node so the tank can be anywhere.</span></a><a class="related__i" href="soil-moisture-drip-irrigation.html"
-        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
         <span class="related__n">2</span>
-        <span class="related__t">Soil Moisture → Drip Irrigation</span>
-        <span class="related__w">Powers the probe directly — the pack's 9.0–12.6 V sits inside its 4.5–30 V input.</span></a><a class="related__i" href="mobile-wifi-base-station.html"
+        <span class="related__t">Water Tank Level &amp; Valve</span>
+        <span class="related__w">Hands it the 12 V that runs the node, the probe's boost rail and the valve.</span></a><a class="related__i" href="soil-moisture-sensor.html"
+        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
+        <span class="related__n">3</span>
+        <span class="related__t">Soil Moisture Sensor</span>
+        <span class="related__w">Optional — the soil node carries its own small pack so it can sit far from here.</span></a><a class="related__i" href="mobile-wifi-base-station.html"
         style="--accent:#43587A;--accent-dark:#8AA0C8">
         <span class="related__n">4</span>
         <span class="related__t">Mobile WiFi Base Station</span>
@@ -406,7 +415,7 @@
       <li><a href="https://github.com/sunrise-labs/farmers-iot-toolkit/blob/main/devlog.md" rel="noopener">Build journal, including everything that went wrong ↗</a></li>
       <li><a href="../cheatsheet.html">Full wiring cheatsheet</a></li>
     </ul>
-    <p class="fineprint">One half works and is measured; the other half is design, not report.</p>
+    <p class="fineprint">Measured where it is built; the rest is worked out and costed.</p>
   </section>
 </article>
 </main>
@@ -415,16 +424,16 @@
   <div class="foot__grid">
     <div class="foot__col">
       <h2 class="foot__h">Farmers IoT Toolkit</h2>
-      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.</p>
       <p class="foot__lic">Open source — use, share, and adapt freely.</p>
     </div>
     <div class="foot__col">
       <h3 class="foot__h">Modules</h3>
       <ul>
-        <li><a href="../modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
-        <li><a href="../modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
-        <li><a href="../modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
-        <li><a href="../modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+        <li><a href="../modules/solar-power-pack.html">1 · Power</a></li>
+        <li><a href="../modules/water-tank-and-valve.html">2 · Water + valve</a></li>
+        <li><a href="../modules/soil-moisture-sensor.html">3 · Soil</a></li>
+        <li><a href="../modules/mobile-wifi-base-station.html">4 · Phone</a></li>
       </ul>
     </div>
     <div class="foot__col">

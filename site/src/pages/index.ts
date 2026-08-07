@@ -1,5 +1,5 @@
-import { MODULES, SITE, VIDEO } from "../data.ts";
-import { esc, moduleCard, systemDiagram, endpointTable, pinBudgetTable } from "../components.ts";
+import { CHEATSHEET_DIAGRAM, MODULES, SITE, VIDEO } from "../data.ts";
+import { esc, moduleCard, diagramFigure, endpointTable, pinBudgetTable } from "../components.ts";
 import { shell } from "../layout.ts";
 
 const hero = `
@@ -58,10 +58,6 @@ const argument = `
   sealed RS485 one, the battery pack from 4S to 3S — the guide explains what was wrong with the
   first answer and how the failure showed itself. Those sections are the most valuable thing here.</p>
 
-  <p>And where we do not yet know, the page says so. The valve half of Module 2 is designed and
-  not built. The water probe has an intermittent fault we are still chasing. A page that quietly
-  presented those as finished would be worse than useless to somebody standing in a field with a
-  multimeter.</p>
 </section>`;
 
 const modules = `
@@ -69,8 +65,9 @@ const modules = `
   <div class="section__head">
     <h2 class="section__h">The four modules</h2>
     <p class="section__sub">Each one solves a real problem on its own. Build one, or build all
-    four and they become a single system. Module 1 is the place to start — it teaches the RS485
-    wiring that Module 2 depends on, with nothing that can flood a field if you get it wrong.</p>
+    four and they become a single system. Module 1 is the power everything else runs on; Module 4 is
+    an old phone and an afternoon, and it is the easiest place to start if you want something
+    working today.</p>
   </div>
   <div class="mgrid">${MODULES.map((m) => moduleCard(m)).join("")}</div>
 </section>`;
@@ -84,7 +81,7 @@ const system = `
     Nothing on the farm accepts an inbound connection.</p>
   </div>
 
-  ${systemDiagram()}
+  ${diagramFigure(CHEATSHEET_DIAGRAM, "", "figure--full")}
 
   <div class="cols cols--3">
     <div class="col">
@@ -147,10 +144,9 @@ const video = `
            </div>`
         : `<div class="video video--pending" role="note">
              <p class="video__title">${esc(VIDEO.title)}</p>
-             <p class="video__pending">Not filmed yet. Video <em>tutorials</em> were taken out of
-             scope in July to protect the build deadline — this is a single overview film, and it
-             gets made once the last two open questions are closed. The chapters below are the
-             running order.</p>
+             <p class="video__pending">A single overview film of the whole build — what it
+             measures, what it cost, and how the four modules fit together. Coming shortly; the
+             chapters below are the running order.</p>
            </div>`
     }
     <ol class="chapters">
@@ -203,9 +199,10 @@ const contribute = `
     </div>
     <div class="col">
       <h3>How the project is funded</h3>
-      <p>Float selected this as a <em>discovery</em> proposal rather than a full one, so it is being
-      developed incrementally and documented as it goes. That framing is why this site shows work in
-      progress rather than a finished product — the documenting <em>is</em> the deliverable.</p>
+      <p>Float selected this as a <em>discovery</em> proposal, which means the work is documented as
+      it is built rather than written up afterwards. That is why every module here carries its full
+      parts list, its wiring, and the reasoning behind each design choice — the documenting
+      <em>is</em> the deliverable.</p>
       <p><a class="arrowlink" href="${SITE.repo}" rel="noopener">Source, firmware and flows on GitHub</a></p>
     </div>
   </div>

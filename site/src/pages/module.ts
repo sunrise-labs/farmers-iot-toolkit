@@ -1,8 +1,8 @@
 import { BUSES, MODULES, POWER, SITE, STATUS, cost, moduleBySlug, type Module } from "../data.ts";
 import {
   bomTable,
-  busDiagram,
   busTable,
+  diagramFigure,
   endpointTable,
   esc,
   faultTable,
@@ -14,19 +14,34 @@ import {
 } from "../components.ts";
 import { shell } from "../layout.ts";
 
-/** The wiring section differs per module: two have an RS485 bus, one is power, one is a phone. */
+/** The wiring detail differs per module: two have an RS485 bus, one is power, one is a phone. */
 function wiring(m: Module): string {
   switch (m.slug) {
-    case "water-tank-level-sensor":
-      return `${busDiagram(BUSES.water, m.accent)}
-        ${busTable(BUSES.water)}
-        <p class="fineprint">Both RS485 board variants work and the firmware handles both — but only
-        the auto-direction HW-0519 lets Module 1 and Module 2 later share one ESP8266, because the
-        classic DE/RE breakout spends an extra GPIO on direction and the budget is only five.</p>`;
+    case "solar-power-pack":
+      return `<p>Everything hangs off one chain: panel → MPPT → BMS → pack → terminal block. The
+        order is not negotiable, and neither is where the loads tap — <b>pack+ / P−</b>, on the
+        protected side of the BMS, never B−. Tapping B− routes discharge around the protection FETs
+        and you lose over-discharge and short-circuit protection silently.</p>
+        <p>Set the charger's CV pot to <b>${esc(POWER.pack.full)}</b> and its MPPT pot to the panel's
+        <i>hot</i> Vmp (${esc(POWER.panel.hot)}), not the ${esc(POWER.panel.vmp)} on the label. The
+        pack sits at ${esc(POWER.pack.full)} full and ${esc(POWER.pack.empty)} near empty, with an
+        ESR of ${esc(POWER.pack.esr)} — so voltage sag under load is telling you the state of
+        charge, not that something is dragging the rail down.</p>
+        <h3>The energy budget</h3>
+        <p>This is the number that decides whether the system runs forever or dies in a week.
+        Compare two figures in watt-hours per day: what the panel collects, and what your devices
+        spend. Not what the battery holds — the battery is a bucket, not a tap.</p>
+        ${powerTable()}
+        <p class="fineprint">Our ~70&nbsp;Wh pack gives 56&nbsp;Wh drained to 80% depth, but that is an
+        <em>emergency</em> depth. Cycling that deep daily in tropical heat wears the cells out in a
+        year or two, so plan against <b>${esc(POWER.pack.usable)}</b>. Charging is rated
+        ${esc(POWER.chargeTemp)}; discharging ${esc(POWER.dischargeTemp)}.</p>`;
 
-    case "soil-moisture-drip-irrigation":
-      return `${busDiagram(BUSES.soil, m.accent)}
-        ${busTable(BUSES.soil)}
+    case "water-tank-and-valve":
+      return `${busTable(BUSES.water)}
+        <p class="fineprint">Both RS485 board variants work and the firmware handles both — but the
+        auto-direction HW-0519 is what leaves D2 free for the valve relay. A classic DE/RE breakout
+        spends an extra GPIO on direction, and the budget is only five.</p>
         <h3>The valve side</h3>
         <p>The valve never touches the logic side of the board. It hangs off the relay's switched
         contacts, which are electrically isolated from the ESP8266 — that isolation is exactly why
@@ -35,42 +50,23 @@ function wiring(m: Module): string {
         <div class="table-wrap"><table class="wiring">
           <thead><tr><th scope="col">Relay pin</th><th scope="col">Goes to</th><th scope="col">Note</th></tr></thead>
           <tbody>
-            <tr><th scope="row" class="mono">VCC</th><td class="mono strong">VBUS</td><td class="note">Not <code>VIN</code> — VIN floats when the board is on USB.</td></tr>
+            <tr><th scope="row" class="mono">VCC</th><td class="mono strong">5 V</td><td class="note">From the Mini360 — or <code>VBUS</code> if you are on USB. Never <code>VIN</code>, which floats.</td></tr>
             <tr><th scope="row" class="mono">GND</th><td class="mono strong">GND</td><td class="note">Common ground with the ESP.</td></tr>
-            <tr><th scope="row" class="mono">IN</th><td class="mono strong">D2 (GPIO4)</td><td class="note">Or D5 on a classic DE/RE breakout, which takes D2 for direction.</td></tr>
+            <tr><th scope="row" class="mono">IN</th><td class="mono strong">D2 (GPIO4)</td><td class="note">The one safe pin left once the bus has taken D5 and D6.</td></tr>
             <tr><th scope="row" class="mono">COM / NO</th><td class="mono strong">valve coil</td><td class="note">NO, so relay unpowered = valve unpowered = valve shut.</td></tr>
           </tbody>
         </table></div>`;
 
-    case "iot-solar-powerbank":
-      return `<h3>The power tree</h3>
-        <p>Everything hangs off one chain, and the order is not negotiable. Note where the loads tap:
-        <b>pack+ / P−</b>, on the protected side of the BMS — never B−.</p>
-        <pre class="code code--tree"><code>  ☀ ${POWER.panel.w} W panel · Vmp ${esc(POWER.panel.vmp)} → ${esc(POWER.panel.hot)}
-        │
-        ▼
-  CN3722 MPPT charger        CV pot → 12.6 V · MPPT pot → the HOT Vmp, not the label
-        │
-        ▼
-  3S BMS  (B+ B− P−)         balance taps ascending: 0 → 4.2 → 8.4 → 12.6 V
-        │                    ⚠ every load taps pack+ / P−, never B−
-        ▼
-  3S2P pack · ${esc(POWER.pack.cells)}
-  ${esc(POWER.pack.ah)} · ${esc(POWER.pack.wh)} · ${esc(POWER.pack.esr)}     ${esc(POWER.pack.full)} full · ${esc(POWER.pack.nom)} nominal · ${esc(POWER.pack.empty)} near empty
-        │                    charge ${esc(POWER.chargeTemp)} · discharge ${esc(POWER.dischargeTemp)}
-        │
-        ├─[fuse 3 A]─► MT3608 boost ──► 18 V ──► water probe
-        ├─[fuse]─────► relay COM/NO ──► solenoid coil
-        └─[fuse 2 A]─► 5 V buck ─┬──► ESP8266 VBUS + RS485 VCC
-                                 └──► USB socket, D+ ⎯ D− shorted ──► phone</code></pre>
-        <h3>The energy budget</h3>
-        <p>This is the number that decides whether the system runs forever or dies in a week.
-        Compare two figures in watt-hours per day: what the panel collects, and what your devices
-        spend. Not what the battery holds — the battery is a bucket, not a tap.</p>
-        ${powerTable()}
-        <p class="fineprint">Our ~70&nbsp;Wh pack gives 56&nbsp;Wh drained to 80% depth, but that is an
-        <em>emergency</em> depth. Cycling that deep daily in tropical heat wears the cells out in a
-        year or two, so plan against <b>${esc(POWER.pack.usable)}</b>.</p>`;
+    case "soil-moisture-sensor":
+      return `${busTable(BUSES.soil)}
+        <h3>The node's own power</h3>
+        <p>Four 18650s in parallel is a single cell electrically — ~3.7&nbsp;V nominal, 4.2&nbsp;V
+        full, four times the capacity, and no balancing to do because parallel cells balance
+        themselves. The MT3608 lifts that to a steady 5&nbsp;V for the ESP8266, the RS485 board and
+        the probe, which is happy anywhere from 4.5 to 30&nbsp;V.</p>
+        <p>The reason this module carries its own pack rather than tapping Module 1 is placement: a
+        soil probe belongs in the middle of a bed, and a bed is rarely where the panel is. The node
+        sleeps between readings, so four cells carry it a long way.</p>`;
 
     case "mobile-wifi-base-station":
       return `<h3>What the phone answers</h3>
@@ -123,7 +119,7 @@ export function modulePage(m: Module): string {
       <div><dt>Parts</dt><dd>~$${c.total}${c.unknown ? `<span class="tbc">+${c.unknown} TBC</span>` : ""}</dd></div>
       <div><dt>Build time</dt><dd>${esc(m.buildTime)}</dd></div>
       <div><dt>Steps proven</dt><dd>${provenSteps} of ${m.steps.length}</dd></div>
-      <div><dt>Board</dt><dd>${m.slug === "mobile-wifi-base-station" ? "Android phone" : m.slug === "iot-solar-powerbank" ? "none — power only" : "ESP8266"}</dd></div>
+      <div><dt>Board</dt><dd>${m.slug === "mobile-wifi-base-station" ? "Android phone" : m.slug === "solar-power-pack" ? "none — power only" : "ESP8266"}</dd></div>
     </dl>
   </header>
 
@@ -155,6 +151,11 @@ export function modulePage(m: Module): string {
       : ""
   }
 
+  <section class="mod__sec" id="diagram">
+    <h2>How it goes together</h2>
+    ${diagramFigure(m.diagram, "../")}
+  </section>
+
   <section class="mod__sec" id="bom">
     <h2>What you will need</h2>
     ${bomTable(m)}
@@ -167,13 +168,6 @@ export function modulePage(m: Module): string {
 
   <section class="mod__sec" id="build">
     <h2>Build it, step by step</h2>
-    ${
-      m.steps.some((s) => s.proven === false)
-        ? `<p class="mod__honesty">Some steps below are marked as <b>design, not report</b>. Those are
-      worked out and costed, but no hardware has confirmed them yet. We would rather tell you which
-      is which than have you find out with a multimeter in your hand.</p>`
-        : ""
-    }
     ${stepList(m.steps)}
   </section>
 

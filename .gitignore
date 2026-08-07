@@ -8,3 +8,7 @@ firmware/*/config.h
 
 # Arduino build artefacts
 firmware/*/build/
+
+# Local video working files (raw footage, DNxHR intermediates, photo dumps).
+# Tens of gigabytes — these are never a git artefact.
+video/

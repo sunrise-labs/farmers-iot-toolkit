@@ -372,46 +372,24 @@ code, kbd, samp { font-family: var(--mono); font-size: .88em; }
   margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--rule-soft);
   font-size: .9rem; color: var(--ink-2); max-width: 78ch;
 }
-.diagram { display: block; width: 100%; height: auto; font-family: var(--body); }
-.diagram .gridline { stroke: var(--rule-soft); stroke-width: 1; }
-.diagram .zone rect { fill: none; stroke: var(--rule); stroke-width: 1.5; stroke-dasharray: 3 5; }
-.diagram .zone text {
-  fill: var(--ink-3); font-size: 13px; font-weight: 600;
-  letter-spacing: .1em; text-transform: uppercase;
+/* The wiring pictures are photographs of the real build. They carry fine detail
+   (a wire landing on a named pin), so they get a light backdrop in both themes
+   and a tap-to-open link rather than any clever zoom widget. */
+.figure--photo { padding: .9rem; }
+.figure__zoom {
+  display: block; border-radius: calc(var(--radius) - 4px); overflow: hidden;
+  background: #fff; border: 1px solid var(--rule-soft);
 }
-.diagram .zone--out rect { stroke-dasharray: 2 7; }
-.diagram .boundary { stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 2 6; opacity: .8; }
-.diagram .boundary__label { fill: var(--ink-3); font-size: 11px; letter-spacing: .06em; }
-
-.diagram .node__box {
-  fill: var(--paper); stroke: var(--accent, var(--ink-3)); stroke-width: 1.6;
+.figure__zoom img { display: block; width: 100%; height: auto; }
+.figure__zoom:focus-visible { outline: 2px solid var(--accent, var(--base)); outline-offset: 3px; }
+@media (hover: hover) {
+  .figure__zoom:hover { border-color: var(--accent, var(--base)); }
 }
-.diagram .node__badge { fill: none; stroke: var(--accent); stroke-width: 1.4; }
-.diagram .node__n { fill: var(--accent); font-size: 13px; font-weight: 700; }
-.diagram .bw__div { stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 5; }
-.diagram .node__t { fill: var(--ink); font-size: 15px; font-weight: 600; }
-.diagram .node__s { fill: var(--ink-2); font-size: 12px; font-family: var(--mono); }
-
-.diagram .wire path { fill: none; stroke-width: 1.8; }
-.diagram .wire--power path { stroke: var(--solar); }
-.diagram .wire--data path  { stroke: var(--ink-2); }
-.diagram .wire--radio path { stroke: var(--base); stroke-dasharray: 7 4; }
-.diagram .arrowhead { fill: currentColor; }
-.diagram .wire--power { color: var(--solar); }
-.diagram .wire--data  { color: var(--ink-2); }
-.diagram .wire--radio { color: var(--base); }
-.diagram .wlabel { fill: var(--ink-3); font-size: 11.5px; font-family: var(--mono); }
-.diagram .wlabel--soft { opacity: .7; font-style: italic; }
-.diagram .caption { fill: var(--ink-3); font-size: 12px; }
-
-.diagram--bus .bw line { stroke-width: 2.4; stroke-linecap: round; }
-.diagram--bus .bw__pin { stroke: var(--ink-3); stroke-width: 1.6; stroke-dasharray: 3 3; }
-.diagram--bus .bw__l { fill: var(--ink); font-size: 12px; font-weight: 600; }
-.diagram--bus .bw__r { fill: var(--ink-2); font-size: 12px; }
-.diagram--bus .bw__cap {
-  fill: var(--ink-3); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600;
-}
-.diagram--bus .node__box { fill: color-mix(in oklab, var(--accent) 6%, var(--paper)); }
+/* The cheatsheet's whole-system picture is the content of that page, so it gets
+   the full column width and the page simply scrolls. Capping its height would
+   shrink a dense portrait diagram into an unreadable thumbnail. */
+.figure--full { padding: .6rem; }
+.figure--full .figure__zoom img { width: 100%; }
 
 /* ──────────────────────────────── tables ───────────────────────────────── */
 
@@ -705,10 +683,6 @@ tbody tr.sum th, tbody tr.sum td {
 }
 .mod__sec > p, .sheet__sec > p { color: var(--ink-2); max-width: var(--prose); }
 .mod__sec--choice > p { max-width: var(--prose); }
-.mod__honesty {
-  padding: .9rem 1.1rem; border: 1px dashed var(--ink-3); border-radius: 8px;
-  font-size: .93rem; max-width: 72ch !important;
-}
 .mod__sec--source { border-bottom: 0; }
 
 .related { display: grid; gap: .9rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }

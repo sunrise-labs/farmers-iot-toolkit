@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Farmers IoT Toolkit — low-cost farm sensors you build yourself</title>
-<meta name="description" content="An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.">
+<meta name="description" content="An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:title" content="Farmers IoT Toolkit — low-cost farm sensors you build yourself">
-<meta property="og:description" content="An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.">
+<meta property="og:description" content="An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="assets/fonts/fonts.css">
 <link rel="stylesheet" href="assets/styles.css">
@@ -95,58 +95,55 @@
   sealed RS485 one, the battery pack from 4S to 3S — the guide explains what was wrong with the
   first answer and how the failure showed itself. Those sections are the most valuable thing here.</p>
 
-  <p>And where we do not yet know, the page says so. The valve half of Module 2 is designed and
-  not built. The water probe has an intermittent fault we are still chasing. A page that quietly
-  presented those as finished would be worse than useless to somebody standing in a field with a
-  multimeter.</p>
 </section>
 <section class="section" id="modules">
   <div class="section__head">
     <h2 class="section__h">The four modules</h2>
     <p class="section__sub">Each one solves a real problem on its own. Build one, or build all
-    four and they become a single system. Module 1 is the place to start — it teaches the RS485
-    wiring that Module 2 depends on, with nothing that can flood a field if you get it wrong.</p>
+    four and they become a single system. Module 1 is the power everything else runs on; Module 4 is
+    an old phone and an afternoon, and it is the easiest place to start if you want something
+    working today.</p>
   </div>
-  <div class="mgrid"><a class="mcard" href="modules/water-tank-level-sensor.html" style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
+  <div class="mgrid"><a class="mcard" href="modules/solar-power-pack.html" style="--accent:#C77C1E;--accent-dark:#E8A94A">
     <div class="mcard__top">
       <span class="mcard__n">1</span>
-      <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
-    <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
+      <span class="badge badge--partial" title="Measured where it is built; the rest is worked out and costed.">
+    <span class="badge__dot" aria-hidden="true"></span>In build</span>
     </div>
-    <h3 class="mcard__title">Water Tank Level Sensor</h3>
-    <p class="mcard__plain">A sealed probe sits on the bottom of your tank and feels the weight of the water above it. The deeper the water, the harder it presses.</p>
-    <dl class="mcard__meta">
-      <div><dt>Level</dt><dd>Beginner</dd></div>
-      <div><dt>Build</dt><dd>1–2 hours</dd></div>
-      <div><dt>Parts</dt><dd>~$18+</dd></div>
-    </dl>
-    <span class="mcard__go">Build it <span aria-hidden="true">→</span></span>
-  </a><a class="mcard" href="modules/soil-moisture-drip-irrigation.html" style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
-    <div class="mcard__top">
-      <span class="mcard__n">2</span>
-      <span class="badge badge--partial" title="One half works and is measured; the other half is design, not report.">
-    <span class="badge__dot" aria-hidden="true"></span>Half built</span>
-    </div>
-    <h3 class="mcard__title">Soil Moisture → Drip Irrigation</h3>
-    <p class="mcard__plain">A sealed probe buried at root depth measures how much water is actually in your soil. When it dries past the level you set, the system opens a valve and waters your drip line.</p>
-    <dl class="mcard__meta">
-      <div><dt>Level</dt><dd>Advanced</dd></div>
-      <div><dt>Build</dt><dd>3–5 hours</dd></div>
-      <div><dt>Parts</dt><dd>~$32+</dd></div>
-    </dl>
-    <span class="mcard__go">Build it <span aria-hidden="true">→</span></span>
-  </a><a class="mcard" href="modules/iot-solar-powerbank.html" style="--accent:#C77C1E;--accent-dark:#E8A94A">
-    <div class="mcard__top">
-      <span class="mcard__n">3</span>
-      <span class="badge badge--partial" title="One half works and is measured; the other half is design, not report.">
-    <span class="badge__dot" aria-hidden="true"></span>Half built</span>
-    </div>
-    <h3 class="mcard__title">IoT Solar Powerbank</h3>
-    <p class="mcard__plain">A 20 W solar panel charging six 18650 cells, keeping your sensors running day and night where there is no mains power.</p>
+    <h3 class="mcard__title">Solar Power Pack</h3>
+    <p class="mcard__plain">A 20 W solar panel charges six 18650 cells through an MPPT controller and a protection board. The pack hands out a steady 12 V to every other module.</p>
     <dl class="mcard__meta">
       <div><dt>Level</dt><dd>Medium</dd></div>
       <div><dt>Build</dt><dd>3–4 hours</dd></div>
-      <div><dt>Parts</dt><dd>~$73</dd></div>
+      <div><dt>Parts</dt><dd>~$74</dd></div>
+    </dl>
+    <span class="mcard__go">Build it <span aria-hidden="true">→</span></span>
+  </a><a class="mcard" href="modules/water-tank-and-valve.html" style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
+    <div class="mcard__top">
+      <span class="mcard__n">2</span>
+      <span class="badge badge--partial" title="Measured where it is built; the rest is worked out and costed.">
+    <span class="badge__dot" aria-hidden="true"></span>In build</span>
+    </div>
+    <h3 class="mcard__title">Water Tank Level &amp; Valve</h3>
+    <p class="mcard__plain">A sealed probe on the tank floor feels the weight of the water above it, and a solenoid valve on the outlet lets the system open and shut the irrigation line.</p>
+    <dl class="mcard__meta">
+      <div><dt>Level</dt><dd>Advanced</dd></div>
+      <div><dt>Build</dt><dd>3–5 hours</dd></div>
+      <div><dt>Parts</dt><dd>~$33+</dd></div>
+    </dl>
+    <span class="mcard__go">Build it <span aria-hidden="true">→</span></span>
+  </a><a class="mcard" href="modules/soil-moisture-sensor.html" style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
+    <div class="mcard__top">
+      <span class="mcard__n">3</span>
+      <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
+    <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
+    </div>
+    <h3 class="mcard__title">Soil Moisture Sensor</h3>
+    <p class="mcard__plain">A sealed probe buried at root depth measures how much water is actually in your soil, on a node small enough to carry its own battery and sit anywhere in the field.</p>
+    <dl class="mcard__meta">
+      <div><dt>Level</dt><dd>Medium</dd></div>
+      <div><dt>Build</dt><dd>2–3 hours</dd></div>
+      <div><dt>Parts</dt><dd>~$28+</dd></div>
     </dl>
     <span class="mcard__go">Build it <span aria-hidden="true">→</span></span>
   </a><a class="mcard" href="modules/mobile-wifi-base-station.html" style="--accent:#43587A;--accent-dark:#8AA0C8">
@@ -173,141 +170,12 @@
     Nothing on the farm accepts an inbound connection.</p>
   </div>
 
-  <figure class="figure figure--system">
-  <svg viewBox="0 0 1120 600" role="img" aria-labelledby="sysdiag-t sysdiag-d" class="diagram">
-    <title id="sysdiag-t">How the four modules fit together</title>
-    <desc id="sysdiag-d">The solar powerbank feeds the sensor node and, once built, the base-station
-      phone. The node reads the water and soil probes over two separate RS485 buses and posts
-      readings over WiFi to Node-RED on the phone. The phone pushes batches out over 4G to a small
-      cloud service; nothing on the farm accepts an inbound connection. The valve command travels
-      back as the reply to a batch.</desc>
-
-    <defs>
-      <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0 0 L10 5 L0 10 z" class="arrowhead"/>
-      </marker>
-      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-        <path d="M20 0 L0 0 0 20" fill="none" class="gridline"/>
-      </pattern>
-    </defs>
-
-    <rect width="1120" height="600" fill="url(#grid)" opacity="0.5"/>
-
-    <g class="zone">
-      <rect x="16" y="60" width="484" height="510" rx="14"/>
-      <text x="34" y="88">The field</text>
-    </g>
-    <g class="zone">
-      <rect x="560" y="60" width="270" height="510" rx="14"/>
-      <text x="578" y="88">The shed</text>
-    </g>
-    <g class="zone zone--out">
-      <rect x="872" y="60" width="232" height="510" rx="14"/>
-      <text x="890" y="88">Anywhere</text>
-    </g>
-
-    <line x1="852" y1="60" x2="852" y2="570" class="boundary"/>
-    <text x="852" y="46" class="boundary__label" text-anchor="middle">no inbound connection exists</text>
-
-    
-    <g class="node" transform="translate(44 108)">
-      <rect width="196" height="88" rx="10" class="node__box" style="--accent:#C77C1E"/>
-      <circle cx="26" cy="25" r="11" class="node__badge" style="--accent:#C77C1E"/>
-      <text class="node__n" x="26" y="29.5" text-anchor="middle">3</text>
-      <text class="node__t" x="46" y="30">Solar powerbank</text>
-      <text class="node__s" x="14" y="58">20 W → 3S2P · ~70 Wh</text>
-    </g>
-    
-    <g class="node" transform="translate(44 254)">
-      <rect width="196" height="88" rx="10" class="node__box" style="--accent:#2B6E7A"/>
-      <circle cx="26" cy="25" r="11" class="node__badge" style="--accent:#2B6E7A"/>
-      <text class="node__n" x="26" y="29.5" text-anchor="middle">1</text>
-      <text class="node__t" x="46" y="30">Water probe</text>
-      <text class="node__s" x="14" y="58">QDY30A · 9600 8N1</text>
-    </g>
-    
-    <g class="node" transform="translate(44 392)">
-      <rect width="196" height="88" rx="10" class="node__box" style="--accent:#4A7A3B"/>
-      <circle cx="26" cy="25" r="11" class="node__badge" style="--accent:#4A7A3B"/>
-      <text class="node__n" x="26" y="29.5" text-anchor="middle">2</text>
-      <text class="node__t" x="46" y="30">Soil probe</text>
-      <text class="node__s" x="14" y="58">THC-S · 4800 8N1</text>
-    </g>
-    
-    <g class="node" transform="translate(296 254)">
-      <rect width="180" height="100" rx="10" class="node__box" style="--accent:#8A8175"/>
-      
-      <text class="node__t" x="14" y="34">ESP8266 node</text>
-      <text class="node__s" x="14" y="56">2 buses · 1 radio</text>
-    </g>
-    
-    <g class="node" transform="translate(296 412)">
-      <rect width="180" height="78" rx="10" class="node__box" style="--accent:#4A7A3B"/>
-      <circle cx="26" cy="25" r="11" class="node__badge" style="--accent:#4A7A3B"/>
-      <text class="node__n" x="26" y="29.5" text-anchor="middle">2</text>
-      <text class="node__t" x="46" y="30">Relay → valve</text>
-      <text class="node__s" x="14" y="58">NC = fails shut</text>
-    </g>
-    
-    <g class="node" transform="translate(588 254)">
-      <rect width="212" height="100" rx="10" class="node__box" style="--accent:#43587A"/>
-      <circle cx="26" cy="25" r="11" class="node__badge" style="--accent:#43587A"/>
-      <text class="node__n" x="26" y="29.5" text-anchor="middle">4</text>
-      <text class="node__t" x="46" y="30">Android phone</text>
-      <text class="node__s" x="14" y="58">hotspot · Node-RED :1880</text>
-    </g>
-    
-    <g class="node" transform="translate(896 254)">
-      <rect width="190" height="88" rx="10" class="node__box" style="--accent:#43587A"/>
-      
-      <text class="node__t" x="14" y="34">farm-ingest</text>
-      <text class="node__s" x="14" y="56">SQLite · read-only</text>
-    </g>
-
-    <g class="wire wire--power">
-      <path d="M142 196 V254" marker-end="url(#arw)"/>
-      <path d="M142 342 V392" marker-end="url(#arw)"/>
-      <path d="M240 152 H386 V254" marker-end="url(#arw)"/>
-      <path d="M240 126 H694 V254" marker-end="url(#arw)" stroke-dasharray="6 5" opacity=".65"/>
-      <text x="256" y="144" class="wlabel">power</text>
-      <text x="440" y="118" class="wlabel wlabel--soft">planned — read the energy budget first</text>
-    </g>
-
-    <g class="wire wire--data">
-      <path d="M240 298 H296" marker-end="url(#arw)"/>
-      <path d="M240 436 H268 V330 H296" marker-end="url(#arw)"/>
-      <path d="M386 354 V412" marker-end="url(#arw)"/>
-      <text x="246" y="288" class="wlabel">RS485</text>
-      <text x="394" y="388" class="wlabel">D2</text>
-    </g>
-
-    <g class="wire wire--radio">
-      <path d="M476 286 H588" marker-end="url(#arw)"/>
-      <path d="M588 322 H476" marker-end="url(#arw)"/>
-      <text x="532" y="274" class="wlabel" text-anchor="middle">POST</text>
-      <text x="532" y="344" class="wlabel" text-anchor="middle">GET /valve</text>
-      <text x="532" y="228" class="wlabel wlabel--soft" text-anchor="middle">WiFi</text>
-    </g>
-
-    <g class="wire wire--radio">
-      <path d="M800 286 H896" marker-end="url(#arw)"/>
-      <path d="M896 322 H800" marker-end="url(#arw)"/>
-      <text x="848" y="274" class="wlabel" text-anchor="middle">batches</text>
-      <text x="848" y="344" class="wlabel" text-anchor="middle">valve state</text>
-      <text x="848" y="228" class="wlabel wlabel--soft" text-anchor="middle">4G, outbound only</text>
-    </g>
-
-    <text x="560" y="546" class="caption" text-anchor="middle">
-      A failed read still posts, with ok:false — a silent node is indistinguishable from a flat battery.
-    </text>
-  </svg>
-  <figcaption>
-    Each module works alone. Together they make one system — and the shape of it is set by two
-    constraints: the ESP8266 has exactly five safe GPIOs, and the phone is behind carrier CGNAT,
-    so every arrow that leaves the farm points <em>outward</em>. Uplinks carry
-    <code>/water</code> and <code>/soil</code>; the valve state rides back on the reply to a batch.
-  </figcaption>
-</figure>
+  <figure class="figure figure--photo figure--full">
+    <a class="figure__zoom" href="assets/img/wiring-cheatsheet-full.jpg" title="Open the full-size diagram">
+      <img src="assets/img/wiring-cheatsheet-full.jpg" alt="The complete toolkit wired as one system: a 20 W solar panel and CN3722 MPPT charger feeding a 3S2P 18650 pack behind a 3S 40 A BMS; a Mini360 buck and MT3608 boost feeding an ESP8266 with an RS485 module, a hydrostatic water level probe in a tank and a 5 V relay switching a 12 V solenoid valve on the outlet; an Android phone as the base station; and three independent soil nodes, each with four parallel 18650 cells, a boost module, an ESP8266, an RS485 module and a buried soil moisture sensor." loading="lazy" decoding="async">
+    </a>
+    <figcaption>Every module in one picture, wired the way the farm actually runs: one power pack, one water node with the valve on it, the phone as the base station, and as many independent soil nodes as you have beds. Tap the picture to open it full size.</figcaption>
+  </figure>
 
   <div class="cols cols--3">
     <div class="col">
@@ -345,7 +213,7 @@
       <td><span class="dirpill dirpill--up">uplink</span></td>
       <th scope="row" class="mono">POST</th>
       <td class="mono strong">/soil</td>
-      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}</td>
+      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, rssi, uptime_s}</td>
     </tr><tr>
       <td><span class="dirpill dirpill--down">downlink</span></td>
       <th scope="row" class="mono">GET (poll, 1 s)</th>
@@ -382,37 +250,37 @@
       <th scope="row" class="mono strong">D1</th>
       <td class="mono dim">GPIO5</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 2 soil TX · farm-node water TX · water-level.ino DE</td>
+      <td>water TX on farm-node · soil TX on the bench node · DE on water-level.ino</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D2</th>
       <td class="mono dim">GPIO4</td>
       <td><span class="ok">safe</span></td>
-      <td>valve relay IN</td>
+      <td>Module 2 valve relay IN</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D5</th>
       <td class="mono dim">GPIO14</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 1 water RX · deep-sleep soil TX</td>
+      <td>Module 2 water RX · Module 3 soil TX</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D6</th>
       <td class="mono dim">GPIO12</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 1 water TX · deep-sleep soil RX</td>
+      <td>Module 2 water TX · Module 3 soil RX</td>
       <td class="note"></td>
     </tr><tr class="safe">
       <th scope="row" class="mono strong">D7</th>
       <td class="mono dim">GPIO13</td>
       <td><span class="ok">safe</span></td>
-      <td>Module 2 soil RX · farm-node water RX</td>
+      <td>water RX on farm-node · soil RX on the bench node</td>
       <td class="note"></td>
     </tr><tr class="trap">
       <th scope="row" class="mono strong">D0</th>
       <td class="mono dim">GPIO16</td>
       <td><span class="no">trap</span></td>
-      <td>deep-sleep wake only</td>
+      <td>deep-sleep wake only (Module 3)</td>
       <td class="note">No interrupts at all — it physically cannot receive SoftwareSerial.</td>
     </tr><tr class="trap">
       <th scope="row" class="mono strong">D3</th>
@@ -446,17 +314,16 @@
   <div class="videowrap">
     <div class="video video--pending" role="note">
              <p class="video__title">The Farmers IoT Toolkit in six minutes</p>
-             <p class="video__pending">Not filmed yet. Video <em>tutorials</em> were taken out of
-             scope in July to protect the build deadline — this is a single overview film, and it
-             gets made once the last two open questions are closed. The chapters below are the
-             running order.</p>
+             <p class="video__pending">A single overview film of the whole build — what it
+             measures, what it cost, and how the four modules fit together. Coming shortly; the
+             chapters below are the running order.</p>
            </div>
     <ol class="chapters">
       <li><span class="chapters__at mono">0:00</span>
             <span class="chapters__l">The problem: knowing what your farm is doing</span></li><li><span class="chapters__at mono">0:50</span>
-            <span class="chapters__l">Module 1 — how deep is the tank?</span></li><li><span class="chapters__at mono">2:10</span>
-            <span class="chapters__l">Module 2 — soil moisture opens a valve</span></li><li><span class="chapters__at mono">3:30</span>
-            <span class="chapters__l">Module 3 — running it all on sunlight</span></li><li><span class="chapters__at mono">4:40</span>
+            <span class="chapters__l">Module 1 — running it all on sunlight</span></li><li><span class="chapters__at mono">2:10</span>
+            <span class="chapters__l">Module 2 — how deep is the tank, and opening the valve</span></li><li><span class="chapters__at mono">3:30</span>
+            <span class="chapters__l">Module 3 — soil moisture at root depth</span></li><li><span class="chapters__at mono">4:40</span>
             <span class="chapters__l">Module 4 — an old phone as the brain</span></li><li><span class="chapters__at mono">5:30</span>
             <span class="chapters__l">Putting the four together</span></li>
     </ol>
@@ -498,9 +365,10 @@
     </div>
     <div class="col">
       <h3>How the project is funded</h3>
-      <p>Float selected this as a <em>discovery</em> proposal rather than a full one, so it is being
-      developed incrementally and documented as it goes. That framing is why this site shows work in
-      progress rather than a finished product — the documenting <em>is</em> the deliverable.</p>
+      <p>Float selected this as a <em>discovery</em> proposal, which means the work is documented as
+      it is built rather than written up afterwards. That is why every module here carries its full
+      parts list, its wiring, and the reasoning behind each design choice — the documenting
+      <em>is</em> the deliverable.</p>
       <p><a class="arrowlink" href="https://github.com/sunrise-labs/farmers-iot-toolkit" rel="noopener">Source, firmware and flows on GitHub</a></p>
     </div>
   </div>
@@ -511,16 +379,16 @@
   <div class="foot__grid">
     <div class="foot__col">
       <h2 class="foot__h">Farmers IoT Toolkit</h2>
-      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.</p>
       <p class="foot__lic">Open source — use, share, and adapt freely.</p>
     </div>
     <div class="foot__col">
       <h3 class="foot__h">Modules</h3>
       <ul>
-        <li><a href="modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
-        <li><a href="modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
-        <li><a href="modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
-        <li><a href="modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+        <li><a href="modules/solar-power-pack.html">1 · Power</a></li>
+        <li><a href="modules/water-tank-and-valve.html">2 · Water + valve</a></li>
+        <li><a href="modules/soil-moisture-sensor.html">3 · Soil</a></li>
+        <li><a href="modules/mobile-wifi-base-station.html">4 · Phone</a></li>
       </ul>
     </div>
     <div class="foot__col">

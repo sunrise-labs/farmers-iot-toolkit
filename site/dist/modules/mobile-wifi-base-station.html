@@ -52,7 +52,7 @@
     <div class="mod__status">
       <span class="badge badge--proven" title="Built and measured on our bench. Not the same as field-soaked.">
     <span class="badge__dot" aria-hidden="true"></span>Bench-proven</span>
-      <p>Done and documented, receiving live readings from Module 1 and pushing them out to a small cloud service. How to power the phone in the field is designed but not yet measured.</p>
+      <p>Done and documented: an Android phone running Termux, Node.js and Node-RED, receiving live readings from the field nodes and pushing them out over 4G to a small cloud service.</p>
     </div>
 
     <dl class="mod__facts">
@@ -64,23 +64,23 @@
   </header>
 
   <nav class="modnav" aria-label="Modules">
-    <a href="modules/water-tank-level-sensor.html"
-      class="modnav__i"
-      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
-      >
-      <span class="modnav__n">1</span><span class="modnav__t">Water tank level</span></a><a href="modules/soil-moisture-drip-irrigation.html"
-      class="modnav__i"
-      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
-      >
-      <span class="modnav__n">2</span><span class="modnav__t">Soil + irrigation valve</span></a><a href="modules/iot-solar-powerbank.html"
+    <a href="modules/solar-power-pack.html"
       class="modnav__i"
       style="--accent:#C77C1E;--accent-dark:#E8A94A"
       >
-      <span class="modnav__n">3</span><span class="modnav__t">Solar power</span></a><a href="modules/mobile-wifi-base-station.html"
+      <span class="modnav__n">1</span><span class="modnav__t">Power</span></a><a href="modules/water-tank-and-valve.html"
+      class="modnav__i"
+      style="--accent:#2B6E7A;--accent-dark:#5FB3C4"
+      >
+      <span class="modnav__n">2</span><span class="modnav__t">Water + valve</span></a><a href="modules/soil-moisture-sensor.html"
+      class="modnav__i"
+      style="--accent:#4A7A3B;--accent-dark:#8FBF6F"
+      >
+      <span class="modnav__n">3</span><span class="modnav__t">Soil</span></a><a href="modules/mobile-wifi-base-station.html"
       class="modnav__i is-current"
       style="--accent:#43587A;--accent-dark:#8AA0C8"
       aria-current="page">
-      <span class="modnav__n">4</span><span class="modnav__t">Base station</span></a>
+      <span class="modnav__n">4</span><span class="modnav__t">Phone</span></a>
   </nav>
 
   <section class="mod__sec">
@@ -89,6 +89,16 @@
   </section>
 
   
+
+  <section class="mod__sec" id="diagram">
+    <h2>How it goes together</h2>
+    <figure class="figure figure--photo">
+    <a class="figure__zoom" href="../assets/img/wiring-diagram-module-4-phone.jpg" title="Open the full-size diagram">
+      <img src="../assets/img/wiring-diagram-module-4-phone.jpg" alt="An Android phone running a Termux terminal session, captioned: receives all ESP8266 data via WiFi hotspot and sends it to the internet via 4G." loading="lazy" decoding="async">
+    </a>
+    <figcaption>There is no wiring in this module beyond a USB cable — the connections are network ones. The phone's hotspot is the farm's network, Termux gives it a Linux shell, and Node-RED is what turns arriving JSON into a dashboard and an irrigation decision.</figcaption>
+  </figure>
+  </section>
 
   <section class="mod__sec" id="bom">
     <h2>What you will need</h2>
@@ -152,7 +162,7 @@
       <td><span class="dirpill dirpill--up">uplink</span></td>
       <th scope="row" class="mono">POST</th>
       <td class="mono strong">/soil</td>
-      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, valve, rssi, uptime_s}</td>
+      <td class="mono dim">{node, ok, moisture_pct, temp_c, ec, rssi, uptime_s}</td>
     </tr><tr>
       <td><span class="dirpill dirpill--down">downlink</span></td>
       <th scope="row" class="mono">GET (poll, 1 s)</th>
@@ -180,7 +190,6 @@
 
   <section class="mod__sec" id="build">
     <h2>Build it, step by step</h2>
-    
     <ol class="steps"><li class="step">
       <div class="step__n" aria-hidden="true">01</div>
       <div class="step__body">
@@ -211,7 +220,7 @@
     </li><li class="step">
       <div class="step__n" aria-hidden="true">03</div>
       <div class="step__body">
-        <h3>Install Node-RED inside Termux</h3>
+        <h3>Install Node.js and Node-RED inside Termux</h3>
         
         <p>Type these one at a time. The first two take a few minutes each.</p>
         <pre class="code" data-lang="bash"><code>pkg update &amp;&amp; pkg upgrade -y
@@ -262,7 +271,7 @@ node-red</code></pre>
       <div class="step__body">
         <h3>See your farm from anywhere — push out, don't expose in</h3>
         
-        <p>The phone has 4G, so it can reach the internet — but the internet cannot reach it. Carriers put phones behind <b>CGNAT</b>: your phone shares one public address with thousands of others, so there is no port to forward and no address to type. Everything you read about port-forwarding assumes a home broadband line and does not apply here.</p><p>So the phone dials out. Node-RED buffers every reading and POSTs it in batches to a small service you control (<code>server/</code>, ours runs at <code>farm.sunriselabs.io</code>). Nothing on the farm is ever exposed, it works on any carrier with zero configuration, and it survives dropouts because the phone keeps a backlog and re-sends. On a metered SIM it costs about 60 requests a day.</p><p>The same channel carries commands back: because the phone is already POSTing, the server answers each batch with the desired valve state — so you can open and shut the irrigation valve from a dashboard without anything on your farm being reachable from the internet.</p>
+        <p>The phone has 4G, so it can reach the internet — but the internet cannot reach it. Carriers put phones behind <b>CGNAT</b>: your phone shares one public address with thousands of others, so there is no port to forward and no address to type. Everything you read about port-forwarding assumes a home broadband line and does not apply here.</p><p>So the phone dials out. Node-RED buffers every reading and POSTs it in batches to a small service you control (<code>server/</code>, ours runs at <code>farm.sunriselabs.io</code>). Nothing on the farm is ever exposed, it works on any carrier with zero configuration, and it survives dropouts because the phone keeps a backlog and re-sends. On a metered SIM it costs about 60 requests a day.</p><p>The same channel carries commands back: because the phone is already POSTing, the server answers each batch with the desired valve state — so you can open and shut Module 2's valve from a dashboard without anything on your farm being reachable from the internet.</p>
         
         <aside class="callout callout--danger">
     <span class="callout__label">This will bite you</span>
@@ -310,18 +319,18 @@ node-red</code></pre>
 
   <section class="mod__sec" id="connects">
     <h2>How this fits with the others</h2>
-    <div class="related"><a class="related__i" href="water-tank-level-sensor.html"
+    <div class="related"><a class="related__i" href="water-tank-and-valve.html"
         style="--accent:#2B6E7A;--accent-dark:#5FB3C4">
-        <span class="related__n">1</span>
-        <span class="related__t">Water Tank Level Sensor</span>
-        <span class="related__w">Receives depth readings over WiFi.</span></a><a class="related__i" href="soil-moisture-drip-irrigation.html"
-        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
         <span class="related__n">2</span>
-        <span class="related__t">Soil Moisture → Drip Irrigation</span>
-        <span class="related__w">Receives soil readings and can command the valve on the reply to a batch.</span></a><a class="related__i" href="iot-solar-powerbank.html"
-        style="--accent:#C77C1E;--accent-dark:#E8A94A">
+        <span class="related__t">Water Tank Level &amp; Valve</span>
+        <span class="related__w">Receives depth readings and sends the valve command back on the reply.</span></a><a class="related__i" href="soil-moisture-sensor.html"
+        style="--accent:#4A7A3B;--accent-dark:#8FBF6F">
         <span class="related__n">3</span>
-        <span class="related__t">IoT Solar Powerbank</span>
+        <span class="related__t">Soil Moisture Sensor</span>
+        <span class="related__w">Receives soil readings and holds the irrigation decision.</span></a><a class="related__i" href="solar-power-pack.html"
+        style="--accent:#C77C1E;--accent-dark:#E8A94A">
+        <span class="related__n">1</span>
+        <span class="related__t">Solar Power Pack</span>
         <span class="related__w">Can power the phone — check the energy budget first.</span></a></div>
   </section>
 
@@ -342,16 +351,16 @@ node-red</code></pre>
   <div class="foot__grid">
     <div class="foot__col">
       <h2 class="foot__h">Farmers IoT Toolkit</h2>
-      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists, and honest build guides that say what is proven and what is not.</p>
+      <p>An open-source toolkit that shows farmers how to build low-cost IoT sensors on ESP8266 microcontrollers. Four modules, full parts lists with buy links, wiring diagrams and complete build guides.</p>
       <p class="foot__lic">Open source — use, share, and adapt freely.</p>
     </div>
     <div class="foot__col">
       <h3 class="foot__h">Modules</h3>
       <ul>
-        <li><a href="../modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
-        <li><a href="../modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
-        <li><a href="../modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
-        <li><a href="../modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+        <li><a href="../modules/solar-power-pack.html">1 · Power</a></li>
+        <li><a href="../modules/water-tank-and-valve.html">2 · Water + valve</a></li>
+        <li><a href="../modules/soil-moisture-sensor.html">3 · Soil</a></li>
+        <li><a href="../modules/mobile-wifi-base-station.html">4 · Phone</a></li>
       </ul>
     </div>
     <div class="foot__col">

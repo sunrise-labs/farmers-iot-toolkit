@@ -45,6 +45,7 @@ export async function build() {
   const home = await import(`./src/pages/index.ts${bust}`);
   const sheet = await import(`./src/pages/cheatsheet.ts${bust}`);
   const mods = await import(`./src/pages/module.ts${bust}`);
+  const missing = await import(`./src/pages/notfound.ts${bust}`);
 
   const written: string[] = [];
   const write = async (path: string, html: string) => {
@@ -55,6 +56,9 @@ export async function build() {
   await write("index.html", home.page);
   await write("cheatsheet.html", sheet.page);
   for (const p of mods.pages) await write(p.path, p.html);
+  // GitHub Pages serves /404.html for any unknown path, so it lives at the root
+  // and carries its own inline styles — see src/pages/notfound.ts.
+  await write("404.html", missing.page);
 
   // Assets
   await copyFile(join(ROOT, "styles.css"), join(DIST, "assets", "styles.css"));

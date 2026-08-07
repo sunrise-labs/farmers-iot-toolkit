@@ -1,4 +1,4 @@
-import { SITE } from "./data.ts";
+import { MODULES, SITE } from "./data.ts";
 
 export type PageMeta = {
   title: string;
@@ -73,10 +73,9 @@ ${body}
     <div class="foot__col">
       <h3 class="foot__h">Modules</h3>
       <ul>
-        <li><a href="${b}modules/water-tank-level-sensor.html">1 · Water tank level</a></li>
-        <li><a href="${b}modules/soil-moisture-drip-irrigation.html">2 · Soil + irrigation</a></li>
-        <li><a href="${b}modules/iot-solar-powerbank.html">3 · Solar powerbank</a></li>
-        <li><a href="${b}modules/mobile-wifi-base-station.html">4 · Base station</a></li>
+        ${MODULES.map(
+          (m) => `<li><a href="${b}modules/${m.slug}.html">${m.n} · ${m.short}</a></li>`,
+        ).join("\n        ")}
       </ul>
     </div>
     <div class="foot__col">
