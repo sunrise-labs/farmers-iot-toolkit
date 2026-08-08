@@ -372,8 +372,10 @@ Power-on order is not arbitrary — a panel has no off switch, and a boost set w
 
 | Symptom | Almost always |
 |---|---|
-| Probe silent, TXD LED blinks, RXD never does | A/B swapped — swap them before anything else |
-| Water probe reads, then doesn't, then does | 🔶 the open intermittent — a wire, prime suspect green/ground |
+| Probe silent, TXD LED blinks, RXD never does — **on a NEW build** | A/B swapped — swap them before anything else |
+| Probe silent, TXD LED blinks, RXD never does — **on a build that WORKED before** | **A dying transceiver.** Polarity, baud and pins are static: they cannot have been right yesterday and wrong today. A half-dead HW-0519 keeps driving (TX LED blinks, looks healthy) while its receive path degrades. Swap the board — 2026-08-07 |
+| Water probe reads, then doesn't, then does | ✅ was the transceiver (2026-08-07). Confirm with: 18 V at the probe *during* the failure, and A/B ≈ 9–12 kΩ — if both hold, the cable and probe are good and it's the board |
+| Meter beeps across A/B | **Read the ohms, not the beep.** ~120 Ω is a terminator, ~60 Ω is two, and some meters beep into the kΩ. Only <10 Ω is a short |
 | Readings fail randomly, wiring "looks right" | no common ground between the 18 V and 3.3 V sides |
 | Probe cold, no reading | boost not at 18 V — meter red-to-green, not the raw pack |
 | Boost reads 0 V | trimmer parked mid-range; it's 25-turn with no end stops. Keep turning |

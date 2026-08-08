@@ -6,6 +6,71 @@ rig) the hours we burned the first time.
 
 ---
 
+## 2026-08-07 — ✅ CLOSED: the water probe's intermittent was a dying RS485 transceiver
+
+**Swapped the HW-0519 for the spare. Both LEDs flash, the probe replies, the node runs.**
+Six weeks of "it's a wire" was wrong. It was the board.
+
+**Why we spent so long looking at wires.** The fault map in `docs/deployment-wiring.md`
+says *"TXD blinks, RXD never does → A/B swapped, swap them before anything else"*, and
+that entry is correct for a **new** build. It is actively misleading for a build that
+**worked yesterday**, because polarity is static — it cannot have been right on Tuesday
+and wrong on Thursday. The same logic that this devlog used on 2026-07-19 to eliminate
+A/B ("this exact wiring worked 20 minutes earlier") also eliminates baud, pin assignment
+and sketch. **What "it worked before" actually points at is a component that degrades**,
+and we never had that on the list.
+
+**The measurement that broke the standing theory.** The green/ground hypothesis predicted
+an unpowered probe. So: meter red-to-green **at the probe, while it is failing**. It read
+a stable 18 V. That killed power delivery outright — and with it the "one intermittent,
+two costumes" theory that tied this to the FT232 dropout. ⚠️ **The FT232 problem is now
+unexplained again and should be treated as open and separate.** Two faults that share a
+symptom are not one fault, however satisfying the story.
+
+**The measurement that localised it.** A/B at the probe end read **9.16 kΩ** — an RS485
+receiver's input load (12 kΩ nominal for one unit load) seen through good cable. One
+number ruled *in* three things at once: both data conductors intact end to end (an open
+reads OL), the probe's receiver alive, and no chafe/water short. Combined with a clean
+`RXD`→D7 continuity check, everything except the transceiver was eliminated **by
+measurement rather than by argument**, which is the only kind of elimination that holds.
+
+**A meter beeped at 9.16 kΩ.** Continuity mode is a comparator against an undisclosed
+threshold, and on this meter that threshold is high enough to be useless on a bus. We
+nearly chased a short that never existed. **Read ohms, never the beep.**
+
+**A transceiver can fail half-dead and that is worse than dead.** It kept driving — TX LED
+blinking the whole time, which reads as "the board is fine" — while its receive path
+degraded. Every symptom pointed downstream of a component that was itself the fault. A
+board that fails completely gets replaced in ten minutes; one that fails asymmetrically
+costs weeks, because it keeps producing evidence of its own health.
+
+### Instrumentation that should have existed from day one
+
+`readRegisters` counted bytes into `n` and buffered them, then discarded both and printed
+`no valid modbus frame` — one bit of information over a 300 ms window that had already
+collected the answer. Added `RS485_DUMP` (bench-only, compiles out at `BENCH_MODE 0`)
+printing `tx`, and on failure `SILENT n=0` or `bad-crc/frame` plus the raw hex. The split
+that matters: **`n=0` is nothing on the wire** (probe silent, or RXD never reaches the
+ESP) versus **`n>0` is a probe replying into a bus that mangles it** — different faults,
+different hunts, and the old message hid which one you had.
+
+### Also this pass: the OTA password was still the shipped default
+
+`OTA_PASSWORD` was `change-me-ota` on a node about to go to field, with `OTA_ENABLE 1`.
+Anyone joining the hotspot could have reflashed it. `config.example.h` warns about exactly
+this — *"change it before the node leaves your desk"* — and the warning got read as being
+about the empty string. **A published default is not a password.** Now set to a generated
+value in the gitignored `config.h`.
+
+### Field build is on the node
+
+`BENCH_MODE 0`, `REPORT_INTERVAL_S 60`, `POST_HOST ""` (gateway discovery),
+`VALVE_MAX_OPEN_S 1800`, OTA live as `farm-node-1`. `DRY_OFFSET_COUNTS` still 26 — worth
+re-reading in air, since the 26 was measured through the transceiver that turned out to
+be failing.
+
+---
+
 ## 2026-08-05 — soil code deleted from `farm-node`, not just flagged off
 
 `ENABLE_SOIL 0` (2026-08-03) stopped the phantom `soil-bed-1` POSTs, but left the whole
